@@ -163,7 +163,11 @@ html {
   margin: 0;
   padding: 1rem 1.15rem;
   overflow-x: auto;
-  background: var(--color-background-secondary) !important;
+  /* Must reference an authored variable, not a @theme one. `@theme inline`
+     inlines its values at build time instead of emitting runtime custom
+     properties, so var(--color-background-secondary) resolves to nothing here
+     and the block falls back to transparent — white text on white in dark. */
+  background: var(--default) !important;
 }
 
 .fern-code code {
