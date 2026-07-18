@@ -2,6 +2,7 @@
 
 import { Button } from "@heroui/react"
 import { CodeActions } from "@/components/code-actions"
+import { cn } from "@/components/cn"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 
 /**
@@ -96,14 +97,14 @@ export function PreviewCode({
       data-has-bar={(label ?? lang) ? "" : undefined}
       className={
         standalone
-          ? "code-section relative my-4 overflow-hidden rounded-xl border border-separator bg-transparent"
+          ? "code-section relative my-4 rounded-xl border border-separator bg-surface-secondary px-1 pb-1"
           : "code-section relative rounded-b-xl border border-separator bg-transparent"
       }
     >
       {(label ?? lang) && (
-        <div className="flex items-center justify-between gap-3 border-b border-separator bg-surface-secondary py-1 pr-1 pl-4">
+        <div className="flex items-center justify-between gap-3 bg-surface-secondary py-1 pr-1 pl-4">
           <span className="font-mono text-xs text-foreground">
-            {label ?? lang}
+            {label ?? lang?.toUpperCase()}
           </span>
           <CodeActions />
         </div>
@@ -115,11 +116,14 @@ export function PreviewCode({
           clamped
             ? // Opaque for the first 20%, then fading out, so the cut reads as
               // "there is more" rather than as a crop.
-              "docs-code-block-wrapper relative max-h-[150px] overflow-hidden [mask-image:linear-gradient(#000_0%_20%,transparent_100%)]"
+              cn(
+                "docs-code-block-wrapper relative max-h-[150px] overflow-hidden [mask-image:linear-gradient(#000_0%_20%,transparent_100%)]",
+                standalone && "rounded-lg bg-background",
+              )
             : standalone
               // A whole source file expands to tens of thousands of pixels,
               // which loses the page. Scroll it inside the block instead.
-              ? "docs-code-block-wrapper relative max-h-[70vh] overflow-auto"
+              ? "docs-code-block-wrapper relative max-h-[70vh] overflow-auto rounded-lg bg-background"
               : "docs-code-block-wrapper relative"
         }
       >

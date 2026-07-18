@@ -13,6 +13,41 @@ export function Button({ children }: { children: React.ReactNode }) {
 
 </PreviewCode>
 
+## The bar
+
+Pass `label` for a filename, or `lang` for a language. A filename shows as
+written; a bare language is uppercased, so the two never read alike.
+
+<PreviewCode standalone lang="bash">
+
+```bash
+bun add @fern-ui/color-picker
+```
+
+</PreviewCode>
+
+<PreviewCode standalone label="globals.css">
+
+```css
+:root {
+  --surface: #ffffff;
+  --accent: #0485f7;
+}
+```
+
+</PreviewCode>
+
+Omit both and the bar does not render at all.
+
+<PreviewCode standalone>
+
+```ts
+export const clamp = (n: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, n))
+```
+
+</PreviewCode>
+
 ## Usage
 
 ```tsx
