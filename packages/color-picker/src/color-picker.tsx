@@ -1,10 +1,25 @@
 "use client"
 
+/**
+ * The complete color picker, in one file.
+ *
+ * Deliberately not split across modules. This package is meant to be copied as
+ * well as installed, and a component that arrives as seven files with relative
+ * imports between them is not something you can paste into a project — you have
+ * to reassemble it first. Only `./color` stays separate, because it is a
+ * published entry point of its own (`@fern-ui/color-picker/color`) and is pure
+ * maths that a consumer can use without pulling in React.
+ *
+ * Read it in order: helpers, constants, hooks, props, the component, then the
+ * presentational parts and icons it composes.
+ */
+
 import * as React from "react"
 import {
   clamp,
   formatColor,
   hslToHsv,
+  hsvToRgb,
   luminance,
   parseColor,
   rgbToHex,
@@ -15,19 +30,269 @@ import {
   type HSV,
   type RGB,
 } from "./color"
-import {
-  CHECKERBOARD,
-  EASE_OUT,
-  HUE_GRADIENT,
-  MODELS,
-  FIELD_THUMB_RADIUS,
-  THUMB_RADIUS,
-  type ChannelSpec,
-} from "./constants"
-import { usePrefersReducedMotion, useTrackDrag } from "./hooks"
-import { ChannelField, IconSwap, LabelledSlider, RoundButton, Thumb } from "./parts"
-import { CheckIcon, ChevronIcon, CopyIcon, EyedropperIcon } from "./icons"
-import { cn } from "./class-names"
+
+/**
+ * Class-name joining. Deliberately not named `utils`.
+ *
+ * A module called "utils" is where unrelated helpers accumulate, because
+ * nothing has to justify its name to live there. This one is named for the
+ * single thing it does, so anything that is not about composing class names
+ * has an obvious reason not to be added to it.
+ *
+ * Shared rather than inlined because both `color-picker.tsx` and `parts.tsx`
+ * need it, and two copies of the same three lines is how they drift.
+ */
+const cn = (...classes: (string | false | undefined | null)[]) =>
+  classes.filter(Boolean).join(" ")
+
+/* -------------------------------------------------------------------------- */
+/*                                  Motion                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Motion tokens. No dependencies — every curve here is a plain CSS
+ * `cubic-bezier`, so springy motion costs nothing at runtime.
+ *
+ * These live in the color-picker package for now. Once a second block needs
+ * them they move to a shared `@fern-ui/tokens` package; extracting a shared
+ * module with exactly one consumer is premature.
+ */
+
+const EASING = {
+  /**
+   * Strong ease-out. Moves immediately, which is what makes a control feel
+   * like it heard you. Default for anything entering or responding to input.
+   */
+  out: "cubic-bezier(0.23, 1, 0.32, 1)",
+
+  /** Natural acceleration and deceleration, for things moving on screen. */
+  inOut: "cubic-bezier(0.4, 0, 0.2, 1)",
+
+  /**
+   * A spring without a physics engine. The y-values exceed 1, so the curve
+   * overshoots its target and settles back — the same overshoot a real spring
+   * produces. Use for tactile feedback like a thumb grabbing under the cursor.
+   */
+  spring: "cubic-bezier(0.155, 1.105, 0.295, 1.12)",
+
+  /** Same idea, gentler overshoot. For larger or heavier elements. */
+  softSpring: "cubic-bezier(0.16, 1.11, 0.3, 1.02)",
+
+  /**
+   * A slightly slower, more elegant general-purpose curve. Reaches for a
+   * softer landing than `out` — good for colour and background changes where
+   * urgency would feel twitchy.
+   */
+  soft: "cubic-bezier(0.36, 0.66, 0.4, 1)",
+} as const
+
+/**
+ * Durations in milliseconds.
+ *
+ * Exits are deliberately faster than enters. An element leaving should get out
+ * of the way immediately; taking as long to leave as it did to arrive reads as
+ * the interface being reluctant. Everything stays under 300ms — past that, UI
+ * motion starts to feel like latency rather than polish.
+ */
+const DURATION = {
+  /** Press feedback. Must be near-instant to register as a response. */
+  press: 120,
+  /** Something appearing or growing. */
+  enter: 200,
+  /** Something leaving. Half the enter, by design. */
+  exit: 100,
+  /** Larger surfaces that would feel abrupt at enter speed. */
+  slow: 300,
+} as const
+
+/* -------------------------------------------------------------------------- */
+/*                                Constants                                 */
+/* -------------------------------------------------------------------------- */
+
+/** Presentation constants shared by the picker shell and its parts. */
+
+
+/**
+ * Alpha checkerboard, inlined so the component ships without an asset.
+ *
+ * Mid-grey rather than black: a black-on-transparent checker is invisible
+ * against a dark card, which is exactly where the opacity track needs to read.
+ * A neutral grey holds contrast on both light and dark surfaces.
+ */
+const CHECKERBOARD =
+  "repeating-conic-gradient(rgba(140,140,140,0.55) 0% 25%, rgba(255,255,255,0.9) 0% 50%) 50% / 9px 9px"
+
+/**
+ * Hue ramp at full chroma, always — it is a *selector*, not a preview.
+ *
+ * An earlier pass drew it at the current saturation and brightness, reasoning
+ * that a vivid rainbow over-promises the outcome. It does, but the cost is far
+ * worse than the benefit: at brightness 0 every stop evaluates to rgb(0,0,0)
+ * and the rail becomes a solid black bar you cannot pick a hue from. That is
+ * precisely where this picker makes a point of *preserving* hue, so the one
+ * place the behaviour matters most is the place the control stopped showing it.
+ *
+ * A hue rail's job is to let you find a hue. Anything that makes two hues
+ * indistinguishable has broken it, however honest the preview.
+ */
+const HUE_GRADIENT = `linear-gradient(to right, ${[0, 60, 120, 180, 240, 300, 360]
+  .map((h) => {
+    const { r, g, b } = hsvToRgb({ h: h % 360, s: 1, v: 1 })
+    return `rgb(${r} ${g} ${b}) ${Math.round((h / 360) * 100)}%`
+  })
+  .join(", ")})`
+
+/** Half the slider thumb's width. Insets both its travel and the drag maths. */
+const THUMB_RADIUS = 10
+
+/** Half the field thumb's width. Insets its travel on both axes. */
+const FIELD_THUMB_RADIUS = 8
+
+// ease-in is never used here — starting slow reads as lag at exactly the
+// moment the user is watching hardest.
+const EASE_OUT = EASING.out
+
+/**
+ * Depth comes from one consistent rule: tracks and wells are *recessed* with an
+ * inset shadow, thumbs and the card are *raised* with a cast shadow plus a
+ * highlight along the top edge. Reversing that on any single element is what
+ * makes a dimensional UI read as muddled.
+ */
+const RECESSED =
+  "inset 0 1px 2px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(0,0,0,0.09)"
+/**
+ * The white ring alone vanishes against a white card, leaving the thumb looking
+ * like a floating dot. The hairline outside it re-establishes the edge on light
+ * surfaces without darkening the thumb on dark ones.
+ */
+const RAISED =
+  "0 0 0 3px #fff, 0 0 0 4px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.3), 0 3px 8px -2px rgba(0,0,0,0.22)"
+
+/**
+ * The colour models offered by the select. `rgb` is labelled RGBA because the
+ * row it produces includes an alpha field — naming it RGB would promise three
+ * fields and deliver four.
+ */
+const MODELS: { value: ColorFormat; label: string }[] = [
+  { value: "hex", label: "HEX" },
+  { value: "rgb", label: "RGBA" },
+  { value: "hsl", label: "HSL" },
+]
+
+/**
+ * One editable channel. `min`/`max` are real bounds, not display hints: input
+ * outside them reverts rather than clamping, so a typo reads as "nothing
+ * happened" instead of silently becoming a different colour.
+ */
+interface ChannelSpec {
+  key: string
+  short: string
+  name: string
+  value: number
+  min: number
+  max: number
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                  Hooks                                   */
+/* -------------------------------------------------------------------------- */
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)"
+
+function subscribeToMotionPreference(callback: () => void) {
+  const query = window.matchMedia(REDUCED_MOTION_QUERY)
+  query.addEventListener("change", callback)
+  return () => query.removeEventListener("change", callback)
+}
+
+/** Honours the OS "reduce motion" setting. Returns false during SSR. */
+function usePrefersReducedMotion() {
+  return React.useSyncExternalStore(
+    subscribeToMotionPreference,
+    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
+    () => false,
+  )
+}
+
+/**
+ * Pointer-capture drag. `trackRef` marks the element whose geometry defines
+ * 0-1, while the handlers attach to a larger padded parent — that split is what
+ * lets a 10px-tall slider carry a 40px touch target.
+ */
+function useTrackDrag(
+  onPosition: (x: number, y: number) => void,
+  onEnd: () => void,
+  disabled: boolean,
+  /**
+   * Horizontal inset, in px, of the usable range at each end — set it to the
+   * thumb's radius on a 1D slider.
+   *
+   * A thumb is centred on its value, so at 0% and 100% half of it hangs off the
+   * end of the rail. Insetting the range keeps the thumb inside the track it
+   * belongs to, and because the same inset is applied to the pointer maths the
+   * thumb still lands exactly under the cursor rather than drifting from it.
+   *
+   * The 2D field insets on both axes for the same reason. Its corners stay
+   * selectable — the maths still resolves them to exactly 0 and 1 — but the
+   * thumb no longer hangs half outside the control, and at the bottom-left it
+   * was clearing the card's edge entirely.
+   */
+  inset = 0,
+  /** Vertical equivalent, for the 2D field. Sliders leave it at 0. */
+  insetY = 0,
+) {
+  const trackRef = React.useRef<HTMLDivElement>(null)
+  const pointerId = React.useRef<number | null>(null)
+  const [dragging, setDragging] = React.useState(false)
+
+  const emit = (event: React.PointerEvent) => {
+    const element = trackRef.current
+    if (!element) return
+    const rect = element.getBoundingClientRect()
+    const usableX = rect.width - inset * 2
+    const usableY = rect.height - insetY * 2
+    onPosition(
+      usableX > 0 ? clamp((event.clientX - rect.left - inset) / usableX, 0, 1) : 0,
+      usableY > 0 ? clamp((event.clientY - rect.top - insetY) / usableY, 0, 1) : 0,
+    )
+  }
+
+  return {
+    trackRef,
+    dragging,
+    handlers: disabled
+      ? {}
+      : {
+          onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => {
+            if (event.button !== 0) return
+            // Multi-touch protection: once a drag owns a pointer, ignore every
+            // other one. Without this, a second finger teleports the thumb.
+            if (pointerId.current !== null) return
+            event.preventDefault() // suppress text selection mid-drag
+            event.currentTarget.setPointerCapture(event.pointerId)
+            pointerId.current = event.pointerId
+            setDragging(true)
+            emit(event)
+          },
+          onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => {
+            if (pointerId.current !== event.pointerId) return
+            emit(event)
+          },
+          onPointerUp: (event: React.PointerEvent<HTMLDivElement>) => {
+            if (pointerId.current !== event.pointerId) return
+            event.currentTarget.releasePointerCapture(event.pointerId)
+            pointerId.current = null
+            setDragging(false)
+            onEnd()
+          },
+          onPointerCancel: (event: React.PointerEvent<HTMLDivElement>) => {
+            if (pointerId.current !== event.pointerId) return
+            pointerId.current = null
+            setDragging(false)
+          },
+        },
+  }
+}
 
 /**
  * Re-derives HSV from RGB while carrying hue and saturation through the points
@@ -870,3 +1135,446 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     )
   },
 )
+
+/* -------------------------------------------------------------------------- */
+/*                                  Parts                                   */
+/* -------------------------------------------------------------------------- */
+
+/** The picker's presentational pieces. Kept out of the shell so the component
+ *  file reads as composition rather than as a wall of markup. */
+
+
+interface LabelledSliderProps {
+  drag: ReturnType<typeof useTrackDrag>
+  onKeyDown: (event: React.KeyboardEvent) => void
+  disabled: boolean
+  label: string
+  readout: string
+  /** Render the name/readout row. The slider keeps its aria-label either way. */
+  showLabel: boolean
+  valueNow: number
+  valueMax: number
+  valueText: string
+  background: string
+  overlay?: string
+  /** Value as 0-1. The thumb's own radius is inset from each end. */
+  fraction: number
+  thumb: { background: string }
+  reducedMotion: boolean
+}
+
+/**
+ * A labelled slider: name on the left, live value on the right, track below.
+ *
+ * The readout matters more than it looks. Without it the only way to know the
+ * hue is to read it back out of the hex field, which is a translation task;
+ * showing the number turns the slider into something you can aim with.
+ */
+function LabelledSlider({
+  drag,
+  onKeyDown,
+  disabled,
+  label,
+  readout,
+  showLabel,
+  valueNow,
+  valueMax,
+  valueText,
+  background,
+  overlay,
+  fraction,
+  thumb,
+  reducedMotion,
+}: LabelledSliderProps) {
+  // No gap on the column, deliberately. The hit area is 40px around a 20px
+  // rail, so it already carries 10px of invisible padding above the track —
+  // a flex gap on top of that stacked to a 16px visual gap, exactly the space
+  // that separates one *section* from the next. A label has to sit closer to
+  // the thing it names than sections sit to each other, or the grouping reads
+  // backwards.
+  return (
+    <div className="flex flex-col">
+      {showLabel && (
+        // Pulls the label into the hit area's 10px of internal padding rather
+        // than adding to it. A plain gap could only ever make this bigger —
+        // 10px was already the floor with no gap at all — and the negative
+        // margin is on the label rather than on the track so the 16px between
+        // sections is untouched. leading-none stops the 12px text carrying
+        // another ~3px of leading below its glyphs, which is why this reads
+        // tighter than the number alone suggests.
+        <div className="-mb-0.5 flex items-center justify-between px-0.5 leading-none">
+          <span className="text-[12px] text-[var(--muted,#71717a)]">
+            {label}
+          </span>
+          {/* Tabular figures so the readout doesn't jitter while dragging. */}
+          <span className="font-mono text-[12px] tabular-nums text-[var(--muted,#71717a)]">
+            {readout}
+          </span>
+        </div>
+      )}
+
+      <div
+        role="slider"
+        tabIndex={disabled ? -1 : 0}
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={valueMax}
+        aria-valuenow={valueNow}
+        aria-valuetext={valueText}
+        aria-orientation="horizontal"
+        aria-disabled={disabled || undefined}
+        onKeyDown={onKeyDown}
+        {...drag.handlers}
+        className={cn(
+          // 20px visible track inside a 40px hit area — the bar stays slim
+          // while the target clears the WCAG 2.5.5 minimum. The two are
+          // separate elements precisely so the hit area can exceed the paint:
+          // `trackRef` marks the 20px rail that defines 0-1, the handlers sit
+          // on this padded parent.
+          "relative flex h-10 touch-none items-center rounded-2xl",
+          !disabled && "cursor-pointer",
+          "outline-hidden focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50",
+        )}
+      >
+        <div
+          ref={drag.trackRef}
+          className="relative h-5 w-full rounded-full"
+          style={{ background, boxShadow: RECESSED }}
+        >
+          {overlay && (
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{ background: overlay, boxShadow: RECESSED }}
+            />
+          )}
+          {/* A circle larger than its rail, so it reads as sitting on top of
+              the track rather than embedded in it. */}
+          <Thumb
+            width={20}
+            height={20}
+            dragging={drag.dragging}
+            reducedMotion={reducedMotion}
+            style={{
+              // Travels between the two insets rather than 0-100%, so at either
+              // end the thumb sits flush inside the rail instead of half over
+              // it. `useTrackDrag` is given the same inset, so the thumb stays
+              // under the cursor.
+              left: `calc(${fraction} * (100% - ${THUMB_RADIUS * 2}px) + ${THUMB_RADIUS}px)`,
+              top: "50%",
+              background: thumb.background,
+              boxShadow: RAISED,
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * One editable channel: the letter sits on the tray, the number sits in a
+ * raised chip. Keeping the letter outside the chip is what lets four fields fit
+ * across 232px — inside, each chip would need its own left padding for a label
+ * that is one character wide.
+ *
+ * `role="spinbutton"` rather than a bare text input: it is what carries the
+ * range to a screen reader, and it is the role that makes arrow keys expected
+ * rather than surprising.
+ */
+function ChannelField({
+  spec,
+  draft,
+  disabled,
+  focusRing,
+  onDraft,
+  onPreview,
+  onCommit,
+  onStep,
+  onCancel,
+}: {
+  spec: ChannelSpec
+  draft: string | null
+  disabled: boolean
+  focusRing: string
+  onDraft: (text: string) => void
+  onPreview: (text: string) => void
+  onCommit: (text: string) => void
+  onStep: (delta: number) => void
+  onCancel: () => void
+}) {
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-1.5">
+      <span
+        aria-hidden
+        className="shrink-0 text-[11px] text-[var(--muted,#71717a)]"
+      >
+        {spec.short}
+      </span>
+      <input
+        role="spinbutton"
+        // Named in channel units — "Red, 77", never "77 percent". A screen
+        // reader user editing four fields needs to know which one they are in.
+        aria-label={spec.name}
+        aria-valuenow={spec.value}
+        aria-valuemin={spec.min}
+        aria-valuemax={spec.max}
+        aria-valuetext={`${spec.name}, ${spec.value}`}
+        inputMode="numeric"
+        value={draft ?? String(spec.value)}
+        disabled={disabled}
+        spellCheck={false}
+        autoComplete="off"
+        // Capped at the width of the channel's own maximum, so 255 fits and
+        // 2555 cannot be typed in the first place. Filtering to digits here
+        // rather than validating later means the field never holds text the
+        // channel could not accept.
+        maxLength={String(spec.max).length}
+        onChange={(event) => {
+          const digits = event.target.value
+            .replace(/[^0-9]/g, "")
+            .slice(0, String(spec.max).length)
+          onDraft(digits)
+          onPreview(digits)
+        }}
+        onFocus={(event) => event.currentTarget.select()}
+        onBlur={(event) => onCommit(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault()
+            onCommit(event.currentTarget.value)
+            return
+          }
+          if (event.key === "Escape") {
+            onCancel()
+            return
+          }
+          // Shift multiplies by 10, matching the sliders and native ranges.
+          const step = event.shiftKey ? 10 : 1
+          if (event.key === "ArrowUp") {
+            event.preventDefault()
+            onStep(step)
+          } else if (event.key === "ArrowDown") {
+            event.preventDefault()
+            onStep(-step)
+          }
+        }}
+        className={cn(
+          "h-10 w-full min-w-0 rounded-xl bg-[var(--surface,#ffffff)] px-1 text-center",
+          "text-[12px] tabular-nums",
+          "text-[var(--foreground,#18181b)] outline-hidden",
+          focusRing,
+        )}
+      />
+    </div>
+  )
+}
+
+/** 40×40 circular action button. Clears the WCAG 2.5.5 target minimum. */
+function RoundButton({
+  onClick,
+  disabled,
+  label,
+  focusRing,
+  children,
+}: {
+  onClick: () => void
+  disabled: boolean
+  label: string
+  focusRing: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className={cn(
+        "grid size-10 shrink-0 place-items-center rounded-full",
+        "bg-[var(--default,#ebebec)] text-[var(--muted,#52525b)]",
+        "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
+        "hover:bg-[var(--default-hover,#e0e0e2)] hover:text-[var(--foreground,#18181b)]",
+        focusRing,
+      )}
+      style={{ transitionTimingFunction: EASE_OUT }}
+    >
+      {children}
+    </button>
+  )
+}
+
+
+
+function Thumb({
+  style,
+  dragging,
+  width,
+  height,
+  reducedMotion,
+}: {
+  style: React.CSSProperties
+  dragging: boolean
+  width: number
+  height: number
+  reducedMotion: boolean
+}) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute rounded-full"
+      style={{
+        ...style,
+        width,
+        height,
+        // Position is deliberately never transitioned. Easing it leaves the
+        // thumb trailing the cursor and the whole control reads as laggy.
+        // Shrinks under the pointer rather than growing. Pressing a physical
+        // control moves it away from you, so scaling down is what reads as
+        // "held"; scaling up reads as a hover affordance instead.
+        transform: `translate(-50%, -50%) scale(${dragging && !reducedMotion ? 0.92 : 1})`,
+        transitionProperty: reducedMotion ? "none" : "transform",
+        transitionDuration: `${DURATION.press}ms`,
+        transitionTimingFunction: EASING.out,
+      }}
+    />
+  )
+}
+
+/** Cross-fades two icons in place. Never scales from 0 — nothing in the real
+ *  world appears out of nothing, and a blur bridges the overlap. */
+function IconSwap({
+  showSecond,
+  reducedMotion,
+  children,
+}: {
+  showSecond: boolean
+  reducedMotion: boolean
+  children: [React.ReactNode, React.ReactNode]
+}) {
+  const [first, second] = children
+  const base = "absolute inset-0 grid place-items-center"
+  // Asymmetric by design: the arriving icon takes the enter duration, the
+  // leaving one exits in half that. A slow exit reads as reluctance.
+  const timing = (entering: boolean) =>
+    reducedMotion
+      ? {
+          transitionProperty: "opacity",
+          transitionDuration: `${DURATION.exit}ms`,
+        }
+      : {
+          transitionProperty: "opacity, transform, filter",
+          transitionDuration: `${entering ? DURATION.enter : DURATION.exit}ms`,
+          transitionTimingFunction: EASING.out,
+        }
+
+  return (
+    <span className="relative grid size-4 place-items-center">
+      <span
+        className={base}
+        style={{
+          ...timing(!showSecond),
+          opacity: showSecond ? 0 : 1,
+          transform: reducedMotion
+            ? undefined
+            : `scale(${showSecond ? 0.6 : 1})`,
+          filter: reducedMotion ? undefined : `blur(${showSecond ? 4 : 0}px)`,
+        }}
+      >
+        {first}
+      </span>
+      <span
+        className={base}
+        style={{
+          ...timing(showSecond),
+          opacity: showSecond ? 1 : 0,
+          transform: reducedMotion
+            ? undefined
+            : `scale(${showSecond ? 1 : 0.6})`,
+          filter: reducedMotion ? undefined : `blur(${showSecond ? 0 : 4}px)`,
+        }}
+      >
+        {second}
+      </span>
+    </span>
+  )
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                  Icons                                   */
+/* -------------------------------------------------------------------------- */
+
+/** Icons, inlined as paths — the package ships no icon dependency. */
+
+const iconProps = {
+  width: 15,
+  height: 15,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+}
+
+/**
+ * Filled pen, to match the copy glyph beside it — the stroked Lucide
+ * eyedropper next to a filled copy mark read as two different icon sets.
+ *
+ * `fill` is currentColor, not the #B5B5B5 the export carried: the button owns
+ * the colour so the icon can follow the theme and the hover state. A literal
+ * grey here would sit unchanged on a dark card and ignore hover entirely.
+ */
+function EyedropperIcon() {
+  return (
+    <svg
+      viewBox="9.002 16.003 20.004 20.004"
+      width={16}
+      height={16}
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M28.126 16.883C26.953 15.71 25.075 15.71 23.902 16.883 23.902 16.883 21.79 18.995 21.79 18.995 21.79 18.995 20.969 18.174 20.969 18.174 20.5 17.704 19.795 17.704 19.327 18.174 19.327 18.174 18.388 18.995 18.388 18.995 17.918 19.464 17.918 20.168 18.388 20.638 18.388 20.638 24.254 26.504 24.254 26.504 24.723 26.973 25.427 26.973 25.896 26.504 25.896 26.504 26.717 25.683 26.717 25.683 27.187 25.213 27.187 24.509 26.717 24.04 26.717 24.04 26.014 23.219 26.014 23.219 26.014 23.219 28.126 21.106 28.126 21.106 29.298 19.934 29.298 18.056 28.126 16.883ZM12.404 28.381C9.823 30.962 11.348 32.135 9.002 35.185 9.002 35.185 9.823 36.007 9.823 36.007 12.874 33.66 14.047 35.185 16.628 32.604 16.628 32.604 22.611 26.621 22.611 26.621 22.611 26.621 18.388 22.397 18.388 22.397 18.388 22.397 12.404 28.381 12.404 28.381Z" />
+    </svg>
+  )
+}
+
+/**
+ * The same copy glyph the docs' code blocks use — two overlapping rounded
+ * squares, filled — so a reader sees one copy affordance on the page rather
+ * than two marks that nearly match.
+ *
+ * Duplicated as a path rather than imported: the docs button is built on
+ * HeroUI's `<Button>`, and this package takes no runtime dependency beyond
+ * React. A shared 16×16 path costs nothing and is the part that actually
+ * carries the resemblance.
+ */
+function CopyIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width={15} height={15} fill="currentColor" aria-hidden>
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M12 2.5H8A1.5 1.5 0 0 0 6.5 4v1H8a3 3 0 0 1 3 3v1.5h1A1.5 1.5 0 0 0 13.5 8V4A1.5 1.5 0 0 0 12 2.5M11 11h1a3 3 0 0 0 3-3V4a3 3 0 0 0-3-3H8a3 3 0 0 0-3 3v1H4a3 3 0 0 0-3 3v4a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3zM4 6.5h4A1.5 1.5 0 0 1 9.5 8v4A1.5 1.5 0 0 1 8 13.5H4A1.5 1.5 0 0 1 2.5 12V8A1.5 1.5 0 0 1 4 6.5"
+      />
+    </svg>
+  )
+}
+
+function CheckIcon() {
+  return (
+    <svg {...iconProps} width={15} height={15} strokeWidth={2.5}>
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  )
+}
+
+
+function ChevronIcon() {
+  return (
+    <svg {...iconProps} width={11} height={11} strokeWidth={2.5}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}

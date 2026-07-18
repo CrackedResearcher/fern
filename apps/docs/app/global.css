@@ -344,6 +344,17 @@
 .docs-code-block-wrapper .shiki {
   margin: 0;
   padding-top: 16px;
+  /*
+   * Matches the top. Their rule sets only padding-top, so the last line sat
+   * flush against the bottom edge while the first had 16px above it, and the
+   * block read as though it had been cut off.
+   *
+   * Padding rather than blank lines in the MDX: an empty line at the end of a
+   * fence is real content, so it lands in the clipboard and in anything that
+   * reads textContent off the <pre>. Spacing is presentation, so it belongs
+   * here.
+   */
+  padding-bottom: 16px;
   padding-inline: 8px;
   border-style: none;
   border-radius: 0;
