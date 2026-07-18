@@ -119,21 +119,31 @@ export function PreviewCode({
         data-line-numbers={lineNumbers || undefined}
         className={
           clamped
-            ? // Opaque for the first 20%, then fading out, so the cut reads as
-              // "there is more" rather than as a crop.
-              cn(
-                "docs-code-block-wrapper relative max-h-[150px] overflow-hidden [mask-image:linear-gradient(#000_0%_60%,transparent_100%)]",
-                standalone && "rounded-lg bg-surface",
+            ? cn(
+                "docs-code-block-wrapper relative max-h-[150px] overflow-hidden",
+                standalone && "rounded-lg bg-surface dark:bg-background",
               )
             : standalone
               // A whole source file expands to tens of thousands of pixels,
               // which loses the page. Scroll it inside the block instead.
-              ? "docs-code-block-wrapper relative max-h-[70vh] overflow-auto rounded-lg bg-surface"
+              ? "docs-code-block-wrapper relative max-h-[70vh] overflow-auto rounded-lg bg-surface dark:bg-background"
               : "docs-code-block-wrapper relative"
         }
       >
         {children}
       </div>
+      {/* A gradient over the content rather than a mask on it. mask-image fades
+          the element's background too, so the surface thinned out and let the
+          shell grey through exactly where the fade was strongest. */}
+      {clamped && (
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-x-1 bottom-1 h-24 rounded-b-lg",
+            "bg-gradient-to-b from-transparent to-surface dark:to-background",
+          )}
+        />
+      )}
       {overflows && (
         <Button
           size="sm"

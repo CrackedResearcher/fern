@@ -6,6 +6,7 @@ import { Preview, PreviewCode, PreviewDemo } from "@/components/preview"
 import { CodeActions } from "@/components/code-actions"
 import { PropsTable } from "@/components/props-table"
 import { ComponentSource } from "@/components/component-source"
+import { InstallTabs } from "@/components/install-tabs"
 import {
   ColorPickerCommit,
   ColorPickerDemo,
@@ -36,6 +37,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     PreviewCode,
     PropsTable,
     ComponentSource,
+    InstallTabs,
     ColorPickerDemo,
     ColorPickerModel,
     ColorPickerCommit,
