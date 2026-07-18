@@ -600,7 +600,12 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           onKeyDown={handleFieldKeys}
           {...field.handlers}
           className={cn(
-            "relative aspect-square w-full touch-none rounded-2xl",
+            // Wider than tall, and capped. A square field on a 264px card is ~248px
+            // of height before the sliders even start, which makes the popover
+            // tall enough to clip against a viewport edge or push its own
+            // trigger off screen. 4:3 keeps both axes comfortably draggable
+            // while taking ~60px off the total.
+            "relative aspect-[4/3] max-h-[200px] w-full touch-none rounded-2xl",
             !disabled && "cursor-crosshair",
             "outline-hidden focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-[var(--focus,#0485f7)]/70",
           )}
