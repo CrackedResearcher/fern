@@ -62,11 +62,11 @@ export function CodeBlock({
       {/* Wide code scrolls inside its own container so the page never does. */}
       {html ? (
         <div
-          className="fern-code overflow-x-auto rounded-xl border border-separator text-[13px] leading-relaxed"
+          className="fern-code overflow-x-auto rounded-b-xl border border-separator text-[13px] leading-relaxed"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : (
-        <pre className="overflow-x-auto rounded-xl border border-separator bg-default p-4 text-[13px] leading-relaxed">
+        <pre className="overflow-x-auto rounded-b-xl border border-separator p-4 text-[13px] leading-relaxed">
           <code className="font-mono">{code}</code>
         </pre>
       )}

@@ -78,12 +78,12 @@ export function BlockPage({ block, dark }: { block: BlockDoc; dark: boolean }) {
   const next = position >= 0 ? readable[position + 1] : undefined
 
   return (
-    <article className="mx-auto max-w-3xl pb-20">
+    <article className="max-w-[900px] pb-20">
       <p className="mb-2 text-[13px] font-medium text-foreground-muted">{block.category}</p>
-      <h1 className="text-[34px] font-semibold tracking-[-0.02em] text-balance">
+      <h1 className="text-[28px] font-semibold text-balance">
         {block.name}
       </h1>
-      <p className="mt-3 text-[15px] leading-relaxed text-pretty text-foreground-muted">
+      <p className="mt-2 mb-4 text-[18px] leading-relaxed text-pretty text-muted">
         {block.description}
       </p>
 

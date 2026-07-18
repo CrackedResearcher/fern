@@ -121,11 +121,11 @@ export function App() {
         {/* 12-column grid rather than fixed widths: the content column then
             scales with the viewport instead of the rails eating into it, and
             the TOC only claims space once there is room for it (xl). */}
-        <div className="mx-auto grid max-w-[1440px] grid-cols-12 px-6">
+        <div className="mx-auto grid max-w-[1400px] grid-cols-12 px-6">
           <div className="hidden lg:col-span-2 lg:block">
             <Sidebar slug={block?.slug ?? ""} />
           </div>
-          <main className="col-span-12 min-w-0 py-10 lg:col-span-10 lg:px-12 xl:col-span-8">
+          <main className="col-span-12 flex min-w-0 flex-col gap-4 pt-4 pb-10 lg:col-span-10 md:pt-0 xl:col-span-8 xl:px-12 xl:pt-8">
             {block ? (
               <BlockPage block={block} dark={dark} />
             ) : (

@@ -35,8 +35,8 @@ export function Preview({
   const width = VIEWPORTS[viewport]
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-separator">
-      <div className="flex items-center justify-between gap-2 border-b border-separator bg-background-secondary px-2 py-1.5">
+    <div className="component-preview relative my-4 w-full">
+      <div className="flex items-center justify-between gap-2 rounded-t-xl border-t border-r border-l border-separator px-2 py-1.5">
         <button
           type="button"
           onClick={() => setOverride(!dark)}
@@ -79,15 +79,10 @@ export function Preview({
         className={cn(dark ? "dark" : "", "transition-colors duration-200")}
         style={{ transitionTimingFunction: EASE }}
       >
-        <div
-          className="grid min-h-[440px] place-items-center bg-background p-8"
-          style={{
-            backgroundImage:
-              "radial-gradient(currentColor 0.5px, transparent 0.5px)",
-            backgroundSize: "16px 16px",
-            color: "rgba(128,128,128,0.22)",
-          }}
-        >
+        {/* Transparent, not patterned. A dotted ground competes with whatever
+            is being previewed; the page's own background is the honest
+            backdrop for judging a component. */}
+        <div className="grid min-h-[350px] place-items-center border-r border-l border-separator p-4 sm:p-10">
           <div
             className="mx-auto w-full transition-[max-width] duration-300"
             style={{
