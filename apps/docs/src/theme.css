@@ -1,0 +1,274 @@
+/**
+ * fern theme foundation.
+ *
+ * Structure follows a layered token architecture:
+ *
+ *   primitives  →  semantic roles  →  calculated states
+ *
+ * Only the middle layer is ever authored per-theme. Every state (hover, soft,
+ * secondary, border) is *calculated* from a role with `color-mix`, so changing
+ * one role moves its whole family. Hardcoding states is what makes a palette
+ * drift — the hovers stay behind when the base moves.
+ *
+ * Colours are oklch. It is perceptually uniform, so a lightness step reads the
+ * same at every hue, and mixes pass through sensible intermediates instead of
+ * muddying through grey the way sRGB does.
+ */
+
+@layer base {
+  :root,
+  .light,
+  [data-theme="light"] {
+    color-scheme: light;
+
+    /* ── Primitives (identical across themes) ─────────────────────────── */
+    --white: oklch(100% 0 0);
+    --black: oklch(0% 0 0);
+    --snow: oklch(0.9911 0 0);
+    --eclipse: oklch(0.2103 0.0059 285.89);
+
+    /* ── Geometry ─────────────────────────────────────────────────────── */
+    --spacing: 0.25rem;
+    --radius: 0.5rem;
+    /* Fields sit at 1.5× the base radius. A field is wider than it is tall,
+       so it needs more curvature to look equally rounded. */
+    --field-radius: calc(var(--radius) * 1.5);
+    --border-width: 1px;
+    --field-border-width: 0px;
+    --ring-offset-width: 2px;
+    --disabled-opacity: 0.5;
+    --cursor-interactive: pointer;
+    --cursor-disabled: not-allowed;
+
+    /* ── Roles ────────────────────────────────────────────────────────── */
+    /* The page is *not* white. Cards are. Without that separation a white
+       card on a white page has to invent a heavy shadow just to be visible. */
+    --background: color-mix(in oklab, oklch(0.9702 0 0) 97%, var(--accent) 3%);
+    --foreground: var(--eclipse);
+
+    /* Surface — inline components: cards, panels, accordions. */
+    --surface: color-mix(in oklab, var(--white) 99%, var(--accent) 1%);
+    --surface-foreground: var(--foreground);
+    --surface-secondary: oklch(0.9524 0.0013 286.37);
+    --surface-tertiary: oklch(0.9373 0.0013 286.37);
+
+    /* Overlay — floating components: popovers, tooltips, menus. Separate
+       from surface because a floating layer needs its own contrast rules. */
+    --overlay: var(--white);
+    --overlay-foreground: var(--foreground);
+
+    --muted: oklch(0.5517 0.0138 285.94);
+
+    --default: oklch(94% 0.001 286.375);
+    --default-foreground: var(--eclipse);
+
+    --accent: oklch(0.6204 0.195 253.83);
+    --accent-foreground: var(--snow);
+
+    /* Fields carry their own family — an input should not read as a button. */
+    --field-background: var(--white);
+    --field-foreground: var(--eclipse);
+    --field-placeholder: var(--muted);
+    --field-border: transparent;
+
+    --success: oklch(0.7329 0.1935 150.81);
+    --success-foreground: var(--eclipse);
+    --warning: oklch(0.7819 0.1585 72.33);
+    --warning-foreground: var(--eclipse);
+    --danger: oklch(0.6532 0.2328 25.74);
+    --danger-foreground: var(--snow);
+
+    --border: oklch(90% 0.004 286.32);
+    --separator: oklch(92% 0.004 286.32);
+    --focus: var(--accent);
+    --backdrop: rgb(0 0 0 / 0.5);
+
+    /* ── Shadows ──────────────────────────────────────────────────────── */
+    --surface-shadow:
+      0 2px 4px 0 rgb(0 0 0 / 0.04), 0 1px 2px 0 rgb(0 0 0 / 0.06),
+      0 0 1px 0 rgb(0 0 0 / 0.06);
+    /* The middle layer's negative offset is a faint upward bloom; without it
+       a floating panel reads as pasted onto the page rather than above it. */
+    --overlay-shadow:
+      0 2px 8px 0 rgb(0 0 0 / 0.06), 0 -6px 12px 0 rgb(0 0 0 / 0.03),
+      0 14px 28px 0 rgb(0 0 0 / 0.08);
+    --field-shadow:
+      0 2px 4px 0 rgb(0 0 0 / 0.04), 0 1px 2px 0 rgb(0 0 0 / 0.06),
+      0 0 1px 0 rgb(0 0 0 / 0.06);
+
+    /* ── Calculated states ────────────────────────────────────────────── */
+    --surface-hover: color-mix(in oklab, var(--surface) 92%, var(--surface-foreground) 8%);
+    --background-secondary: color-mix(in oklab, var(--background) 96%, var(--foreground) 4%);
+    --background-tertiary: color-mix(in oklab, var(--background) 92%, var(--foreground) 8%);
+    --background-inverse: var(--foreground);
+
+    --default-hover: color-mix(in oklab, var(--default) 96%, var(--default-foreground) 4%);
+    --accent-hover: color-mix(in oklab, var(--accent) 90%, var(--accent-foreground) 10%);
+    --success-hover: color-mix(in oklab, var(--success) 90%, var(--success-foreground) 10%);
+    --warning-hover: color-mix(in oklab, var(--warning) 90%, var(--warning-foreground) 10%);
+    --danger-hover: color-mix(in oklab, var(--danger) 90%, var(--danger-foreground) 10%);
+
+    --field-hover: color-mix(
+      in oklab,
+      var(--field-background, var(--default)) 90%,
+      var(--field-foreground, var(--foreground)) 2%
+    );
+    --field-focus: var(--field-background, var(--default));
+    --field-border-hover: color-mix(
+      in oklab,
+      var(--field-border, var(--border)) 88%,
+      var(--field-foreground, var(--foreground)) 10%
+    );
+    --field-border-focus: color-mix(
+      in oklab,
+      var(--field-border, var(--border)) 74%,
+      var(--field-foreground, var(--foreground)) 22%
+    );
+
+    /* "Soft" pairs — tinted backgrounds for low-emphasis emphasis. */
+    --default-soft: color-mix(in oklab, var(--default) 50%, transparent);
+    --default-soft-hover: color-mix(in oklab, var(--default) 60%, transparent);
+    --accent-soft: color-mix(in oklab, var(--accent) 15%, transparent);
+    --accent-soft-foreground: color-mix(in oklab, var(--accent) 70%, var(--foreground) 30%);
+    --accent-soft-hover: color-mix(in oklab, var(--accent) 20%, transparent);
+    --danger-soft: color-mix(in oklab, var(--danger) 15%, transparent);
+    --danger-soft-foreground: color-mix(in oklab, var(--danger) 70%, var(--foreground) 40%);
+    --success-soft: color-mix(in oklab, var(--success) 15%, transparent);
+    --warning-soft: color-mix(in oklab, var(--warning) 15%, transparent);
+
+    --separator-secondary: color-mix(in oklab, var(--surface) 85%, var(--surface-foreground) 15%);
+    --separator-tertiary: color-mix(in oklab, var(--surface) 81%, var(--surface-foreground) 19%);
+    --border-secondary: color-mix(in oklab, var(--surface) 78%, var(--surface-foreground) 22%);
+    --border-tertiary: color-mix(in oklab, var(--surface) 66%, var(--surface-foreground) 34%);
+  }
+
+  .dark,
+  [data-theme="dark"] {
+    color-scheme: dark;
+
+    --background: color-mix(in oklab, oklch(12% 0.005 285.823) 96%, var(--accent) 4%);
+    --foreground: var(--snow);
+
+    --surface: color-mix(in oklab, oklch(0.2103 0.0059 285.89) 97%, var(--accent) 3%);
+    --surface-foreground: var(--foreground);
+    --surface-secondary: oklch(0.257 0.0037 286.14);
+    --surface-tertiary: oklch(0.2721 0.0024 247.91);
+
+    /* Lighter than surface, not darker: a floating layer has to advance
+       toward the viewer, and on a dark ground that means more light. */
+    --overlay: oklch(0.2103 0.0059 285.89);
+    --overlay-foreground: var(--foreground);
+
+    --muted: oklch(70.5% 0.015 286.067);
+
+    --default: oklch(27.4% 0.006 286.033);
+    --default-foreground: var(--snow);
+
+    --accent: oklch(0.6204 0.195 253.83);
+    --accent-foreground: var(--snow);
+
+    --field-background: oklch(0.2103 0.0059 285.89);
+    --field-foreground: var(--foreground);
+    --field-placeholder: var(--muted);
+    --field-border: transparent;
+
+    --success: oklch(0.7329 0.1935 150.81);
+    --success-foreground: var(--eclipse);
+    --warning: oklch(0.8203 0.1388 76.34);
+    --warning-foreground: var(--eclipse);
+    --danger: oklch(0.594 0.1967 24.63);
+    --danger-foreground: var(--snow);
+
+    --border: oklch(28% 0.006 286.033);
+    --separator: oklch(25% 0.006 286.033);
+    --focus: var(--accent);
+    --backdrop: rgb(0 0 0 / 0.6);
+
+    /* No cast shadows in dark. A drop shadow against near-black is invisible;
+       elevation has to come from a lit edge instead. */
+    --surface-shadow: 0 0 0 0 transparent inset;
+    --overlay-shadow: 0 0 1px 0 rgb(255 255 255 / 0.3) inset;
+    --field-shadow: 0 0 0 0 transparent inset;
+
+    --surface-hover: color-mix(in oklab, var(--surface) 92%, var(--surface-foreground) 8%);
+    --background-secondary: color-mix(in oklab, var(--background) 96%, var(--foreground) 4%);
+    --background-tertiary: color-mix(in oklab, var(--background) 92%, var(--foreground) 8%);
+    --background-inverse: var(--foreground);
+
+    --default-hover: color-mix(in oklab, var(--default) 96%, var(--default-foreground) 4%);
+    --accent-hover: color-mix(in oklab, var(--accent) 90%, var(--accent-foreground) 10%);
+    --success-hover: color-mix(in oklab, var(--success) 90%, var(--success-foreground) 10%);
+    --warning-hover: color-mix(in oklab, var(--warning) 90%, var(--warning-foreground) 10%);
+    --danger-hover: color-mix(in oklab, var(--danger) 90%, var(--danger-foreground) 10%);
+
+    --field-hover: color-mix(
+      in oklab,
+      var(--field-background, var(--default)) 90%,
+      var(--field-foreground, var(--foreground)) 2%
+    );
+    --field-focus: var(--field-background, var(--default));
+    --field-border-hover: color-mix(
+      in oklab,
+      var(--field-border, var(--border)) 88%,
+      var(--field-foreground, var(--foreground)) 10%
+    );
+    --field-border-focus: color-mix(
+      in oklab,
+      var(--field-border, var(--border)) 74%,
+      var(--field-foreground, var(--foreground)) 22%
+    );
+
+    --default-soft: color-mix(in oklab, var(--default) 50%, transparent);
+    --default-soft-hover: color-mix(in oklab, var(--default) 60%, transparent);
+    /* Soft tints are dialled back on dark — the same 15% reads much louder
+       against a near-black ground than against white. */
+    --accent-soft: color-mix(in oklab, var(--accent) 12%, transparent);
+    --accent-soft-foreground: color-mix(in oklab, var(--accent) 80%, var(--foreground) 30%);
+    --accent-soft-hover: color-mix(in oklab, var(--accent) 16%, transparent);
+    --danger-soft: color-mix(in oklab, var(--danger) 15%, transparent);
+    --danger-soft-foreground: color-mix(in oklab, var(--danger) 80%, var(--foreground) 30%);
+    --success-soft: color-mix(in oklab, var(--success) 15%, transparent);
+    --warning-soft: color-mix(in oklab, var(--warning) 15%, transparent);
+
+    --separator-secondary: color-mix(in oklab, var(--surface) 85%, var(--surface-foreground) 15%);
+    --separator-tertiary: color-mix(in oklab, var(--surface) 81%, var(--surface-foreground) 19%);
+    --border-secondary: color-mix(in oklab, var(--surface) 78%, var(--surface-foreground) 22%);
+    --border-tertiary: color-mix(in oklab, var(--surface) 66%, var(--surface-foreground) 34%);
+  }
+}
+
+/**
+ * Theme presets.
+ *
+ * Each preset sets exactly one value: the accent hue. Everything else —
+ * hovers, soft tints, the page's background wash, focus rings — is calculated
+ * from it, so a preset is one line rather than a parallel palette. This is the
+ * whole argument for deriving states instead of hardcoding them.
+ */
+@layer base {
+  [data-preset="sky"] {
+    --accent: oklch(0.72 0.132 220.5);
+  }
+  [data-preset="lavender"] {
+    --accent: oklch(0.665 0.185 301.2);
+  }
+  [data-preset="mint"] {
+    --accent: oklch(0.755 0.132 165.4);
+  }
+  [data-preset="rose"] {
+    --accent: oklch(0.63 0.219 15.8);
+  }
+  [data-preset="amber"] {
+    --accent: oklch(0.755 0.158 62.5);
+  }
+  [data-preset="slate"] {
+    --accent: oklch(0.44 0.021 285.9);
+  }
+
+  /* Vibrant mode pushes chroma up and lets contrast fall. Some people want
+     the palette to sing more than they want it to be legible; this makes that
+     an explicit choice rather than the default. */
+  [data-vibrant="true"] {
+    --accent: oklch(from var(--accent) l calc(c * 1.35) h);
+  }
+}

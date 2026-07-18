@@ -6,144 +6,57 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Authored roles and calculated states live here. */
+@import "./theme.css";
+
 /**
- * Colour foundation.
+ * Tailwind mapping.
  *
- * Only base colours are authored. Every state — hover, soft, secondary,
- * tertiary, separator — is *derived* from a base with `color-mix`, so changing
- * one variable moves its whole family. Hardcoding each state is what makes a
- * palette drift: the hovers stay behind when the base changes.
- *
- * Mixing happens in oklab rather than sRGB because oklab is perceptually
- * uniform — a 10% mix looks like the same step regardless of hue, where sRGB
- * mixing muddies through grey.
+ * This block only *names* the variables from theme.css as utilities. It
+ * deliberately authors nothing: a value defined in two places drifts, and the
+ * theme file is the single source.
  */
-@layer base {
-  :root {
-    --background: #ffffff;
-    --foreground: #11181c;
-
-    /* Neutral surface family. */
-    --default: #f4f4f5;
-    --default-foreground: #11181c;
-
-    /* The one saturated colour. Deliberately used sparingly — overuse
-       flattens hierarchy and the accent stops meaning anything. */
-    --accent: #006fee;
-    --accent-foreground: #ffffff;
-
-    --surface: #ffffff;
-    --surface-foreground: #11181c;
-
-    --danger: #f31260;
-    --danger-foreground: #ffffff;
-
-    --radius-small: 8px;
-    --radius-medium: 12px;
-    --radius-large: 14px;
-
-    --disabled-opacity: 0.5;
-  }
-
-  .dark {
-    --background: #000000;
-    --foreground: #ecedee;
-
-    --default: #27272a;
-    --default-foreground: #ecedee;
-
-    --accent: #006fee;
-    --accent-foreground: #ffffff;
-
-    --surface: #18181b;
-    --surface-foreground: #ecedee;
-
-    --danger: #f31260;
-    --danger-foreground: #ffffff;
-  }
-}
-
 @theme inline {
-  /* Base */
   --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
+  --color-background-tertiary: var(--background-tertiary);
+  --color-background-inverse: var(--background-inverse);
   --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--muted);
+  --color-muted: var(--muted);
 
-  /* Elevated backgrounds, stepped by mixing foreground into background.
-     4% and 8% land as distinct-but-quiet on both themes. */
-  --color-background-secondary: color-mix(
-    in oklab,
-    var(--background) 96%,
-    var(--foreground) 4%
-  );
-  --color-background-tertiary: color-mix(
-    in oklab,
-    var(--background) 92%,
-    var(--foreground) 8%
-  );
-  --color-background-inverse: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-tertiary: var(--surface-tertiary);
+  --color-surface-hover: var(--surface-hover);
+  --color-overlay: var(--overlay);
 
-  /* Muted text: foreground pulled toward background rather than a fixed grey,
-     so it keeps the same relationship in either theme. */
-  --color-foreground-muted: color-mix(
-    in oklab,
-    var(--foreground) 62%,
-    var(--background) 38%
-  );
-  --color-foreground-subtle: color-mix(
-    in oklab,
-    var(--foreground) 45%,
-    var(--background) 55%
-  );
-
-  /* Neutral interactive surface */
   --color-default: var(--default);
   --color-default-foreground: var(--default-foreground);
-  --color-default-hover: color-mix(
-    in oklab,
-    var(--default) 96%,
-    var(--default-foreground) 4%
-  );
+  --color-default-hover: var(--default-hover);
+  --color-default-soft: var(--default-soft);
 
-  /* Accent, plus its low-emphasis "soft" pairing for tinted backgrounds */
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-accent-hover: color-mix(
-    in oklab,
-    var(--accent) 90%,
-    var(--accent-foreground) 10%
-  );
-  --color-accent-soft: color-mix(in oklab, var(--accent) 15%, transparent);
-  --color-accent-soft-hover: color-mix(in oklab, var(--accent) 20%, transparent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-soft-foreground: var(--accent-soft-foreground);
+  --color-accent-soft-hover: var(--accent-soft-hover);
 
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-danger: var(--danger);
-  --color-danger-soft: color-mix(in oklab, var(--danger) 15%, transparent);
+  --color-danger-soft: var(--danger-soft);
 
-  /* Surfaces and separators */
-  --color-surface: var(--surface);
-  --color-separator: color-mix(
-    in oklab,
-    var(--surface) 88%,
-    var(--surface-foreground) 12%
-  );
-  --color-separator-secondary: color-mix(
-    in oklab,
-    var(--surface) 85%,
-    var(--surface-foreground) 15%
-  );
+  --color-field: var(--field-background);
+  --color-field-hover: var(--field-hover);
 
-  /* Form fields get their own family — inputs should not read as buttons. */
-  --color-field: var(--default);
-  --color-field-hover: color-mix(
-    in oklab,
-    var(--default) 90%,
-    var(--default-foreground) 2%
-  );
+  --color-border: var(--border);
+  --color-separator: var(--separator);
+  --color-separator-secondary: var(--separator-secondary);
+  --color-focus: var(--focus);
 
-  --color-focus: var(--accent);
-
-  --radius-small: var(--radius-small);
-  --radius-medium: var(--radius-medium);
-  --radius-large: var(--radius-large);
+  --radius-field: var(--field-radius);
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -157,6 +70,17 @@ html {
   scroll-padding-top: 104px;
 }
 
+/* Retint the page rather than snap it when a preset changes. */
+body {
+  transition: background-color 300ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
+}
+
 /* Shiki emits its own <pre> with inline theme colours; this only supplies the
    box around it so the highlighting stays authoritative. */
 .fern-code pre {
@@ -165,9 +89,8 @@ html {
   overflow-x: auto;
   /* Must reference an authored variable, not a @theme one. `@theme inline`
      inlines its values at build time instead of emitting runtime custom
-     properties, so var(--color-background-secondary) resolves to nothing here
-     and the block falls back to transparent — white text on white in dark. */
-  background: var(--default) !important;
+     properties, so a var() pointing at a --color-* name resolves to nothing. */
+  background: var(--surface-secondary) !important;
 }
 
 .fern-code code {
