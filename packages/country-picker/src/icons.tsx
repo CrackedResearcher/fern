@@ -50,11 +50,52 @@ export function CloseIcon() {
   )
 }
 
+/**
+ * Empty-state mark: two stacked tiles with a globe knocked out of a disc.
+ *
+ * Drawn rather than shipped as an image. A greyscale PNG cannot follow the
+ * theme — it needs an opacity hack to stop glaring on dark — whereas
+ * currentColor at layered opacities reads on any surface, and the package
+ * keeps its no-asset promise.
+ *
+ * The globe is stroked in `--surface` rather than filled, so it reads as cut
+ * out of the disc and picks up whatever the panel behind it is.
+ */
 export function GlobeIcon() {
   return (
-    <svg {...iconProps} width={26} height={26} strokeWidth={1.5}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18" />
+    <svg viewBox="0 0 96 96" width={84} height={84} fill="none" aria-hidden>
+      {/* The back tile only peeks — enough to read as two cards, not enough to
+          compete. It is also fainter, so the front one holds the focus. */}
+      <rect
+        x="26"
+        y="21"
+        width="52"
+        height="52"
+        rx="16"
+        transform="rotate(6 52 47)"
+        fill="currentColor"
+        opacity="0.10"
+      />
+      <rect
+        x="16"
+        y="26"
+        width="56"
+        height="56"
+        rx="17"
+        fill="currentColor"
+        opacity="0.15"
+      />
+      <circle cx="44" cy="54" r="18" fill="currentColor" opacity="0.28" />
+      <g
+        stroke="var(--surface, #ffffff)"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+      >
+        <circle cx="44" cy="54" r="11.5" />
+        <path d="M32.5 54h23" />
+        <ellipse cx="44" cy="54" rx="5.2" ry="11.5" />
+      </g>
     </svg>
   )
 }
+
