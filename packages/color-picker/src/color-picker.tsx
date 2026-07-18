@@ -77,6 +77,15 @@ export interface ColorPickerProps
   formatToggle?: boolean
   /** Show the opacity slider and include alpha in the output. */
   alpha?: boolean
+  /**
+   * Show the name and live readout above each slider.
+   *
+   * On by default: in HEX and RGBA the readout is the only place the hue
+   * appears at all, and a number you can aim at is what separates a slider you
+   * can use deliberately from one you can only nudge. Turn it off for a
+   * compact picker where the two bars are self-evident.
+   */
+  sliderLabels?: boolean
   /** Offer the native screen eyedropper where the browser supports it. */
   eyedropper?: boolean
   /** Show the copy-to-clipboard button. */
@@ -151,6 +160,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       // Defaults ship the complete picker. Good defaults matter more than
       // options — most people never customise, so the box should be full.
       alpha: alphaProp,
+      sliderLabels = true,
       variant = "default",
       eyedropper = true,
       copyable = true,
@@ -645,6 +655,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 onKeyDown={handleHueKeys}
                 disabled={disabled}
                 label="Hue"
+                showLabel={sliderLabels}
                 readout={`${Math.round(state.hsv.h)}°`}
                 valueNow={Math.round(state.hsv.h)}
                 valueMax={360}
@@ -661,6 +672,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   onKeyDown={handleOpacityKeys}
                   disabled={disabled}
                   label="Opacity"
+                  showLabel={sliderLabels}
                   readout={`${Math.round(state.alpha * 100)}%`}
                   valueNow={Math.round(state.alpha * 100)}
                   valueMax={100}
@@ -711,6 +723,28 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
               >
                 <ChevronIcon />
               </span>
+            </div>
+
+            {/* The current colour, at the same 40px as the buttons either side
+                so the row reads as one rank of circles. Checkerboard beneath,
+                because a semi-transparent colour over the card would just look
+                like a lighter colour — the transparency has to be visible or
+                the preview is lying about the value. */}
+            <div
+              aria-hidden
+              className="size-10 shrink-0 rounded-full"
+              style={{
+                background: CHECKERBOARD,
+                boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.12)",
+              }}
+            >
+              <div
+                className="size-full rounded-full"
+                style={{
+                  backgroundColor: output,
+                  boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.12)",
+                }}
+              />
             </div>
 
             {eyedropper && supportsEyedropper && (

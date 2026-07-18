@@ -15,6 +15,8 @@ interface LabelledSliderProps {
   disabled: boolean
   label: string
   readout: string
+  /** Render the name/readout row. The slider keeps its aria-label either way. */
+  showLabel: boolean
   valueNow: number
   valueMax: number
   valueText: string
@@ -39,6 +41,7 @@ export function LabelledSlider({
   disabled,
   label,
   readout,
+  showLabel,
   valueNow,
   valueMax,
   valueText,
@@ -50,15 +53,17 @@ export function LabelledSlider({
 }: LabelledSliderProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between px-0.5">
-        <span className="text-[12px] text-[var(--muted,#71717a)]">
-          {label}
-        </span>
-        {/* Tabular figures so the readout doesn't jitter while dragging. */}
-        <span className="font-mono text-[12px] tabular-nums text-[var(--muted,#71717a)]">
-          {readout}
-        </span>
-      </div>
+      {showLabel && (
+        <div className="flex items-center justify-between px-0.5">
+          <span className="text-[12px] text-[var(--muted,#71717a)]">
+            {label}
+          </span>
+          {/* Tabular figures so the readout doesn't jitter while dragging. */}
+          <span className="font-mono text-[12px] tabular-nums text-[var(--muted,#71717a)]">
+            {readout}
+          </span>
+        </div>
+      )}
 
       <div
         role="slider"
