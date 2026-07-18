@@ -63,6 +63,9 @@ const DEFAULT_SWATCHES = [
 
 const FORMAT_CYCLE: ColorFormat[] = ["hex", "rgb", "hsl"]
 
+/** Presets shown per page before the pager kicks in. */
+const SWATCHES_PER_PAGE = 10
+
 /* -------------------------------------------------------------------------- */
 /*                                   Props                                    */
 /* -------------------------------------------------------------------------- */
@@ -105,6 +108,8 @@ export interface ColorPickerProps
   eyedropper?: boolean
   /** Show the copy-to-clipboard button. */
   copyable?: boolean
+  /** Show a randomise button that jumps to an arbitrary colour. */
+  shuffle?: boolean
   /**
    * Show the starting color beside the current one. Pressing it reverts —
    * picking is comparative, so the value you began with should stay reachable.
@@ -244,6 +249,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       swatches = DEFAULT_SWATCHES,
       eyedropper = true,
       copyable = true,
+      shuffle = true,
       comparison = true,
       disabled = false,
       label = "Color picker",
@@ -260,6 +266,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const [alphaDraft, setAlphaDraft] = React.useState<string | null>(null)
     const [announcement, setAnnouncement] = React.useState("")
     const [copied, setCopied] = React.useState(false)
+    const [swatchPage, setSwatchPage] = React.useState(0)
     const reducedMotion = usePrefersReducedMotion()
     const inputId = React.useId()
 
@@ -432,6 +439,32 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       "outline-none focus-visible:ring-[3px] focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-neutral-900"
 
     const swatchList = swatches === false ? [] : swatches
+    // Presets page rather than wrap. A wrapping grid changes the card's height
+    // as the palette grows; a pager keeps the layout fixed at any length.
+    const maxSwatchPage = Math.max(
+      0,
+      Math.ceil(swatchList.length / SWATCHES_PER_PAGE) - 1,
+    )
+    const visibleSwatches = swatchList.slice(
+      swatchPage * SWATCHES_PER_PAGE,
+      swatchPage * SWATCHES_PER_PAGE + SWATCHES_PER_PAGE,
+    )
+
+    const randomize = () => {
+      // Random hue, but saturation and value kept in a usable band — fully
+      // random HSV mostly returns muddy near-black and washed-out pastels.
+      commit(
+        {
+          hsv: {
+            h: Math.floor(Math.random() * 360),
+            s: 0.55 + Math.random() * 0.4,
+            v: 0.6 + Math.random() * 0.35,
+          },
+          alpha: state.alpha,
+        },
+        true,
+      )
+    }
 
     return (
       <div
@@ -441,68 +474,68 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         aria-disabled={disabled || undefined}
         data-disabled={disabled || undefined}
         className={cn(
-          "w-[304px] select-none p-4 antialiased",
-          // Concentric radii: 28px outer = 12px inner + 16px padding.
-          "rounded-[28px] bg-white dark:bg-neutral-900",
-          // Three layers: ambient haze, directional shadow, and a 1px hairline
-          // that does the real work of separating card from page. On dark the
-          // hairline flips to an inset white highlight — a shadow against
-          // near-black is invisible, so the edge has to be lit, not darkened.
-          "shadow-[0_0_15px_0_rgb(0_0_0_/_0.03),0_2px_30px_0_rgb(0_0_0_/_0.08),0_0_1px_0_rgb(0_0_0_/_0.3)]",
-          "dark:shadow-[0_0_15px_0_rgb(0_0_0_/_0.06),0_2px_30px_0_rgb(0_0_0_/_0.22),inset_0_0_1px_0_rgb(255_255_255_/_0.15)]",
-          disabled && "pointer-events-none opacity-55 saturate-50",
+          "flex w-60 select-none flex-col gap-2 pt-4 pr-2 pb-3 pl-2 antialiased",
+          "rounded-[20px] bg-white dark:bg-neutral-900",
+          // Three layers, and the middle one carries a *negative* y offset — a
+          // faint upward bloom that keeps the top edge from looking pasted onto
+          // the page. Without it the card reads as sitting in a hole.
+          "shadow-[0_14px_28px_0_rgb(0_0_0/0.08),0_-6px_12px_0_rgb(0_0_0/0.03),0_2px_8px_0_rgb(0_0_0/0.06),0_0_0_1px_rgb(0_0_0/0.04)]",
+          "dark:shadow-[0_14px_28px_0_rgb(0_0_0/0.5),0_-6px_12px_0_rgb(0_0_0/0.2),0_2px_8px_0_rgb(0_0_0/0.4),inset_0_0_0_1px_rgb(255_255_255/0.08)]",
+          disabled && "pointer-events-none opacity-50 saturate-50",
           className,
         )}
         // Mobile Safari paints a grey box over anything tappable otherwise.
         style={{ WebkitTapHighlightColor: "transparent" }}
         {...props}
       >
-        {/* -------------------------------- Top bar ----------------------------- */}
-        {(comparison || copyable || (eyedropper && supportsEyedropper)) && (
-          <div className="mb-3 flex items-center justify-between">
-            {comparison ? (
-              <ComparisonWell
-                current={output}
-                initial={initial}
-                changed={initial.toLowerCase() !== color.hex.toLowerCase()}
-                disabled={disabled}
-                onRevert={() =>
-                  commit(stateFromString(initial, state.hsv), true)
-                }
-                focusRing={focusRing}
-              />
-            ) : (
-              <span />
-            )}
-
-            <div className="flex items-center gap-0.5">
-              {copyable && (
-                <IconButton
-                  onClick={copy}
-                  disabled={disabled}
-                  label={copied ? "Copied" : "Copy color value"}
-                  focusRing={focusRing}
-                >
-                  {/* Both icons stay mounted and cross-fade. Toggling
-                      visibility would pop; blur bridges the two states so the
-                      eye reads one object changing rather than two swapping. */}
-                  <IconSwap showSecond={copied} reducedMotion={reducedMotion}>
-                    <CopyIcon />
-                    <CheckIcon />
-                  </IconSwap>
-                </IconButton>
-              )}
-              {eyedropper && supportsEyedropper && (
-                <IconButton
-                  onClick={pickFromScreen}
-                  disabled={disabled}
-                  label="Pick a color from the screen"
-                  focusRing={focusRing}
-                >
-                  <EyedropperIcon />
-                </IconButton>
-              )}
+        {/* ------------------------------ Swatches ------------------------------ */}
+        {/* Above the field, not below. Presets are where you *start* — putting
+            them after the fine controls implies they're an afterthought. */}
+        {swatchList.length > 0 && (
+          <div className="flex items-center gap-3 px-2">
+            <PagerButton
+              direction="previous"
+              disabled={disabled || swatchPage === 0}
+              onClick={() => setSwatchPage((page) => Math.max(0, page - 1))}
+            />
+            <div className="flex flex-1 items-center justify-between">
+              {visibleSwatches.map((swatch) => {
+                const selected = swatch.toLowerCase() === color.hex.toLowerCase()
+                return (
+                  <button
+                    key={swatch}
+                    type="button"
+                    aria-label={swatch}
+                    aria-pressed={selected}
+                    disabled={disabled}
+                    onClick={() =>
+                      commit(stateFromString(swatch, state.hsv), true)
+                    }
+                    className={cn(
+                      "size-4 shrink-0 rounded-full",
+                      "transition-[scale] duration-150 hover:scale-115 active:scale-[0.97]",
+                      focusRing,
+                    )}
+                    style={{
+                      backgroundColor: swatch,
+                      transitionTimingFunction: EASE_OUT,
+                      // outline + offset leaves a gap showing the card itself,
+                      // so the ring reads on light and dark without a theme flag.
+                      outline: selected ? `2px solid ${swatch}` : undefined,
+                      outlineOffset: selected ? 2 : undefined,
+                      boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.12)",
+                    }}
+                  />
+                )
+              })}
             </div>
+            <PagerButton
+              direction="next"
+              disabled={disabled || swatchPage >= maxSwatchPage}
+              onClick={() =>
+                setSwatchPage((page) => Math.min(maxSwatchPage, page + 1))
+              }
+            />
           </div>
         )}
 
@@ -520,185 +553,187 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           onKeyDown={handleFieldKeys}
           {...field.handlers}
           className={cn(
-            "relative aspect-square w-full touch-none rounded-xl",
+            "relative aspect-square w-full touch-none rounded-2xl",
             !disabled && "cursor-crosshair",
-            "outline-none focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-blue-500/70",
+            "outline-hidden focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-[#006FEE]/70",
           )}
           style={{
             backgroundColor: `hsl(${state.hsv.h} 100% 50%)`,
             backgroundImage:
               "linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent)",
-            boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.12)",
+            boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.1)",
           }}
         >
           <Thumb
-            width={18}
-            height={18}
+            width={16}
+            height={16}
             dragging={field.dragging}
             reducedMotion={reducedMotion}
             style={{
               left: `${state.hsv.s * 100}%`,
               top: `${(1 - state.hsv.v) * 100}%`,
               background: solid,
-              boxShadow: `0 0 0 3px ${fieldThumbRing}, 0 2px 6px rgba(0,0,0,0.4)`,
+              boxShadow: `0 0 0 3px ${fieldThumbRing}, 0 1px 4px rgb(0 0 0 / 0.4)`,
             }}
           />
         </div>
 
-        {/* ------------------------------- Sliders ------------------------------ */}
-        {/* Full width. Nothing shares this row — these are primary controls and
-            a preview well beside them only steals travel distance. */}
-        <div className="mt-4 flex flex-col gap-1">
-          <SliderTrack
-            drag={hue}
-            onKeyDown={handleHueKeys}
-            disabled={disabled}
-            ariaLabel="Hue"
-            valueNow={Math.round(state.hsv.h)}
-            valueMax={360}
-            valueText={`${Math.round(state.hsv.h)} degrees`}
-            background={HUE_GRADIENT}
-            thumb={{
-              left: `${(state.hsv.h / 360) * 100}%`,
-              background: `hsl(${state.hsv.h} 100% 50%)`,
-            }}
-            reducedMotion={reducedMotion}
-          />
+        {/* ------------------------------ Controls ------------------------------ */}
+        <div className="flex flex-col gap-2 px-1">
+          <div className="flex items-end gap-2">
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <LabelledSlider
+                drag={hue}
+                onKeyDown={handleHueKeys}
+                disabled={disabled}
+                label="Hue"
+                readout={`${Math.round(state.hsv.h)}°`}
+                valueNow={Math.round(state.hsv.h)}
+                valueMax={360}
+                valueText={`${Math.round(state.hsv.h)} degrees`}
+                background={HUE_GRADIENT}
+                thumb={{
+                  left: `${(state.hsv.h / 360) * 100}%`,
+                  background: `hsl(${state.hsv.h} 100% 50%)`,
+                }}
+                reducedMotion={reducedMotion}
+              />
 
-          {alpha && (
-            <SliderTrack
-              drag={opacity}
-              onKeyDown={handleOpacityKeys}
-              disabled={disabled}
-              ariaLabel="Opacity"
-              valueNow={Math.round(state.alpha * 100)}
-              valueMax={100}
-              valueText={`${Math.round(state.alpha * 100)} percent`}
-              background={CHECKERBOARD}
-              overlay={`linear-gradient(to right, transparent, ${solid})`}
-              thumb={{ left: `${state.alpha * 100}%`, background: solid }}
-              reducedMotion={reducedMotion}
-            />
-          )}
-        </div>
-
-        {/* ------------------------------ Value row ----------------------------- */}
-        <div className="mt-4 flex items-center gap-2">
-          <label htmlFor={inputId} className="sr-only">
-            Color value
-          </label>
-          <div
-            className="flex h-10 min-w-0 flex-1 items-center rounded-xl bg-neutral-100 dark:bg-neutral-800/80"
-            style={{ boxShadow: RECESSED }}
-          >
-            <input
-              id={inputId}
-              value={draft ?? output}
-              disabled={disabled}
-              spellCheck={false}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              onChange={(event) => setDraft(event.target.value)}
-              onBlur={(event) => commitDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault()
-                  commitDraft(event.currentTarget.value)
-                }
-                if (event.key === "Escape") setDraft(null)
-              }}
-              className={cn(
-                "h-full w-full min-w-0 bg-transparent px-3",
-                "font-mono text-[13px] lowercase tabular-nums tracking-tight",
-                "text-neutral-900 outline-none dark:text-neutral-100",
+              {alpha && (
+                <LabelledSlider
+                  drag={opacity}
+                  onKeyDown={handleOpacityKeys}
+                  disabled={disabled}
+                  label="Opacity"
+                  readout={`${Math.round(state.alpha * 100)}%`}
+                  valueNow={Math.round(state.alpha * 100)}
+                  valueMax={100}
+                  valueText={`${Math.round(state.alpha * 100)} percent`}
+                  background={CHECKERBOARD}
+                  overlay={`linear-gradient(to right, transparent, ${solid})`}
+                  thumb={{ left: `${state.alpha * 100}%`, background: solid }}
+                  reducedMotion={reducedMotion}
+                />
               )}
-            />
-            {alpha && (
-              <>
-                <span
-                  aria-hidden
-                  className="h-5 w-px shrink-0 bg-black/10 dark:bg-white/12"
-                />
-                <input
-                  aria-label="Opacity percentage"
-                  value={
-                    alphaDraft ?? `${Math.round(state.alpha * 100)}%`
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2">
+              {eyedropper && supportsEyedropper && (
+                <SquareButton
+                  onClick={pickFromScreen}
+                  disabled={disabled}
+                  label="Pick a color from the screen"
+                  focusRing={focusRing}
+                >
+                  <EyedropperIcon />
+                </SquareButton>
+              )}
+              {shuffle && (
+                <SquareButton
+                  onClick={randomize}
+                  disabled={disabled}
+                  label="Random color"
+                  focusRing={focusRing}
+                >
+                  <ShuffleIcon />
+                </SquareButton>
+              )}
+            </div>
+          </div>
+
+          {/* ----------------------------- Value field ---------------------------- */}
+          <div className="flex items-center gap-2">
+            <label htmlFor={inputId} className="sr-only">
+              Color value
+            </label>
+            <div className="flex h-9 min-w-0 flex-1 items-center rounded-xl bg-[#ebebec] dark:bg-neutral-800">
+              <button
+                type="button"
+                onClick={cycleFormat}
+                disabled={disabled || !formatToggle}
+                aria-label={`Color format: ${format}. Press to change.`}
+                className={cn(
+                  "flex h-full shrink-0 items-center gap-1 rounded-l-xl pr-1.5 pl-3",
+                  "text-[10px] font-semibold tracking-wide uppercase",
+                  "text-neutral-500 dark:text-neutral-400",
+                  formatToggle &&
+                    "transition-colors duration-150 hover:text-neutral-900 dark:hover:text-neutral-100",
+                  focusRing,
+                )}
+                style={{ transitionTimingFunction: EASE_OUT }}
+              >
+                {format}
+                {formatToggle && <ChevronIcon />}
+              </button>
+
+              <span
+                aria-hidden
+                className="h-4 w-px shrink-0 bg-black/10 dark:bg-white/10"
+              />
+
+              <input
+                id={inputId}
+                value={draft ?? output}
+                disabled={disabled}
+                spellCheck={false}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                onChange={(event) => setDraft(event.target.value)}
+                onBlur={(event) => commitDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault()
+                    commitDraft(event.currentTarget.value)
                   }
+                  if (event.key === "Escape") setDraft(null)
+                }}
+                className={cn(
+                  "h-full w-full min-w-0 bg-transparent px-2.5",
+                  "font-mono text-[13px] tracking-tight tabular-nums lowercase",
+                  "text-neutral-900 outline-hidden dark:text-neutral-100",
+                )}
+              />
+
+              {copyable && (
+                <IconButton
+                  onClick={copy}
                   disabled={disabled}
-                  spellCheck={false}
-                  onChange={(event) => setAlphaDraft(event.target.value)}
-                  onBlur={(event) => commitAlphaDraft(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault()
-                      commitAlphaDraft(event.currentTarget.value)
-                    }
-                    if (event.key === "Escape") setAlphaDraft(null)
-                  }}
-                  className={cn(
-                    "h-full w-[52px] shrink-0 bg-transparent px-2 text-center",
-                    "font-mono text-[13px] tabular-nums tracking-tight",
-                    "text-neutral-600 outline-none dark:text-neutral-400",
-                  )}
-                />
-              </>
+                  label={copied ? "Copied" : "Copy color value"}
+                  focusRing={focusRing}
+                >
+                  {/* Both icons stay mounted and cross-fade. Toggling
+                      visibility would pop; blur bridges the two states so the
+                      eye reads one object changing rather than two swapping. */}
+                  <IconSwap showSecond={copied} reducedMotion={reducedMotion}>
+                    <CopyIcon />
+                    <CheckIcon />
+                  </IconSwap>
+                </IconButton>
+              )}
+            </div>
+
+            {comparison && initial.toLowerCase() !== color.hex.toLowerCase() && (
+              <button
+                type="button"
+                onClick={() => commit(stateFromString(initial, state.hsv), true)}
+                disabled={disabled}
+                aria-label={`Revert to ${initial}`}
+                title={`Revert to ${initial}`}
+                className={cn(
+                  "size-9 shrink-0 rounded-xl",
+                  "transition-[scale] duration-150 active:scale-[0.97]",
+                  focusRing,
+                )}
+                style={{
+                  backgroundColor: initial,
+                  transitionTimingFunction: EASE_OUT,
+                  boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.12)",
+                }}
+              />
             )}
           </div>
-
-          <button
-            type="button"
-            onClick={cycleFormat}
-            disabled={disabled || !formatToggle}
-            aria-label={`Color format: ${format}. Press to change.`}
-            className={cn(
-              "flex h-10 shrink-0 items-center gap-1 rounded-xl px-2.5",
-              "bg-neutral-100 dark:bg-neutral-800/80",
-              "text-[11px] font-semibold uppercase tracking-wide",
-              "text-neutral-500 dark:text-neutral-400",
-              formatToggle &&
-                "transition-[background-color,color,scale] duration-150 active:scale-[0.97] hover:text-neutral-800 dark:hover:text-neutral-100",
-              focusRing,
-            )}
-            style={{ boxShadow: RECESSED, transitionTimingFunction: EASE_OUT }}
-          >
-            {format}
-            {formatToggle && <ChevronIcon />}
-          </button>
         </div>
-
-        {/* ------------------------------ Swatches ------------------------------ */}
-        {swatchList.length > 0 && (
-          <div className="mt-4 flex items-center justify-between border-t border-black/[0.07] pt-4 dark:border-white/[0.08]">
-            {swatchList.map((swatch) => {
-              const selected = swatch.toLowerCase() === color.hex.toLowerCase()
-              return (
-                <button
-                  key={swatch}
-                  type="button"
-                  aria-label={swatch}
-                  aria-pressed={selected}
-                  disabled={disabled}
-                  onClick={() => commit(stateFromString(swatch, state.hsv), true)}
-                  className={cn(
-                    "size-6 rounded-full",
-                    // Tailwind v4 already gates `hover:` behind a hover-capable
-                    // pointer, so this never sticks as a stuck state on touch.
-                    "transition-[scale] duration-150 hover:scale-110 active:scale-[0.97]",
-                    focusRing,
-                  )}
-                  style={{
-                    backgroundColor: swatch,
-                    transitionTimingFunction: EASE_OUT,
-                    boxShadow: selected
-                      ? `0 0 0 2px #fff, 0 0 0 4px ${swatch}, 0 1px 3px rgba(0,0,0,0.3)`
-                      : "inset 0 0 0 1px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.15)",
-                  }}
-                />
-              )
-            })}
-          </div>
-        )}
 
         {/* Settled values only — narrating every drag frame would flood a reader. */}
         <span aria-live="polite" className="sr-only">
@@ -774,11 +809,12 @@ function ComparisonWell({
   )
 }
 
-interface SliderTrackProps {
+interface LabelledSliderProps {
   drag: ReturnType<typeof useTrackDrag>
   onKeyDown: (event: React.KeyboardEvent) => void
   disabled: boolean
-  ariaLabel: string
+  label: string
+  readout: string
   valueNow: number
   valueMax: number
   valueText: string
@@ -789,14 +825,18 @@ interface SliderTrackProps {
 }
 
 /**
- * A 10px-tall track inside a 40px-tall hit area. The visible bar stays slim
- * while the pointer target clears the WCAG 2.5.5 minimum on touch.
+ * A labelled slider: name on the left, live value on the right, track below.
+ *
+ * The readout matters more than it looks. Without it the only way to know the
+ * hue is to read it back out of the hex field, which is a translation task;
+ * showing the number turns the slider into something you can aim with.
  */
-function SliderTrack({
+function LabelledSlider({
   drag,
   onKeyDown,
   disabled,
-  ariaLabel,
+  label,
+  readout,
   valueNow,
   valueMax,
   valueText,
@@ -804,53 +844,146 @@ function SliderTrack({
   overlay,
   thumb,
   reducedMotion,
-}: SliderTrackProps) {
+}: LabelledSliderProps) {
   return (
-    <div
-      role="slider"
-      tabIndex={disabled ? -1 : 0}
-      aria-label={ariaLabel}
-      aria-valuemin={0}
-      aria-valuemax={valueMax}
-      aria-valuenow={valueNow}
-      aria-valuetext={valueText}
-      aria-orientation="horizontal"
-      aria-disabled={disabled || undefined}
-      onKeyDown={onKeyDown}
-      {...drag.handlers}
-      className={cn(
-        "relative flex h-10 touch-none items-center rounded-xl",
-        !disabled && "cursor-pointer",
-        "outline-none focus-visible:ring-[3px] focus-visible:ring-blue-500/50",
-      )}
-    >
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between px-0.5">
+        <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+          {label}
+        </span>
+        {/* Tabular figures so the readout doesn't jitter while dragging. */}
+        <span className="font-mono text-[11px] tabular-nums text-neutral-500 dark:text-neutral-400">
+          {readout}
+        </span>
+      </div>
+
       <div
-        ref={drag.trackRef}
-        className="relative h-6 w-full rounded-full"
-        style={{ background, boxShadow: RECESSED }}
-      >
-        {overlay && (
-          <div
-            className="absolute inset-0 rounded-full"
-            style={{ background: overlay, boxShadow: RECESSED }}
-          />
+        role="slider"
+        tabIndex={disabled ? -1 : 0}
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={valueMax}
+        aria-valuenow={valueNow}
+        aria-valuetext={valueText}
+        aria-orientation="horizontal"
+        aria-disabled={disabled || undefined}
+        onKeyDown={onKeyDown}
+        {...drag.handlers}
+        className={cn(
+          // 20px visible track inside a 32px hit area — the bar stays slim
+          // while the pointer target clears a comfortable touch size.
+          "relative flex h-8 touch-none items-center rounded-xl",
+          !disabled && "cursor-pointer",
+          "outline-hidden focus-visible:ring-[3px] focus-visible:ring-[#006FEE]/50",
         )}
-        {/* A capsule taller than its track. Overhanging the rail reads as a
-            grabbable handle; a dot sitting inside it reads as decoration. */}
-        <Thumb
-          width={16}
-          height={32}
-          dragging={drag.dragging}
-          reducedMotion={reducedMotion}
-          style={{
-            left: thumb.left,
-            top: "50%",
-            background: thumb.background,
-            boxShadow: RAISED,
-          }}
-        />
+      >
+        <div
+          ref={drag.trackRef}
+          className="relative h-5 w-full rounded-full"
+          style={{ background, boxShadow: RECESSED }}
+        >
+          {overlay && (
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{ background: overlay, boxShadow: RECESSED }}
+            />
+          )}
+          <Thumb
+            width={14}
+            height={14}
+            dragging={drag.dragging}
+            reducedMotion={reducedMotion}
+            style={{
+              left: thumb.left,
+              top: "50%",
+              background: thumb.background,
+              boxShadow: RAISED,
+            }}
+          />
+        </div>
       </div>
     </div>
+  )
+}
+
+/** 32×32 action button sitting beside the sliders. */
+function SquareButton({
+  onClick,
+  disabled,
+  label,
+  focusRing,
+  children,
+}: {
+  onClick: () => void
+  disabled: boolean
+  label: string
+  focusRing: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className={cn(
+        "grid size-8 shrink-0 place-items-center rounded-2xl",
+        "bg-[#ebebec] text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300",
+        "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
+        "hover:bg-[#e0e0e2] hover:text-neutral-900 dark:hover:bg-neutral-700 dark:hover:text-neutral-100",
+        focusRing,
+      )}
+      style={{ transitionTimingFunction: EASE_OUT }}
+    >
+      {children}
+    </button>
+  )
+}
+
+/** Chevron pager for the preset row. Hidden from readers — the swatches
+ *  themselves are the content, and the arrows only reposition them. */
+function PagerButton({
+  direction,
+  disabled,
+  onClick,
+}: {
+  direction: "previous" | "next"
+  disabled: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={`${direction === "previous" ? "Previous" : "Next"} presets`}
+      className={cn(
+        "grid size-4 shrink-0 place-items-center rounded-full",
+        "text-neutral-400 dark:text-neutral-500",
+        "transition-[color,opacity] duration-150",
+        "hover:text-neutral-900 disabled:opacity-30 dark:hover:text-neutral-100",
+        "outline-hidden focus-visible:ring-2 focus-visible:ring-[#006FEE]/50",
+      )}
+      style={{ transitionTimingFunction: EASE_OUT }}
+    >
+      <svg
+        width="10"
+        height="10"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+        style={{
+          transform: direction === "next" ? "rotate(180deg)" : undefined,
+        }}
+      >
+        <path d="m15 18-6-6 6-6" />
+      </svg>
+    </button>
   )
 }
 
@@ -1016,6 +1149,14 @@ function CheckIcon() {
   return (
     <svg {...iconProps} width={14} height={14}>
       <path d="M20 6 9 17l-5-5" />
+    </svg>
+  )
+}
+
+function ShuffleIcon() {
+  return (
+    <svg {...iconProps} width={15} height={15}>
+      <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
     </svg>
   )
 }
