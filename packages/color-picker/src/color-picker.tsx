@@ -584,6 +584,30 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const focusRing =
       "outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface,#ffffff)]"
 
+    /**
+     * Declared once and rendered from one of two places depending on the model,
+     * so the two sites cannot drift. Whichever row it lands in, it copies the
+     * value the channel row is displaying — `#747839` in HEX,
+     * `rgb(116 120 57)` in RGBA. A copy button that always emits hex regardless
+     * of the selected model is a trap.
+     */
+    const copyButton = (
+      <RoundButton
+        onClick={copy}
+        disabled={disabled}
+        label={copied ? "Copied" : `Copy ${output}`}
+        focusRing={focusRing}
+      >
+        {/* Both icons stay mounted and cross-fade. Toggling visibility would
+            pop; blur bridges the two states so the eye reads one object
+            changing rather than two swapping. */}
+        <IconSwap showSecond={copied} reducedMotion={reducedMotion}>
+          <CopyIcon />
+          <CheckIcon />
+        </IconSwap>
+      </RoundButton>
+    )
+
     return (
       <div
         ref={forwardedRef}
@@ -755,6 +779,12 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
               </RoundButton>
             )}
 
+            {/* Copy rides with whichever row has the room. HEX is one field
+                with space to spare, so it sits there, next to the value it
+                copies. RGBA is four fields across 232px and every pixel the
+                button takes comes straight out of them — "255" stops fitting
+                long before the row looks full. */}
+            {copyable && format !== "hex" && copyButton}
           </div>
           )}
 
@@ -821,26 +851,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             )}
           </div>
 
-            {/* Copy sits after the row it copies, so what lands on the
-                clipboard is what the row displays — `#747839` in HEX,
-                `rgb(116 120 57)` in RGBA. A copy button that always emits hex
-                regardless of the selected model is a trap. */}
-            {copyable && (
-              <RoundButton
-                onClick={copy}
-                disabled={disabled}
-                label={copied ? "Copied" : `Copy ${output}`}
-                focusRing={focusRing}
-              >
-                {/* Both icons stay mounted and cross-fade. Toggling visibility
-                    would pop; blur bridges the two states so the eye reads one
-                    object changing rather than two swapping. */}
-                <IconSwap showSecond={copied} reducedMotion={reducedMotion}>
-                  <CopyIcon />
-                  <CheckIcon />
-                </IconSwap>
-              </RoundButton>
-            )}
+            {copyable && format === "hex" && copyButton}
           </div>
           )}
         </div>
