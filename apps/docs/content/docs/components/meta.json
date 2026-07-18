@@ -5,6 +5,8 @@
   "pages": [
     "---Inputs---",
     "color-picker",
-    "country-picker"
+    "country-picker",
+    "---Display---",
+    "code-block"
   ]
 }

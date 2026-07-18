@@ -54,12 +54,14 @@ export function PreviewCode({
   standalone = false,
   label,
   lang,
+  lineNumbers = false,
 }: {
   children: ReactNode
   standalone?: boolean
   /** Filename for the bar. Falls back to `lang` when not given. */
   label?: string
   lang?: string
+  lineNumbers?: boolean
 }) {
   const [expanded, setExpanded] = useState(false)
   const [overflows, setOverflows] = useState(false)
@@ -91,6 +93,7 @@ export function PreviewCode({
 
   return (
     <div
+      data-has-bar={(label ?? lang) ? "" : undefined}
       className={
         standalone
           ? "code-section relative my-4 overflow-hidden rounded-xl border border-separator bg-transparent"
@@ -98,7 +101,7 @@ export function PreviewCode({
       }
     >
       {(label ?? lang) && (
-        <div className="flex items-center justify-between gap-3 rounded-t-xl border-b border-separator bg-surface-secondary py-1 pr-1 pl-4">
+        <div className="flex items-center justify-between gap-3 border-b border-separator bg-surface-secondary py-1 pr-1 pl-4">
           <span className="font-mono text-xs text-foreground">
             {label ?? lang}
           </span>
@@ -107,6 +110,7 @@ export function PreviewCode({
       )}
       <div
         ref={contentRef}
+        data-line-numbers={lineNumbers || undefined}
         className={
           clamped
             ? // Opaque for the first 20%, then fading out, so the cut reads as
