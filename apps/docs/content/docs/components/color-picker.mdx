@@ -1,28 +1,12 @@
 ---
 title: Color Picker
-description: A saturation field, hue and opacity sliders, and editable per-channel inputs — with full keyboard support and no runtime dependencies beyond React.
+description: A saturation field, hue and opacity sliders, and editable per-channel inputs.
 links:
   - label: Source
     href: https://github.com/CrackedResearcher/fern/tree/main/packages/color-picker/src/color-picker.tsx
   - label: npm
     href: https://www.npmjs.com/package/@fern-ui/color-picker
 ---
-
-## Installation
-
-```bash
-bun add @fern-ui/color-picker
-```
-
-Or copy `color-picker.tsx` and `color.ts` into your project — the component has
-no runtime dependencies beyond React, and reads its colors from CSS custom
-properties with literal fallbacks, so it themes where you have variables and
-still renders where you do not.
-
-## Usage
-
-Pass `value` and `onChange` and you have the whole picker. Every capability is
-on by default; you subtract with props rather than composing parts on.
 
 <Preview>
   <PreviewDemo>
@@ -41,15 +25,29 @@ const [color, setColor] = useState("#3b82f6")
   </PreviewCode>
 </Preview>
 
-## Live value vs settled value
+## Installation
 
-`onChange` fires on every frame of a drag. `onChangeComplete` fires once, when
-the interaction settles — pointer release, key press, or a committed text entry.
+```bash
+bun add @fern-ui/color-picker
+```
 
-Drag the field below: the left swatch tracks every frame, the counter on the
-right only moves when you let go. Use `onChange` for anything you are painting
-and `onChangeComplete` for anything you would regret doing sixty times a
-second — a network write, an undo entry, a re-render of the rest of the page.
+Or copy `color-picker.tsx` and `color.ts` into your project.
+
+## When to use what
+
+- **`onChange`** fires every frame of a drag — use it for anything you are
+  painting live.
+- **`onChangeComplete`** fires once on settle — use it for saves, undo entries,
+  and anything expensive.
+- **`format`** picks the model the picker opens in, and the format your
+  callbacks receive.
+- Turn things **off** to get a smaller picker; everything is on by default.
+
+## Examples
+
+### Live value vs settled value
+
+The left swatch tracks every frame. The counter only moves when you let go.
 
 <Preview>
   <PreviewDemo>
@@ -60,24 +58,18 @@ second — a network write, an undo entry, a re-render of the rest of the page.
 ```tsx
 <ColorPicker
   value={color}
-  onChange={setColor}                  // every frame — cheap work only
-  onChangeComplete={(next) => {        // once, on settle
-    save(next)
-  }}
+  onChange={setColor}
+  onChangeComplete={(next) => save(next)}
 />
 ```
 
   </PreviewCode>
 </Preview>
 
-## Choosing a color model
+### Opening in another model
 
-The select drives the row beneath it: `HEX` is one field, `RGBA` is four, `HSL`
-is three. Switching reformats in place and never loses the color.
-
-`format` sets which one it opens on. The value handed to your callbacks is in
-that model too, and the copy button copies what the row displays — `#d97706` in
-HEX, `rgb(217 119 6)` in RGBA.
+`HEX` is one field, `RGBA` is four, `HSL` is three. Switching never loses the
+color.
 
 <Preview>
   <PreviewDemo>
@@ -86,21 +78,13 @@ HEX, `rgb(217 119 6)` in RGBA.
   <PreviewCode>
 
 ```tsx
-// Opens in RGBA. Users can still switch models unless
-// you pass formatToggle={false}.
 <ColorPicker format="rgb" value={color} onChange={setColor} />
 ```
 
   </PreviewCode>
 </Preview>
 
-Every channel field commits on blur or Enter and previews as you type, but only
-from a complete, in-range value — a half-typed `#ff` is not a color, and `2555`
-cannot be entered into a channel that stops at 255. Invalid input reverts rather
-than clamping, so a typo reads as "that was rejected" instead of quietly
-becoming a different color.
-
-## A smaller picker
+### Compact
 
 <Preview>
   <PreviewDemo>
@@ -112,31 +96,19 @@ becoming a different color.
 <ColorPicker
   value={color}
   onChange={setColor}
-  sliderLabels={false}   // drop the name/readout row above each slider
-  alpha={false}          // drop the opacity slider and the A channel
+  sliderLabels={false}
+  alpha={false}
 />
 ```
 
   </PreviewCode>
 </Preview>
 
-## Accessibility
+## Keyboard
 
-- Arrow keys step 1, Shift+arrows step 10, and Home/End jump to the ends — on
-  the saturation field and both sliders. The field is a primary control, not
-  just a pointer target.
-- Every channel input is a labelled `spinbutton` announcing its value in channel
-  units — "Red, 77", not "77 percent" — and carries its own range.
-- The model select points at the channel group it reshapes with `aria-controls`.
-- Interactive targets are 40×40, clearing the WCAG 2.5.5 minimum.
-- Settled values are announced through a polite live region. Intermediate drag
-  frames deliberately are not, which would otherwise flood a screen reader with
-  hundreds of updates per gesture.
-- The field thumb flips between a light and dark ring based on the luminance
-  beneath it, so it never disappears into the color it is selecting.
-- A drag owns a single pointer id, so a second finger cannot hijack it
-  mid-gesture.
-- `prefers-reduced-motion` removes the thumb scale and the icon transitions.
+Arrow keys step 1, Shift+arrows step 10, Home/End jump — on the field and both
+sliders. Channel inputs are spinbuttons that commit on blur or Enter; invalid
+input reverts instead of clamping.
 
 ## Props
 
@@ -144,22 +116,21 @@ becoming a different color.
   rows={[
     { name: "value", type: "string", description: "Controlled value. Accepts hex, rgb() or hsl(), with or without alpha." },
     { name: "defaultValue", type: "string", default: '"#3b82f6"', description: "Initial value when uncontrolled." },
-    { name: "onChange", type: "(value, color) => void", description: "Fires on every change, including each frame of a drag. Use for live previews." },
-    { name: "onChangeComplete", type: "(value, color) => void", description: "Fires once when an interaction settles. Use for network writes and undo history." },
-    { name: "format", type: '"hex" | "rgb" | "hsl"', default: '"hex"', description: "Color model to open in. Also the format handed to your callbacks." },
-    { name: "formatToggle", type: "boolean", default: "true", description: "Let the user change the model. Disabling it locks the select." },
+    { name: "onChange", type: "(value, color) => void", description: "Fires on every change, including each frame of a drag." },
+    { name: "onChangeComplete", type: "(value, color) => void", description: "Fires once when an interaction settles." },
+    { name: "format", type: '"hex" | "rgb" | "hsl"', default: '"hex"', description: "Color model to open in, and the format passed to callbacks." },
+    { name: "formatToggle", type: "boolean", default: "true", description: "Let the user change the model." },
     { name: "alpha", type: "boolean", default: "true", description: "Show the opacity slider and include alpha in the output." },
-    { name: "sliderLabels", type: "boolean", default: "true", description: "Show the name and live readout above each slider." },
-    { name: "eyedropper", type: "boolean", default: "true", description: "Offer the native screen eyedropper where the browser supports it." },
+    { name: "sliderLabels", type: "boolean", default: "true", description: "Show the name and readout above each slider." },
+    { name: "eyedropper", type: "boolean", default: "true", description: "Offer the native screen eyedropper where supported." },
     { name: "copyable", type: "boolean", default: "true", description: "Show the copy-to-clipboard button." },
     { name: "disabled", type: "boolean", default: "false", description: "Block interaction and dim the control." },
     { name: "label", type: "string", default: '"Color picker"', description: "Accessible name for the group." },
   ]}
 />
 
-The second argument to both callbacks is the full color — `hex`, `rgb`, `hsl`,
-`hsv` and `alpha` — so you never have to convert by hand. The same conversion
-helpers are importable on their own, without pulling in React:
+Both callbacks receive the full color as a second argument — `hex`, `rgb`,
+`hsl`, `hsv` and `alpha`. The conversion helpers are importable on their own:
 
 ```tsx
 import { formatColor, parseHex, rgbToHsv } from "@fern-ui/color-picker/color"
