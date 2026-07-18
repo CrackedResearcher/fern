@@ -83,18 +83,23 @@ body {
 
 /* Shiki emits its own <pre> with inline theme colours; this only supplies the
    box around it so the highlighting stays authoritative. */
-.fern-code pre {
+.fern-code pre,
+.fern-code-fallback {
   margin: 0;
   padding: 1rem 1.15rem;
   overflow-x: auto;
-  /* Must reference an authored variable, not a @theme one. `@theme inline`
-     inlines its values at build time instead of emitting runtime custom
+  /* Must reference an authored variable, not a @theme one: `@theme inline`
+     inlines its values at build time rather than emitting runtime custom
      properties, so a var() pointing at a --color-* name resolves to nothing. */
   background: rgb(0 0 0 / 0.04) !important;
 }
 
-.dark .fern-code pre {
-  background: rgb(40 40 40 / 0.4) !important;
+/* A solid step, not a translucent one. Layering 40% grey over a near-black
+   page lands within a couple of percent of the page itself — the panel stops
+   reading as a panel. Solid surface separates cleanly at any page darkness. */
+.dark .fern-code pre,
+.dark .fern-code-fallback {
+  background: var(--surface) !important;
 }
 
 .fern-code code {
