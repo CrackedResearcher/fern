@@ -26,6 +26,7 @@
 @import "fumadocs-ui/css/neutral.css";
 @import "fumadocs-ui/css/preset.css";
 
+@source "../../../packages/button/src";
 @source "../../../packages/code-block/src";
 @source "../../../packages/color-picker/src";
 @source "../../../packages/country-picker/src";

@@ -22,9 +22,12 @@ priority. If it makes a block more usable, it is.
 ## Layout
 
 ```
+packages/button         @fern-ui/button — seven variants, three sizes
+packages/code-block     @fern-ui/code-block — filename bar, copy, collapse
 packages/color-picker   @fern-ui/color-picker — the published block
 packages/country-picker @fern-ui/country-picker — searchable country select
 apps/docs               Next.js 16 + Fumadocs documentation site and playground
+apps/docs/app/probe     measuring harnesses, not docs pages — see below
 MIGRATION_PROMPT.md     completed brief for adopting @heroui/styles — historical
 packages/color-picker/REDESIGN.md   agreed spec for the next picker pass
 ```
@@ -93,6 +96,12 @@ role, a label, and a human-readable `aria-valuetext`. Interactive targets clear
 40px. `prefers-reduced-motion` is respected. Live regions announce settled
 values only — narrating every drag frame floods a screen reader.
 
+The one accepted exception is `@fern-ui/button`, whose `sm` size is 36px and
+drops to 32px above the `md` breakpoint. That is HeroUI's own sizing, and the
+block exists to be pixel-identical to it — a taller `sm` would make every
+adopted call site visibly disagree with the surrounding page. Do not "fix" it
+to 40px; the tradeoff was made deliberately and measured.
+
 ## Verification
 
 **Typechecking is not evidence the UI works.** A pass early in this project
@@ -113,6 +122,22 @@ The docs site reads `?theme=light|dark` from the URL specifically so headless
 screenshots can capture either. **Check both themes** — dark-mode bugs
 (invisible checkerboards, panels that collapse into the page) do not show up in
 light.
+
+**When a block has to match something, diff the rendered DOM, not the classes.**
+HeroUI overrides its own utilities with unlayered rules, so a class list is not
+evidence of anything. `apps/docs/app/probe/button` is the pattern: render both
+components side by side, walk the whole `getComputedStyle` on each pair, and
+render the differences into the page so a headless screenshot captures them.
+Compare *every* property — a hand-picked list only finds the differences you
+already suspected. That harness found six real gaps (`position`, `user-select`,
+`touch-action`, `white-space`, icon-only padding, the outline border) that a
+list of the twelve obvious properties reported as a clean pass.
+
+**Wait for the dev server to go idle before believing a screenshot.** Turbopack
+serves the page before the stylesheet finishes rebuilding, so a probe run with
+the "Compiling…" badge still up measures a half-applied stylesheet. One such run
+reported the button as matching on every property that later turned out to be
+wrong. If the badge is in the shot, the shot is void.
 
 ## Conventions
 
