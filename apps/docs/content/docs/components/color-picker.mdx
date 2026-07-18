@@ -25,18 +25,6 @@ const [color, setColor] = useState("#3b82f6")
   </PreviewCode>
 </Preview>
 
-## Installation
-
-<InstallTabs pkg="@fern-ui/color-picker" />
-
-Or copy these two files into your project. No runtime dependencies beyond
-React; `color.ts` is pure math and is imported by the component.
-
-<ComponentSource pkg="color-picker" file="color-picker.tsx" />
-<ComponentSource pkg="color-picker" file="color.ts" />
-
-## When to use what
-
 - **`onChange`** fires every frame of a drag — use it for anything you are
   painting live.
 - **`onChangeComplete`** fires once on settle — use it for saves, undo entries,
@@ -106,7 +94,7 @@ color.
   </PreviewCode>
 </Preview>
 
-## Theming
+### Theming
 
 The picker reads CSS custom properties, each with a literal fallback, so it
 picks up your theme where you define these and still renders correctly where
@@ -144,11 +132,21 @@ stylesheet without forking the component.
   variables and slots above, or copy the component in and edit it directly.
 </Callout>
 
-## Keyboard
+### Keyboard
 
 Arrow keys step 1, Shift+arrows step 10, Home/End jump — on the field and both
 sliders. Channel inputs are spinbuttons that commit on blur or Enter; invalid
 input reverts instead of clamping.
+
+## Installation
+
+<InstallTabs pkg="@fern-ui/color-picker" />
+
+Or copy these two files into your project. No runtime dependencies beyond
+React; `color.ts` is pure math and is imported by the component.
+
+<ComponentSource pkg="color-picker" file="color-picker.tsx" />
+<ComponentSource pkg="color-picker" file="color.ts" />
 
 ## Props
 
