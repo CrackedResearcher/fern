@@ -59,7 +59,7 @@ export default async function Page(props: {
           </DocsTitle>
           {page.data.toc.length > 0 && (
             <div className="flex items-center gap-2">
-              <CopyMarkdown markdown={raw} />
+              <CopyMarkdown markdown={raw} markdownUrl={`/api/mdx${page.url.replace("/docs", "")}`} />
             </div>
           )}
         </div>

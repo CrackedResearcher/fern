@@ -1,7 +1,14 @@
 "use client"
 
-import { Button, ButtonGroup } from "@heroui/react"
+import {
+  Button,
+  ButtonGroup,
+  Description,
+  Dropdown,
+  Label,
+} from "@heroui/react"
 import { useEffect, useRef, useState } from "react"
+import { cn } from "@/utils/cn"
 
 const CopyIcon = () => (
   <svg viewBox="0 0 16 16" width="1em" height="1em" fill="currentColor" aria-hidden>
@@ -14,31 +21,55 @@ const CopyIcon = () => (
 )
 
 const CheckIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="1em"
-    height="1em"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden
-  >
+  <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <path d="M20 6 9 17l-5-5" />
   </svg>
 )
 
+const ChevronDown = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 16 16" width="1em" height="1em" fill="currentColor" aria-hidden className={className}>
+    <path
+      fillRule="evenodd"
+      d="M2.97 5.47a.75.75 0 0 1 1.06 0L8 9.44l3.97-3.97a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 0 1 0-1.06"
+      clipRule="evenodd"
+    />
+  </svg>
+)
+
+const ExternalIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={className}>
+    <path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+  </svg>
+)
+
 /**
- * "Copy Markdown", top-right of the page title — the same affordance their
- * docs put there so a page can be pasted straight into an LLM.
+ * Page actions: copy the page as Markdown, plus a dropdown of ways to hand it
+ * to an assistant.
+ *
+ * Mirrors their ViewOptions (apps/docs/src/components/ai/page-actions.tsx):
+ * a ButtonGroup whose second button is icon-only with a ButtonGroup.Separator
+ * and a chevron that rotates when open, opening a Dropdown of title +
+ * description rows, with an external-link mark on the ones that leave the site.
+ *
+ * Their "Add to Cursor" / "Add to VS Code" rows are deliberately not copied:
+ * both are MCP install deep-links pointing at @heroui/react-mcp. fern has no
+ * MCP server, so those rows would install nothing.
  */
-export function CopyMarkdown({ markdown }: { markdown: string }) {
+export function CopyMarkdown({
+  markdown,
+  markdownUrl,
+}: {
+  markdown: string
+  markdownUrl: string
+}) {
   const [copied, setCopied] = useState(false)
+  const [isOpen, setOpen] = useState(false)
+  const [origin, setOrigin] = useState("")
   const timer = useRef<number | undefined>(undefined)
 
-  // The timer handle is held so rapid presses reset it rather than stacking.
-  // Without this the icon flickers between states as each stale timeout fires.
+  // window is not available while prerendering; reading it during render would
+  // disagree with the server pass and throw away the tree on hydration.
+  useEffect(() => setOrigin(window.location.origin), [])
   useEffect(() => () => window.clearTimeout(timer.current), [])
 
   const copy = async () => {
@@ -52,12 +83,78 @@ export function CopyMarkdown({ markdown }: { markdown: string }) {
     }
   }
 
+  const fullUrl = origin ? `${origin}${markdownUrl}` : markdownUrl
+  const query = `Read ${fullUrl} so I can ask questions about it.`
+
+  const items = [
+    {
+      key: "markdown",
+      title: "View as Markdown",
+      description: "View this page as plain text",
+      href: markdownUrl,
+      external: false,
+    },
+    {
+      key: "chatgpt",
+      title: "Open in ChatGPT",
+      description: "Ask questions about this page",
+      href: `https://chatgpt.com/?${new URLSearchParams({ hints: "search", q: query })}`,
+      external: true,
+    },
+    {
+      key: "claude",
+      title: "Open in Claude",
+      description: "Ask questions about this page",
+      href: `https://claude.ai/new?${new URLSearchParams({ q: query })}`,
+      external: true,
+    },
+  ]
+
   return (
     <ButtonGroup>
       <Button variant="tertiary" onPress={copy}>
         {copied ? <CheckIcon /> : <CopyIcon />}
         {copied ? "Copied" : "Copy Markdown"}
       </Button>
+
+      <Dropdown isOpen={isOpen} onOpenChange={setOpen}>
+        <Button isIconOnly aria-label="More options" variant="tertiary">
+          <ButtonGroup.Separator />
+          <ChevronDown
+            className={cn(
+              "size-3.5 text-muted transition-transform",
+              isOpen && "rotate-180",
+            )}
+          />
+        </Button>
+        <Dropdown.Popover placement="bottom end">
+          <Dropdown.Menu
+            onAction={(key) => {
+              const item = items.find((entry) => entry.key === key)
+              if (item?.external) {
+                window.open(item.href, "_blank", "noreferrer noopener")
+              }
+            }}
+          >
+            {items.map((item) => (
+              <Dropdown.Item
+                key={item.key}
+                id={item.key}
+                href={item.href}
+                target={item.external ? "_blank" : undefined}
+                rel={item.external ? "noreferrer noopener" : undefined}
+                textValue={item.title}
+              >
+                <div className="flex w-full flex-col">
+                  <Label className="flex gap-0.5">{item.title}</Label>
+                  <Description>{item.description}</Description>
+                </div>
+                {item.external && <ExternalIcon className="size-3.5 text-foreground/70" />}
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown>
     </ButtonGroup>
   )
 }
@@ -68,11 +165,6 @@ export interface ResourceLink {
   icon?: React.ReactNode
 }
 
-/**
- * The row of resource chips under a page description — their Figma / Storybook
- * / Source row. Rendered as buttons rather than plain links because that is
- * what theirs are, down to the `dark:bg-default/70` wash.
- */
 const GitHubMark = () => (
   <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
     <path
