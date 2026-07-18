@@ -2,5 +2,7 @@
   "title": "Getting Started",
   "icon": "Book",
   "root": true,
-  "pages": ["index"]
+  "pages": [
+    "index"
+  ]
 }

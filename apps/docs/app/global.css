@@ -139,6 +139,19 @@
 }
 
 /**
+ * Vibrant palette: chroma up, contrast allowed to fall.
+ *
+ * Derived on <body>, not on the <html> element that carries data-vibrant. A
+ * custom property that references itself on the element that defines it is a
+ * cycle, and CSS discards it silently — `--accent: oklch(from var(--accent) …)`
+ * on the same element computes to nothing at all. Reading it one level down
+ * resolves against the inherited value.
+ */
+[data-vibrant] body {
+  --accent: oklch(from var(--accent) l calc(c * 1.35) h);
+}
+
+/**
  * ────────────────────────────────────────────────────────────────────────────
  * HEROUI'S OWN OVERRIDES OF THE FUMADOCS SHELL
  *
@@ -217,4 +230,17 @@
 }
 .dark .prose .shiki .fd-scroll-container {
   background: rgb(40 40 40 / 0.4);
+}
+
+/* Sidebar group headings are plain <p> elements in their tree. Their app CSS
+   gives them weight 500 in the full foreground — noticeably heavier than the
+   muted items beneath — plus 16px of separation between groups. Without this
+   the headings read at the same weight as their own items and the rail loses
+   its structure. */
+#nd-sidebar [data-radix-scroll-area-viewport] p {
+  font-weight: 500;
+  color: var(--foreground);
+}
+#nd-sidebar [data-radix-scroll-area-viewport] p:not(:first-child) {
+  margin-top: 16px;
 }

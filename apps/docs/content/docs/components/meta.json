@@ -1,6 +1,10 @@
 {
   "title": "Components",
-  "icon": "Blocks",
+  "icon": "Cubes3",
   "root": true,
-  "pages": ["---Inputs---", "color-picker", "country-picker"]
+  "pages": [
+    "---Inputs---",
+    "color-picker",
+    "country-picker"
+  ]
 }
