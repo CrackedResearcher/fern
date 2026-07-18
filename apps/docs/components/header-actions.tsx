@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@heroui/react"
+import { ThemePicker } from "@/components/theme-picker"
 import { useEffect, useState } from "react"
 
 /**
@@ -35,10 +36,7 @@ export function HeaderActions() {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="mt-1 hidden text-xs font-medium text-muted lg:inline sm:text-sm">
-        0.1.0
-      </span>
-
+      <ThemePicker />
       <Button
         size="sm"
         variant="tertiary"
