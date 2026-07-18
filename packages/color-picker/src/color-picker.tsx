@@ -268,7 +268,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       formatToggle = true,
       // Defaults ship the complete picker. Good defaults matter more than
       // options — most people never customise, so the box should be full.
-      alpha = true,
+      alpha: alphaProp,
       swatches = DEFAULT_SWATCHES,
       variant = "default",
       eyedropper = true,
@@ -305,6 +305,23 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       setLastValue(value)
       setState((previous) => stateFromString(value, previous.hsv))
     }
+
+    /**
+     * Composition follows the variant, and an explicit prop always wins.
+     *
+     * The kit's `swatches` layout is a *reduced* one — field, hue, presets, and
+     * nothing else. It is not the default layout with the presets moved, which
+     * is what an earlier pass shipped.
+     *
+     * Dropping the readout is a real accessibility question, not just a visual
+     * one: without it there is no on-screen text for the current value. The
+     * sliders keep their labels and aria-valuetext and the polite live region
+     * still announces settled values, so the value stays reachable to a screen
+     * reader — but a sighted user loses it, which is why `default` keeps the
+     * field and this variant is opt-in.
+     */
+    const alpha = alphaProp ?? variant === "default"
+    const showValueField = variant === "default"
 
     const color = toColor(state.hsv, state.alpha, alpha)
     const output = formatColor(color, format)
@@ -701,6 +718,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           {swatchList.length > 0 && variant === "swatches" && swatchRow}
 
           {/* ----------------------------- Value field ---------------------------- */}
+          {showValueField && (
           <div className="flex items-center gap-2">
             <label htmlFor={inputId} className="sr-only">
               Color value
@@ -808,6 +826,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
               />
             )}
           </div>
+          )}
         </div>
 
         {/* Settled values only — narrating every drag frame would flood a reader. */}
