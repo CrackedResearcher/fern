@@ -14,6 +14,9 @@ export default function Layout({ children }: { children: ReactNode }) {
     <DocsLayout
       tree={source.pageTree}
       tabMode="navbar"
+      // No collapse control. Theirs has none in the header — the toggle was
+      // rendering at the far right where their language icon sits.
+      sidebar={{ collapsible: false }}
       // Their resolved layout variables. --fd-layout-width is 97rem/1552px —
       // the 1400px value exists in their CSS as an unused class. The rails are
       // 268px each; leaving them at the Fumadocs default made fern's sidebar
@@ -56,8 +59,18 @@ export default function Layout({ children }: { children: ReactNode }) {
               <FernMark />
               fern
             </span>
-            <span className="mt-1 hidden text-xs font-medium text-muted lg:inline sm:text-sm">
-              0.1.0
+            {/* Their version trigger: muted, xs→sm, with a chevron, and
+                hidden below lg. */}
+            <span className="mt-1 hidden items-center gap-1.5 py-1 text-left text-xs font-medium text-muted transition-opacity hover:opacity-80 lg:flex sm:text-sm">
+              v0.1.0
+              <svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden>
+                <path
+                  fill="currentColor"
+                  fillRule="evenodd"
+                  d="M2.97 5.47a.75.75 0 0 1 1.06 0L8 9.44l3.97-3.97a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 0 1 0-1.06"
+                  clipRule="evenodd"
+                />
+              </svg>
             </span>
           </span>
         ),
