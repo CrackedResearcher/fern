@@ -4,7 +4,11 @@ import type { MDXComponents } from "mdx/types"
 import type { ComponentProps } from "react"
 import { Preview, PreviewCode, PreviewDemo } from "@/components/preview"
 import { CodeActions } from "@/components/code-actions"
-import { ColorPickerDemo } from "@/components/demos/color-picker-demo"
+import {
+  ColorPickerDemo,
+  ColorPickerMinimal,
+  ColorPickerSwatches,
+} from "@/components/demos/color-picker-demo"
 
 /**
  * Components reachable from MDX without an import in every file. Demos are
@@ -28,6 +32,8 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     PreviewDemo,
     PreviewCode,
     ColorPickerDemo,
+    ColorPickerSwatches,
+    ColorPickerMinimal,
     ...components,
   }
 }
