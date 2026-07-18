@@ -161,29 +161,44 @@ html {
 
 /* Shiki emits its own <pre> with inline theme colours; this only supplies the
    box around it so the highlighting stays authoritative. */
+/**
+ * Shiki emits its own <pre> with inline theme colours; this only supplies the
+ * box around it so the highlighting stays authoritative.
+ *
+ * Values are the *resolved* ones from their docs site, not the utility classes
+ * on the markup. Their figure carries `bg-fd-card rounded-xl border shadow-sm`,
+ * but an unlayered `.prose .shiki` rule cancels all three — background, border
+ * and shadow — and moves the fill onto the inner scroll container. Reading the
+ * class list alone gets the code block visibly wrong.
+ */
 .fern-code pre,
 .fern-code-fallback {
   margin: 0;
-  padding: 1rem 1.15rem;
+  /* py-3.5 plus their effective 20px inline inset (4px container + 16px line) */
+  padding: 14px 20px;
   overflow-x: auto;
+  border: none;
+  border-radius: 12px;
   /* Must reference an authored variable, not a @theme one: `@theme inline`
      inlines its values at build time rather than emitting runtime custom
      properties, so a var() pointing at a --color-* name resolves to nothing. */
-  background: var(--surface-secondary) !important;
+  background: rgb(0 0 0 / 0.04) !important;
 }
 
-/* A solid step, not a translucent one. Layering 40% grey over a near-black
-   page lands within a couple of percent of the page itself — the panel stops
-   reading as a panel. Solid surface separates cleanly at any page darkness. */
 .dark .fern-code pre,
 .dark .fern-code-fallback {
-  background: var(--surface) !important;
+  /* Their dark fill really is this translucent step. fern had previously moved
+     to a solid --surface here because 40% grey over a *near-black* page
+     collapses — but their page sits at oklch(12%), light enough that the step
+     still reads. Matching them; if the page darkens again, revisit this. */
+  background: rgb(40 40 40 / 0.4) !important;
 }
 
 .fern-code code {
   font-family: var(--font-mono);
+  /* text-[0.8125rem] with text-sm's line-height, per their figure. */
   font-size: 13px;
-  line-height: 1.65;
+  line-height: 1.4286;
 }
 
 /* Shiki wraps each line in a span. Making them blocks keeps lines separate when

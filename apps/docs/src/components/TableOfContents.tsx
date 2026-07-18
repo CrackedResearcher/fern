@@ -71,7 +71,10 @@ export function TableOfContents({ entries }: { entries: TocEntry[] }) {
         </svg>
         On this page
       </h3>
-      <ul className="flex flex-col">
+      {/* Their rail draws a border-s line that is deliberately transparent, and
+          states position with a 1px bar that slides between entries instead.
+          The bar is the only visible rail element. */}
+      <ul className="relative flex flex-col border-s border-transparent py-3">
         {entries.map((entry) => (
           <li key={entry.id}>
             <a
@@ -87,15 +90,25 @@ export function TableOfContents({ entries }: { entries: TocEntry[] }) {
                 setActiveId(entry.id)
               }}
               className={cn(
-                // Their TOC states the current entry with accent *text* and no
-                // marker dot — the colour alone carries it at this size.
-                "relative flex scroll-m-4 items-center py-1.5 text-sm wrap-anywhere transition-colors first:pt-0 last:pb-0",
+                // Active is the *foreground*, not the accent — their
+                // --color-fd-primary resolves to #090909 / #fcfcfc. The accent
+                // never appears in this rail.
+                "relative flex scroll-m-4 items-center py-1.5 text-[13px] wrap-anywhere transition-colors first:pt-0 last:pb-0",
                 entry.depth === 2 ? "ps-6" : "ps-3",
                 entry.id === activeId
-                  ? "text-accent"
+                  ? "text-foreground"
                   : "text-muted hover:text-foreground",
               )}
             >
+              {/* The indicator is a 1px bar on the rail, not a dot beside the
+                  label. Sliding it is what makes scrolling read as movement. */}
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute inset-y-0 -start-px w-px bg-foreground transition-opacity",
+                  entry.id === activeId ? "opacity-100" : "opacity-0",
+                )}
+              />
               {entry.label}
             </a>
           </li>

@@ -7,10 +7,12 @@ function NavList({ slug, onNavigate }: { slug: string; onNavigate?: () => void }
   return (
     <nav className="flex flex-col gap-7">
       {CATEGORIES.map((category) => (
-        <div key={category} className="flex flex-col gap-1">
-          <h2 className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
-            {category}
-          </h2>
+        // gap-0.5: their rail sits items 2px apart, not 4px.
+        <div key={category} className="flex flex-col gap-0.5">
+          {/* Their group headings are plain 14px/500 in the full foreground —
+              not the small uppercase muted label pattern. Uppercase tracking at
+              11px reads as a different (louder) rail than theirs. */}
+          <h2 className="ps-2 text-sm font-medium text-foreground">{category}</h2>
           {REGISTRY.filter((block) => block.category === category).map((block) => {
             const active = block.slug === slug
             const planned = block.status === "planned"
@@ -26,17 +28,19 @@ function NavList({ slug, onNavigate }: { slug: string; onNavigate?: () => void }
                 aria-disabled={planned || undefined}
                 data-active={active || undefined}
                 className={cn(
-                  // Active is an accent *tint*, not a raised white pill. Their
-                  // rail states the current page with bg-accent/10 and accent
-                  // text; a lifted surface chip reads heavier than the content
-                  // it indexes and made the rail compete with the page.
-                  "relative flex flex-row items-center justify-between gap-2 rounded-lg p-2 text-sm text-start",
+                  // Active is a raised surface pill, not an accent tint. Their
+                  // markup says `data-[active=true]:bg-fd-primary/10`, but an
+                  // unlayered `#nd-sidebar a[data-active=true]` rule replaces
+                  // it with --surface + --surface-shadow, and in dark with a
+                  // flat white/8 wash. The utility class is a decoy.
+                  "relative flex flex-row items-center justify-between gap-2 rounded-field p-2 text-sm text-start",
                   "transition-colors hover:transition-none",
                   "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
                   planned && "cursor-not-allowed opacity-45",
                   active
-                    ? "bg-accent/10 font-medium text-accent"
-                    : !planned && "text-muted hover:bg-default/50 hover:text-foreground/80",
+                    ? "bg-surface text-foreground shadow-[var(--surface-shadow)] dark:bg-white/8 dark:shadow-none"
+                    : !planned &&
+                        "text-muted hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.04]",
                 )}
                 style={{ transitionTimingFunction: EASE }}
               >

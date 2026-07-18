@@ -100,16 +100,24 @@ export function CommandPalette({
         aria-modal="true"
         aria-label="Search documentation"
         className={cn(
-          "relative w-full max-w-lg overflow-hidden rounded-2xl border border-separator bg-background shadow-2xl",
+          // --overlay and --overlay-shadow, not bg-background + shadow-2xl.
+          // A floating layer has its own surface and elevation rules in their
+          // system, and a generic Tailwind shadow ignores the dark-theme case
+          // where their elevation becomes a lit inset edge instead of a cast
+          // shadow.
+          "relative w-full max-w-lg overflow-hidden rounded-2xl border border-separator bg-overlay",
           "transition-[opacity,transform] duration-200",
           // Never from scale(0) — nothing in the real world appears from
           // nothing, and a near-scale entrance reads as arriving, not popping.
           open ? "scale-100 opacity-100" : "scale-[0.97] opacity-0",
         )}
-        style={{ transitionTimingFunction: EASE }}
+        style={{
+          boxShadow: "var(--overlay-shadow)",
+          transitionTimingFunction: EASE,
+        }}
       >
         <div className="flex items-center gap-3 border-b border-separator px-4">
-          <span className="text-foreground-muted">
+          <span className="text-field-placeholder">
             <SearchIcon size={16} />
           </span>
           <input
@@ -122,11 +130,9 @@ export function CommandPalette({
             onKeyDown={onKeyDown}
             placeholder="Search blocks…"
             aria-label="Search blocks"
-            className="h-12 w-full bg-transparent text-[14px] text-foreground outline-none placeholder:text-foreground-muted"
+            className="h-12 w-full bg-transparent text-[14px] text-foreground outline-none placeholder:text-field-placeholder"
           />
-          <kbd className="rounded-md bg-default px-1.5 py-0.5 font-mono text-[10px] text-foreground-muted">
-            esc
-          </kbd>
+          <kbd className="kbd h-5 px-1.5 font-mono text-[10px]">esc</kbd>
         </div>
 
         <ul className="max-h-80 overflow-y-auto p-2">
@@ -143,21 +149,31 @@ export function CommandPalette({
                 onMouseEnter={() => setCursor(index)}
                 onClick={() => choose(result)}
                 className={cn(
-                  "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left",
+                  // Highlighted row uses the same accent tint the sidebar
+                  // states the current page with, so "where the keyboard is"
+                  // reads identically in both.
+                  "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left",
                   "transition-colors duration-100",
                   result.planned && "cursor-not-allowed opacity-45",
-                  index === cursor && !result.planned && "bg-default",
+                  index === cursor && !result.planned && "bg-accent/10",
                 )}
               >
                 <span className="min-w-0">
-                  <span className="block text-[13.5px] font-medium text-foreground">
+                  <span
+                    className={cn(
+                      "block text-[13.5px] font-medium",
+                      index === cursor && !result.planned
+                        ? "text-accent"
+                        : "text-foreground",
+                    )}
+                  >
                     {result.name}
                   </span>
-                  <span className="block truncate text-[12px] text-foreground-muted">
+                  <span className="block truncate text-[12px] text-muted">
                     {result.description}
                   </span>
                 </span>
-                <span className="shrink-0 rounded-md bg-default px-1.5 py-0.5 text-[10px] text-foreground-muted">
+                <span className="chip chip--default chip--primary h-5 shrink-0 rounded-full px-1.5 text-[10px] text-muted/90">
                   {result.planned ? "Soon" : result.category}
                 </span>
               </button>
