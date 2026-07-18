@@ -51,8 +51,14 @@ export function LabelledSlider({
   thumb,
   reducedMotion,
 }: LabelledSliderProps) {
+  // No gap on the column, deliberately. The hit area is 40px around a 20px
+  // rail, so it already carries 10px of invisible padding above the track —
+  // a flex gap on top of that stacked to a 16px visual gap, exactly the space
+  // that separates one *section* from the next. A label has to sit closer to
+  // the thing it names than sections sit to each other, or the grouping reads
+  // backwards.
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col">
       {showLabel && (
         <div className="flex items-center justify-between px-0.5">
           <span className="text-[12px] text-[var(--muted,#71717a)]">
@@ -155,10 +161,10 @@ export function ChannelField({
   onCancel: () => void
 }) {
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-0.5">
+    <div className="flex min-w-0 flex-1 items-center gap-1.5">
       <span
         aria-hidden
-        className="shrink-0 pl-0.5 text-[11px] text-[var(--muted,#71717a)]"
+        className="shrink-0 text-[11px] text-[var(--muted,#71717a)]"
       >
         {spec.short}
       </span>

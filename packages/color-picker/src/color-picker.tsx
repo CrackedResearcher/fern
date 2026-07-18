@@ -639,7 +639,11 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             sitting as close together as a label sits to its own slider. */}
         <div className="flex flex-col gap-4">
           <div className="flex items-end gap-2">
-            <div className="flex min-w-0 flex-1 flex-col gap-3">
+            {/* gap-1.5 + the hit area's 10px of invisible padding = the same 16px
+                that separates every other section. -mb-2.5 cancels the
+                trailing padding so the model row below sits 16px away too,
+                rather than 26px. */}
+            <div className="-mb-2.5 flex min-w-0 flex-1 flex-col gap-1.5">
               <LabelledSlider
                 drag={hue}
                 onKeyDown={handleHueKeys}
@@ -780,7 +784,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             id={channelGroupId}
             role="group"
             aria-label="Color channels"
-            className="flex h-12 min-w-0 flex-1 items-center gap-1 rounded-2xl bg-[var(--default,#ebebec)] p-1"
+            className="flex h-12 min-w-0 flex-1 items-center gap-2 rounded-2xl bg-[var(--default,#ebebec)] px-2 py-1"
           >
             {format === "hex" ? (
               <>
