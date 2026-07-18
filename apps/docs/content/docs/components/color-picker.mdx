@@ -104,6 +104,25 @@ color.
   </PreviewCode>
 </Preview>
 
+## Theming
+
+The picker reads CSS custom properties, each with a literal fallback, so it
+picks up your theme where you define these and still renders correctly where
+you do not. Set them anywhere in scope — `:root`, a wrapper, or the picker
+itself.
+
+```css
+:root {
+  --surface: #ffffff;        /* card and channel inputs */
+  --default: #ebebec;        /* select, tray, action buttons */
+  --default-hover: #e0e0e2;  /* those buttons on hover     */
+  --foreground: #18181b;     /* values and labels          */
+  --muted: #71717a;          /* slider names and icons     */
+  --focus: #0485f7;          /* focus ring                 */
+  --overlay-shadow: …;       /* card elevation             */
+}
+```
+
 ## Keyboard
 
 Arrow keys step 1, Shift+arrows step 10, Home/End jump — on the field and both
