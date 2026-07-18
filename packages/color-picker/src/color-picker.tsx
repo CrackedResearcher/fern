@@ -23,18 +23,37 @@ const CHECKERBOARD =
 const HUE_GRADIENT =
   "linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)"
 
-const EASE = "cubic-bezier(0.2, 0, 0, 1)"
+/**
+ * The built-in CSS easings are too weak to read as intentional. This is a
+ * strong ease-out: it moves immediately, which is what makes an interface feel
+ * like it heard you. ease-in is never used here — starting slow reads as lag at
+ * exactly the moment the user is watching hardest.
+ */
+const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)"
 
 /**
  * Depth comes from one consistent rule: tracks and wells are *recessed* with an
  * inset shadow, thumbs and the card are *raised* with a cast shadow plus a
- * highlight along their top edge. Reversing that on any one element is what
- * makes a 3D UI read as flat or muddled.
+ * highlight along the top edge. Reversing that on any single element is what
+ * makes a dimensional UI read as muddled.
  */
 const RECESSED =
   "inset 0 1px 2px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(0,0,0,0.09)"
 const RAISED =
   "0 0 0 2.5px #fff, 0 1px 3px rgba(0,0,0,0.32), 0 3px 8px -2px rgba(0,0,0,0.28)"
+
+const DEFAULT_SWATCHES = [
+  "#ef4444",
+  "#f97316",
+  "#eab308",
+  "#22c55e",
+  "#14b8a6",
+  "#3b82f6",
+  "#8b5cf6",
+  "#ec4899",
+]
+
+const FORMAT_CYCLE: ColorFormat[] = ["hex", "rgb", "hsl"]
 
 /* -------------------------------------------------------------------------- */
 /*                                   Props                                    */
@@ -59,16 +78,30 @@ export interface ColorPickerProps
    * committed text entry. Use this for network writes and undo history.
    */
   onChangeComplete?: (value: string, color: Color) => void
-  /** Output format for the string passed to callbacks. Defaults to `"hex"`. */
+  /**
+   * Starting output format. The user can cycle this at runtime with the format
+   * button unless `formatToggle` is false; changing it affects both the
+   * displayed text and the string passed to callbacks.
+   */
   format?: ColorFormat
+  /** Let the user cycle hex → rgb → hsl by pressing the format label. */
+  formatToggle?: boolean
   /** Show the opacity slider and include alpha in the output. */
   alpha?: boolean
-  /** Preset colors rendered as a row of swatches. */
-  swatches?: string[]
+  /**
+   * Preset colors. Pass `false` to hide the row, or an array to replace the
+   * default palette.
+   */
+  swatches?: string[] | false
   /** Offer the native screen eyedropper where the browser supports it. */
   eyedropper?: boolean
-  /** Show a copy-to-clipboard button beside the value. */
+  /** Show the copy-to-clipboard button. */
   copyable?: boolean
+  /**
+   * Show the starting color beside the current one. Pressing it reverts —
+   * picking is comparative, so the value you began with should stay reachable.
+   */
+  comparison?: boolean
   /** Block all interaction and dim the control. */
   disabled?: boolean
   /** Accessible name for the whole picker. Defaults to `"Color picker"`. */
@@ -103,8 +136,8 @@ function usePrefersReducedMotion() {
 
 /**
  * Pointer-capture drag. `trackRef` marks the element whose geometry defines
- * 0-1, while the handlers can be attached to a larger padded parent — that
- * split is what lets a 10px-tall slider carry a 44px touch target.
+ * 0-1, while the handlers attach to a larger padded parent — that split is what
+ * lets a 10px-tall slider carry a 40px touch target.
  */
 function useTrackDrag(
   onPosition: (x: number, y: number) => void,
@@ -112,6 +145,7 @@ function useTrackDrag(
   disabled: boolean,
 ) {
   const trackRef = React.useRef<HTMLDivElement>(null)
+  const pointerId = React.useRef<number | null>(null)
   const [dragging, setDragging] = React.useState(false)
 
   const emit = (event: React.PointerEvent) => {
@@ -132,19 +166,30 @@ function useTrackDrag(
       : {
           onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => {
             if (event.button !== 0) return
+            // Multi-touch protection: once a drag owns a pointer, ignore every
+            // other one. Without this, a second finger teleports the thumb.
+            if (pointerId.current !== null) return
             event.preventDefault() // suppress text selection mid-drag
             event.currentTarget.setPointerCapture(event.pointerId)
+            pointerId.current = event.pointerId
             setDragging(true)
             emit(event)
           },
           onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => {
-            if (dragging) emit(event)
+            if (pointerId.current !== event.pointerId) return
+            emit(event)
           },
           onPointerUp: (event: React.PointerEvent<HTMLDivElement>) => {
-            if (!dragging) return
+            if (pointerId.current !== event.pointerId) return
             event.currentTarget.releasePointerCapture(event.pointerId)
+            pointerId.current = null
             setDragging(false)
             onEnd()
+          },
+          onPointerCancel: (event: React.PointerEvent<HTMLDivElement>) => {
+            if (pointerId.current !== event.pointerId) return
+            pointerId.current = null
+            setDragging(false)
           },
         },
   }
@@ -183,11 +228,15 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       defaultValue = "#3b82f6",
       onChange,
       onChangeComplete,
-      format = "hex",
-      alpha = false,
-      swatches,
-      eyedropper = false,
-      copyable = false,
+      format: initialFormat = "hex",
+      formatToggle = true,
+      // Defaults ship the complete picker. Good defaults matter more than
+      // options — most people never customise, so the box should be full.
+      alpha = true,
+      swatches = DEFAULT_SWATCHES,
+      eyedropper = true,
+      copyable = true,
+      comparison = true,
       disabled = false,
       label = "Color picker",
       className,
@@ -198,11 +247,15 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const [state, setState] = React.useState<State>(() =>
       stateFromString(value ?? defaultValue),
     )
+    const [format, setFormat] = React.useState(initialFormat)
     const [draft, setDraft] = React.useState<string | null>(null)
     const [announcement, setAnnouncement] = React.useState("")
     const [copied, setCopied] = React.useState(false)
     const reducedMotion = usePrefersReducedMotion()
     const inputId = React.useId()
+
+    // The colour the picker opened with, kept for the comparison well.
+    const [initial] = React.useState(value ?? defaultValue)
 
     // Sync a controlled value without an effect: compare against the last prop
     // we reconciled and adjust during render. React reruns this pass before
@@ -319,6 +372,13 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       if (parseHex(text)) commit(stateFromString(text, state.hsv), true)
     }
 
+    const cycleFormat = () => {
+      const next =
+        FORMAT_CYCLE[(FORMAT_CYCLE.indexOf(format) + 1) % FORMAT_CYCLE.length]!
+      setFormat(next)
+      setAnnouncement(formatColor(color, next))
+    }
+
     const supportsEyedropper =
       typeof window !== "undefined" && "EyeDropper" in window
 
@@ -354,6 +414,8 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const focusRing =
       "outline-none focus-visible:ring-[3px] focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-neutral-900"
 
+    const swatchList = swatches === false ? [] : swatches
+
     return (
       <div
         ref={forwardedRef}
@@ -370,6 +432,8 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           disabled && "pointer-events-none opacity-55 saturate-50",
           className,
         )}
+        // Mobile Safari paints a grey box over anything tappable otherwise.
+        style={{ WebkitTapHighlightColor: "transparent" }}
         {...props}
       >
         {/* ----------------------- Saturation / brightness ---------------------- */}
@@ -394,7 +458,8 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             backgroundColor: `hsl(${state.hsv.h} 100% 50%)`,
             backgroundImage:
               "linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent)",
-            boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.12), inset 0 1px 3px rgba(0,0,0,0.15)",
+            boxShadow:
+              "inset 0 0 0 1px rgba(0,0,0,0.12), inset 0 1px 3px rgba(0,0,0,0.15)",
           }}
         >
           <Thumb
@@ -410,23 +475,28 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           />
         </div>
 
-        {/* ------------------------------ Controls ------------------------------ */}
+        {/* ------------------------- Comparison + sliders ----------------------- */}
         <div className="mt-3 flex items-center gap-3">
-          {/* Current color well — recessed to sit opposite the raised thumbs. */}
-          <div
-            aria-hidden
-            className="size-11 shrink-0 rounded-full"
-            style={{ background: CHECKERBOARD, boxShadow: RECESSED }}
-          >
-            <div
-              className="size-full rounded-full transition-colors duration-150"
-              style={{
-                backgroundColor: output,
-                boxShadow: "inset 0 1px 2px rgba(0,0,0,0.2)",
-                transitionTimingFunction: EASE,
-              }}
+          {comparison ? (
+            <ComparisonWell
+              current={output}
+              initial={initial}
+              disabled={disabled}
+              onRevert={() => commit(stateFromString(initial, state.hsv), true)}
+              focusRing={focusRing}
             />
-          </div>
+          ) : (
+            <div
+              aria-hidden
+              className="size-11 shrink-0 rounded-full"
+              style={{ background: CHECKERBOARD, boxShadow: RECESSED }}
+            >
+              <div
+                className="size-full rounded-full"
+                style={{ backgroundColor: output }}
+              />
+            </div>
+          )}
 
           <div className="flex min-w-0 flex-1 flex-col justify-center">
             <SliderTrack
@@ -469,12 +539,26 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             Color value
           </label>
           <div
-            className="flex h-11 min-w-0 flex-1 items-center rounded-2xl bg-neutral-100 pl-3 pr-1 dark:bg-neutral-800/80"
+            className="flex h-11 min-w-0 flex-1 items-center rounded-2xl bg-neutral-100 pl-1 pr-1 dark:bg-neutral-800/80"
             style={{ boxShadow: RECESSED }}
           >
-            <span className="mr-2 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+            <button
+              type="button"
+              onClick={cycleFormat}
+              disabled={disabled || !formatToggle}
+              aria-label={`Color format: ${format}. Press to change.`}
+              className={cn(
+                "mr-1 h-9 shrink-0 rounded-xl px-2",
+                "text-[10px] font-semibold uppercase tracking-wider",
+                "text-neutral-400 dark:text-neutral-500",
+                formatToggle &&
+                  "transition-[background-color,color,scale] duration-150 active:scale-[0.97] hover:bg-black/5 hover:text-neutral-600 dark:hover:bg-white/10 dark:hover:text-neutral-300",
+                focusRing,
+              )}
+              style={{ transitionTimingFunction: EASE_OUT }}
+            >
               {format}
-            </span>
+            </button>
             <input
               id={inputId}
               value={draft ?? output}
@@ -505,7 +589,13 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 label={copied ? "Copied" : "Copy color value"}
                 focusRing={focusRing}
               >
-                {copied ? <CheckIcon /> : <CopyIcon />}
+                {/* Both icons stay mounted and cross-fade. Toggling visibility
+                    would pop; blur bridges the two states so the eye reads one
+                    object changing rather than two swapping. */}
+                <IconSwap showSecond={copied} reducedMotion={reducedMotion}>
+                  <CopyIcon />
+                  <CheckIcon />
+                </IconSwap>
               </IconButton>
             )}
           </div>
@@ -521,11 +611,11 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 "bg-white text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300",
                 "shadow-[0_1px_2px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.07),inset_0_1px_0_rgba(255,255,255,0.9)]",
                 "dark:shadow-[0_1px_2px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.06)]",
-                "transition-[scale,background-color] duration-150 active:scale-[0.96]",
+                "transition-[scale,background-color] duration-150 active:scale-[0.97]",
                 "hover:bg-neutral-50 dark:hover:bg-neutral-700",
                 focusRing,
               )}
-              style={{ transitionTimingFunction: EASE }}
+              style={{ transitionTimingFunction: EASE_OUT }}
             >
               <EyedropperIcon />
             </button>
@@ -533,9 +623,9 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         </div>
 
         {/* ------------------------------ Swatches ------------------------------ */}
-        {swatches && swatches.length > 0 && (
+        {swatchList.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2 border-t border-black/[0.07] pt-3 dark:border-white/[0.08]">
-            {swatches.map((swatch) => {
+            {swatchList.map((swatch) => {
               const selected = swatch.toLowerCase() === color.hex.toLowerCase()
               return (
                 <button
@@ -547,12 +637,14 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   onClick={() => commit(stateFromString(swatch, state.hsv), true)}
                   className={cn(
                     "size-6 rounded-full",
-                    "transition-[scale] duration-150 hover:scale-110 active:scale-[0.96]",
+                    // Tailwind v4 already gates `hover:` behind a hover-capable
+                    // pointer, so this never fires as a stuck state on touch.
+                    "transition-[scale] duration-150 hover:scale-110 active:scale-[0.97]",
                     focusRing,
                   )}
                   style={{
                     backgroundColor: swatch,
-                    transitionTimingFunction: EASE,
+                    transitionTimingFunction: EASE_OUT,
                     boxShadow: selected
                       ? `0 0 0 2px #fff, 0 0 0 4px ${swatch}, 0 1px 3px rgba(0,0,0,0.3)`
                       : "inset 0 0 0 1px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.15)",
@@ -575,6 +667,48 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
 /* -------------------------------------------------------------------------- */
 /*                                   Parts                                    */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * Starting colour on the left, current on the right. Choosing a colour is a
+ * comparative act — you judge against where you began — so the original stays
+ * visible and pressing it reverts.
+ */
+function ComparisonWell({
+  current,
+  initial,
+  disabled,
+  onRevert,
+  focusRing,
+}: {
+  current: string
+  initial: string
+  disabled: boolean
+  onRevert: () => void
+  focusRing: string
+}) {
+  return (
+    <div
+      className="size-11 shrink-0 overflow-hidden rounded-full"
+      style={{ background: CHECKERBOARD, boxShadow: RECESSED }}
+    >
+      <div className="flex size-full">
+        <button
+          type="button"
+          onClick={onRevert}
+          disabled={disabled}
+          aria-label={`Revert to ${initial}`}
+          className={cn("h-full w-1/2 cursor-pointer", focusRing)}
+          style={{ backgroundColor: initial }}
+        />
+        <div
+          aria-hidden
+          className="h-full w-1/2"
+          style={{ backgroundColor: current }}
+        />
+      </div>
+    </div>
+  )
+}
 
 interface SliderTrackProps {
   drag: ReturnType<typeof useTrackDrag>
@@ -621,7 +755,7 @@ function SliderTrack({
       onKeyDown={onKeyDown}
       {...drag.handlers}
       className={cn(
-        "relative flex h-10 items-center rounded-xl touch-none",
+        "relative flex h-10 touch-none items-center rounded-xl",
         !disabled && "cursor-pointer",
         "outline-none focus-visible:ring-[3px] focus-visible:ring-blue-500/50",
       )}
@@ -677,9 +811,62 @@ function Thumb({
         transform: `translate(-50%, -50%) scale(${dragging && !reducedMotion ? 1.18 : 1})`,
         transitionProperty: reducedMotion ? "none" : "transform",
         transitionDuration: "150ms",
-        transitionTimingFunction: EASE,
+        transitionTimingFunction: EASE_OUT,
       }}
     />
+  )
+}
+
+/** Cross-fades two icons in place. Never scales from 0 — nothing in the real
+ *  world appears out of nothing, and a blur bridges the overlap. */
+function IconSwap({
+  showSecond,
+  reducedMotion,
+  children,
+}: {
+  showSecond: boolean
+  reducedMotion: boolean
+  children: [React.ReactNode, React.ReactNode]
+}) {
+  const [first, second] = children
+  const base = "absolute inset-0 grid place-items-center"
+  const timing = reducedMotion
+    ? { transitionProperty: "opacity", transitionDuration: "100ms" }
+    : {
+        transitionProperty: "opacity, transform, filter",
+        transitionDuration: "160ms",
+        transitionTimingFunction: EASE_OUT,
+      }
+
+  return (
+    <span className="relative grid size-4 place-items-center">
+      <span
+        className={base}
+        style={{
+          ...timing,
+          opacity: showSecond ? 0 : 1,
+          transform: reducedMotion
+            ? undefined
+            : `scale(${showSecond ? 0.6 : 1})`,
+          filter: reducedMotion ? undefined : `blur(${showSecond ? 4 : 0}px)`,
+        }}
+      >
+        {first}
+      </span>
+      <span
+        className={base}
+        style={{
+          ...timing,
+          opacity: showSecond ? 1 : 0,
+          transform: reducedMotion
+            ? undefined
+            : `scale(${showSecond ? 1 : 0.6})`,
+          filter: reducedMotion ? undefined : `blur(${showSecond ? 0 : 4}px)`,
+        }}
+      >
+        {second}
+      </span>
+    </span>
   )
 }
 
@@ -705,11 +892,11 @@ function IconButton({
       className={cn(
         "grid size-9 shrink-0 place-items-center rounded-xl",
         "text-neutral-500 dark:text-neutral-400",
-        "transition-[scale,background-color,color] duration-150 active:scale-[0.96]",
+        "transition-[scale,background-color,color] duration-150 active:scale-[0.97]",
         "hover:bg-black/5 hover:text-neutral-800 dark:hover:bg-white/10 dark:hover:text-neutral-100",
         focusRing,
       )}
-      style={{ transitionTimingFunction: EASE }}
+      style={{ transitionTimingFunction: EASE_OUT }}
     >
       {children}
     </button>
@@ -740,7 +927,7 @@ function EyedropperIcon() {
 
 function CopyIcon() {
   return (
-    <svg {...iconProps}>
+    <svg {...iconProps} width={14} height={14}>
       <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
       <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
     </svg>
@@ -749,7 +936,7 @@ function CopyIcon() {
 
 function CheckIcon() {
   return (
-    <svg {...iconProps}>
+    <svg {...iconProps} width={14} height={14}>
       <path d="M20 6 9 17l-5-5" />
     </svg>
   )
