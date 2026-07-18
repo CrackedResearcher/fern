@@ -1,13 +1,32 @@
 import { cn, EASE } from "../lib/cn"
-import { href } from "../lib/router"
+import { href, useRoute } from "../lib/router"
+import { REGISTRY } from "../registry"
 import {
+  BookIcon,
+  BlocksIcon,
   FernMark,
   GitHubIcon,
   MenuIcon,
+  MonitorIcon,
   MoonIcon,
   SearchIcon,
+  SparkIcon,
   SunIcon,
 } from "./icons"
+
+export type ThemeMode = "light" | "dark" | "system"
+
+const TABS = [
+  { id: "getting-started", label: "Getting Started", Icon: BookIcon },
+  { id: "components", label: "Components", Icon: BlocksIcon },
+  { id: "changelog", label: "Changelog", Icon: SparkIcon },
+]
+
+const THEMES: { id: ThemeMode; label: string; Icon: typeof SunIcon }[] = [
+  { id: "light", label: "Light theme", Icon: SunIcon },
+  { id: "dark", label: "Dark theme", Icon: MoonIcon },
+  { id: "system", label: "System theme", Icon: MonitorIcon },
+]
 
 const iconButton = cn(
   "grid size-9 place-items-center rounded-xl text-fg-muted",
@@ -17,79 +36,146 @@ const iconButton = cn(
 )
 
 export function Header({
-  dark,
-  onToggleTheme,
+  theme,
+  onSetTheme,
   onOpenSearch,
   onOpenNav,
+  stars,
 }: {
-  dark: boolean
-  onToggleTheme: () => void
+  theme: ThemeMode
+  onSetTheme: (mode: ThemeMode) => void
   onOpenSearch: () => void
   onOpenNav: () => void
+  stars: string | null
 }) {
+  const route = useRoute()
+  // Every block route lives under the Components tab, so it stays lit while
+  // reading any block page rather than only on the tab's own landing route.
+  const activeTab = REGISTRY.some((block) => block.slug === route)
+    ? "components"
+    : route || "components"
+
   return (
-    <header className="sticky top-0 z-30 border-b border-divider bg-bg/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-divider bg-bg/85 backdrop-blur-xl">
+      {/* Row one: identity, search, actions */}
       <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-3 px-4 sm:px-6">
         <button
           type="button"
           onClick={onOpenNav}
           aria-label="Open navigation"
-          className={cn(iconButton, "md:hidden")}
+          className={cn(iconButton, "lg:hidden")}
           style={{ transitionTimingFunction: EASE }}
         >
           <MenuIcon />
         </button>
 
-        <a href={href("")} className="flex items-center gap-2">
+        <a href={href("")} className="flex shrink-0 items-center gap-2">
           <FernMark />
           <span className="text-[15px] font-semibold tracking-tight">fern</span>
         </a>
-        <span className="hidden rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-fg-muted sm:block">
+        <span className="hidden shrink-0 rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-fg-muted sm:block">
           0.1.0
         </span>
 
-        <div className="ml-auto flex items-center gap-1.5">
-          {/* A fake input rather than a real one: it opens a palette, and a
-              text field that refuses typing is a worse lie than a button. */}
+        {/* A button rather than a real input: it opens a palette, and a text
+            field that refuses typing is a worse lie than a button. */}
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          className={cn(
+            "mx-auto hidden h-9 w-full max-w-md items-center gap-2.5 rounded-xl px-3 md:flex",
+            "border border-divider bg-surface-2/50 text-[13px] text-fg-muted",
+            "transition-colors duration-150 hover:bg-surface-2",
+            "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
+          )}
+          style={{ transitionTimingFunction: EASE }}
+        >
+          <SearchIcon />
+          <span>Search documentation…</span>
+          <kbd className="ml-auto rounded-md bg-surface-3/40 px-1.5 py-0.5 font-mono text-[10px]">
+            ⌘K
+          </kbd>
+        </button>
+
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 md:ml-0">
           <button
             type="button"
             onClick={onOpenSearch}
-            className={cn(
-              "flex h-9 items-center gap-2 rounded-xl border border-divider px-3",
-              "text-[13px] text-fg-muted",
-              "transition-colors duration-150 hover:bg-surface-2",
-              "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
-            )}
+            aria-label="Search documentation"
+            className={cn(iconButton, "md:hidden")}
             style={{ transitionTimingFunction: EASE }}
           >
-            <SearchIcon />
-            <span className="hidden sm:inline">Search</span>
-            <kbd className="ml-2 hidden rounded-md bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] sm:inline">
-              ⌘K
-            </kbd>
+            <SearchIcon size={16} />
           </button>
 
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
-            className={iconButton}
-            style={{ transitionTimingFunction: EASE }}
-          >
-            {dark ? <SunIcon /> : <MoonIcon />}
-          </button>
+          {/* Three-way rather than a toggle: "follow the OS" is a distinct
+              choice, and a binary switch silently discards it. */}
+          <div className="hidden items-center gap-0.5 rounded-full border border-divider p-0.5 sm:flex">
+            {THEMES.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onSetTheme(id)}
+                aria-label={label}
+                aria-pressed={theme === id}
+                className={cn(
+                  "grid size-7 place-items-center rounded-full transition-colors duration-150",
+                  "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
+                  theme === id
+                    ? "bg-surface-2 text-fg"
+                    : "text-fg-muted hover:text-fg",
+                )}
+                style={{ transitionTimingFunction: EASE }}
+              >
+                <Icon size={14} />
+              </button>
+            ))}
+          </div>
 
           <a
             href="https://github.com/CrackedResearcher/fern"
             target="_blank"
             rel="noreferrer"
-            aria-label="GitHub repository"
-            className={iconButton}
+            className={cn(
+              "flex h-9 items-center gap-2 rounded-full border border-divider px-3",
+              "text-[13px] text-fg-muted transition-colors duration-150",
+              "hover:bg-surface-2 hover:text-fg",
+              "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
+            )}
             style={{ transitionTimingFunction: EASE }}
           >
             <GitHubIcon />
+            {stars && <span className="hidden tabular-nums sm:inline">{stars}</span>}
           </a>
         </div>
+      </div>
+
+      {/* Row two: section tabs */}
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
+        <nav className="flex gap-1 overflow-x-auto">
+          {TABS.map(({ id, label, Icon }) => {
+            const active = activeTab === id
+            return (
+              <a
+                key={id}
+                href={href(id === "components" ? REGISTRY[0]!.slug : id)}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-[13.5px]",
+                  "transition-colors duration-150",
+                  "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
+                  active
+                    ? "border-fg font-medium text-fg"
+                    : "border-transparent text-fg-muted hover:text-fg",
+                )}
+                style={{ transitionTimingFunction: EASE }}
+              >
+                <Icon size={15} />
+                {label}
+              </a>
+            )
+          })}
+        </nav>
       </div>
     </header>
   )

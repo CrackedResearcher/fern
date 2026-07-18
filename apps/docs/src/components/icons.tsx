@@ -67,6 +67,43 @@ export function CloseIcon({ size = 18 }: { size?: number }) {
   )
 }
 
+export function MonitorIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size}>
+      <rect width="20" height="14" x="2" y="3" rx="2" />
+      <path d="M8 21h8m-4-4v4" />
+    </svg>
+  )
+}
+
+export function BookIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size}>
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
+    </svg>
+  )
+}
+
+export function BlocksIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size}>
+      <rect width="7" height="7" x="3" y="3" rx="1.5" />
+      <rect width="7" height="7" x="14" y="3" rx="1.5" />
+      <rect width="7" height="7" x="3" y="14" rx="1.5" />
+      <rect width="7" height="7" x="14" y="14" rx="1.5" />
+    </svg>
+  )
+}
+
+export function SparkIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size}>
+      <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1" />
+    </svg>
+  )
+}
+
 export function GitHubIcon({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
