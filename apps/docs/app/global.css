@@ -156,18 +156,6 @@
   --accent: oklch(0.44 0.021 285.9);
 }
 
-/**
- * Vibrant palette: chroma up, contrast allowed to fall.
- *
- * Derived on <body>, not on the <html> element that carries data-vibrant. A
- * custom property that references itself on the element that defines it is a
- * cycle, and CSS discards it silently — `--accent: oklch(from var(--accent) …)`
- * on the same element computes to nothing at all. Reading it one level down
- * resolves against the inherited value.
- */
-[data-vibrant] body {
-  --accent: oklch(from var(--accent) l calc(c * 1.35) h);
-}
 
 /**
  * ────────────────────────────────────────────────────────────────────────────
