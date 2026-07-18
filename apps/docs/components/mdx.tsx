@@ -5,6 +5,7 @@ import type { ComponentProps } from "react"
 import { Preview, PreviewCode, PreviewDemo } from "@/components/preview"
 import { CodeActions } from "@/components/code-actions"
 import { PropsTable } from "@/components/props-table"
+import { ComponentSource } from "@/components/component-source"
 import {
   ColorPickerCommit,
   ColorPickerDemo,
@@ -34,6 +35,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     PreviewDemo,
     PreviewCode,
     PropsTable,
+    ComponentSource,
     ColorPickerDemo,
     ColorPickerModel,
     ColorPickerCommit,

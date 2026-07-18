@@ -31,7 +31,11 @@ const [color, setColor] = useState("#3b82f6")
 bun add @fern-ui/color-picker
 ```
 
-Or copy `color-picker.tsx` and `color.ts` into your project.
+Or copy these two files into your project. No runtime dependencies beyond
+React; `color.ts` is pure math and is imported by the component.
+
+<ComponentSource pkg="color-picker" file="color-picker.tsx" />
+<ComponentSource pkg="color-picker" file="color.ts" />
 
 ## When to use what
 
