@@ -26,6 +26,13 @@ export const EASING = {
 
   /** Same idea, gentler overshoot. For larger or heavier elements. */
   softSpring: "cubic-bezier(0.16, 1.11, 0.3, 1.02)",
+
+  /**
+   * A slightly slower, more elegant general-purpose curve. Reaches for a
+   * softer landing than `out` — good for colour and background changes where
+   * urgency would feel twitchy.
+   */
+  soft: "cubic-bezier(0.36, 0.66, 0.4, 1)",
 } as const
 
 /**

@@ -2,14 +2,14 @@ import type { PropDoc } from "../registry"
 
 export function PropsTable({ props }: { props: PropDoc[] }) {
   return (
-    <div className="mt-4 overflow-x-auto rounded-2xl border border-divider">
+    <div className="mt-4 overflow-x-auto rounded-2xl border border-separator">
       <table className="w-full min-w-[680px] border-collapse text-left">
         <thead>
-          <tr className="border-b border-divider bg-surface-2/50">
+          <tr className="border-b border-separator bg-background-secondary">
             {["Prop", "Type", "Default", "Description"].map((heading) => (
               <th
                 key={heading}
-                className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-fg-muted"
+                className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted"
               >
                 {heading}
               </th>
@@ -20,7 +20,7 @@ export function PropsTable({ props }: { props: PropDoc[] }) {
           {props.map((prop) => (
             <tr
               key={prop.name}
-              className="border-b border-divider last:border-0 align-top"
+              className="border-b border-separator last:border-0 align-top"
             >
               <td className="whitespace-nowrap px-4 py-3 font-mono text-[12.5px] font-medium">
                 {prop.name}
@@ -33,10 +33,10 @@ export function PropsTable({ props }: { props: PropDoc[] }) {
               <td className="px-4 py-3 font-mono text-[12.5px] text-accent">
                 {prop.type}
               </td>
-              <td className="whitespace-nowrap px-4 py-3 font-mono text-[12.5px] text-fg-muted">
+              <td className="whitespace-nowrap px-4 py-3 font-mono text-[12.5px] text-foreground-muted">
                 {prop.defaultValue ?? "—"}
               </td>
-              <td className="px-4 py-3 text-[13px] text-pretty text-fg-muted">
+              <td className="px-4 py-3 text-[13px] text-pretty text-foreground-muted">
                 {prop.description}
               </td>
             </tr>

@@ -25,7 +25,9 @@ export function TableOfContents({ entries }: { entries: TocEntry[] }) {
       },
       // Bias the band toward the top of the viewport, so a heading counts as
       // "current" while its content is being read, not only as it scrolls past.
-      { rootMargin: "-80px 0px -70% 0px", threshold: 0 },
+      // Only the top 20% of the viewport counts as "current". A taller band
+      // makes several headings qualify at once and the marker jitters.
+      { rootMargin: "0% 0% -80% 0%", threshold: 0 },
     )
 
     for (const entry of entries) {
@@ -38,15 +40,25 @@ export function TableOfContents({ entries }: { entries: TocEntry[] }) {
   if (entries.length === 0) return null
 
   return (
-    <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-56 shrink-0 overflow-y-auto py-10 pr-6 xl:block">
-      <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-fg-muted">
-        On this page
-      </h2>
-      <ul className="flex flex-col gap-0.5 border-l border-divider">
+    <aside
+      className="sticky top-[104px] h-[calc(100vh-104px)] max-w-48 overflow-y-auto py-10"
+      style={{
+        // Fades the list where it meets the viewport edges so entries don't
+        // appear guillotined mid-scroll. The top fade only engages once there
+        // is something scrolled past to hide.
+        WebkitMaskImage:
+          "linear-gradient(to top, transparent 0%, #000 60px, #000 92%, transparent 100%)",
+        maskImage:
+          "linear-gradient(to top, transparent 0%, #000 60px, #000 92%, transparent 100%)",
+      }}
+    >
+      <p className="mb-3 text-[13px] font-medium">On this page</p>
+      <ul className="flex flex-col gap-2">
         {entries.map((entry) => (
           <li key={entry.id}>
             <a
               href={`#${entry.id}`}
+              data-active={entry.id === activeId || undefined}
               onClick={(event) => {
                 // Preserve the hash route: these are in-page anchors, and
                 // letting the browser rewrite the hash would navigate away.
@@ -57,13 +69,20 @@ export function TableOfContents({ entries }: { entries: TocEntry[] }) {
                 setActiveId(entry.id)
               }}
               className={cn(
-                "-ml-px block border-l py-1.5 text-[13px] transition-colors duration-150",
-                entry.depth === 2 ? "pl-6" : "pl-4",
-                entry.id === activeId
-                  ? "border-fg font-medium text-fg"
-                  : "border-transparent text-fg-muted hover:text-fg",
+                "relative flex items-center text-[12px] transition-colors duration-150",
+                entry.depth === 2 ? "pl-3" : "pl-0",
+                entry.id === activeId ? "text-foreground" : "text-foreground-muted hover:text-foreground",
               )}
             >
+              {/* Marker fades in rather than appearing, so scrolling between
+                  entries reads as a move instead of a flicker. */}
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute -ml-3 size-1 rounded-full bg-foreground-muted transition-opacity duration-150",
+                  entry.id === activeId ? "opacity-100" : "opacity-0",
+                )}
+              />
               {entry.label}
             </a>
           </li>
