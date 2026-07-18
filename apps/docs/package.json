@@ -10,6 +10,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fern-ui/button": "workspace:*",
+    "@fern-ui/code-block": "workspace:*",
+    "@fern-ui/country-picker": "workspace:*",
     "@gravity-ui/icons": "^2.20.0",
     "@heroui/react": "^3.2.2",
     "clsx": "^2.1.1",
@@ -18,9 +21,7 @@
     "next": "16.2.10",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "shiki": "^4.3.1",
-    "@fern-ui/country-picker": "workspace:*",
-    "@fern-ui/code-block": "workspace:*"
+    "shiki": "^4.3.1"
   },
   "devDependencies": {
     "@heroui/styles": "3.2.2",
