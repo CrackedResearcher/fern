@@ -187,9 +187,15 @@
  * headings and description read bolder than theirs at identical font-size and
  * weight, which sends you looking for a CSS difference that is not there.
  */
-html {
+:root {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* `font-synthesis: none` is the one that is easy to miss. Without it the
+     browser fakes any weight the font does not supply by smearing the glyphs,
+     which renders heavier and slightly blurrier than a real weight — so type
+     reads bolder than theirs even at an identical font-weight. */
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
 /* Nav tab underline is the accent, 2px. */
