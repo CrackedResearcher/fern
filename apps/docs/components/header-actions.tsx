@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@heroui/react"
+import { Button } from "@fern-ui/button"
 import { ThemePicker } from "@/components/theme-picker"
 import { useEffect, useState } from "react"
 

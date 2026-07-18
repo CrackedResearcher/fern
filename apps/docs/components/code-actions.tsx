@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@heroui/react"
+import { Button } from "@fern-ui/button"
 import { useEffect, useRef, useState } from "react"
 
 /** HeroUI's copy glyph — two overlapping rounded squares, filled. Fumadocs
