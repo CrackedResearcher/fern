@@ -404,6 +404,22 @@
   display: none;
 }
 
+/*
+ * Plain MDX fences get the same shell as PreviewCode: grey outer, code inset
+ * as a darker panel. Scoped to fences outside a PreviewCode, which supplies
+ * its own shell and would otherwise nest two.
+ */
+figure.shiki:not(.docs-code-block-wrapper figure) {
+  background-color: var(--surface-secondary);
+  padding: 4px;
+}
+figure.shiki:not(.docs-code-block-wrapper figure) > .fd-scroll-container {
+  /* !important for the same reason the rule above needs it — Fumadocs sets
+     this background with one of its own. */
+  background-color: var(--surface) !important;
+  border-radius: 8px;
+}
+
 /* The copy button belongs to the section, not the inner figure. */
 .docs-code-block-wrapper .shiki > div:first-of-type {
   top: 0.5rem;
