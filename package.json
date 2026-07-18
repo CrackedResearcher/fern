@@ -1,0 +1,14 @@
+{
+  "name": "fern",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "build": "bun run --filter '*' build",
+    "typecheck": "bun run --filter '*' typecheck",
+    "dev": "bun run --filter demo dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
