@@ -27,6 +27,7 @@
 @import "fumadocs-ui/css/preset.css";
 
 @source "../../../packages/color-picker/src";
+@source "../../../packages/country-picker/src";
 @source "../content";
 
 /**

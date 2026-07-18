@@ -8,6 +8,11 @@ import { PropsTable } from "@/components/props-table"
 import { ComponentSource } from "@/components/component-source"
 import { InstallTabs } from "@/components/install-tabs"
 import {
+  CountryPickerDemo,
+  CountryPickerPlain,
+  CountryPickerPriority,
+} from "@/components/demos/country-picker-demo"
+import {
   ColorPickerCommit,
   ColorPickerDemo,
   ColorPickerMinimal,
@@ -42,6 +47,9 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     ColorPickerModel,
     ColorPickerCommit,
     ColorPickerMinimal,
+    CountryPickerDemo,
+    CountryPickerPriority,
+    CountryPickerPlain,
     ...components,
   }
 }
