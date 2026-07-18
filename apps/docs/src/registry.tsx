@@ -60,49 +60,53 @@ export const REGISTRY: BlockDoc[] = [
         name: "Default",
         code: `import { ColorPicker } from "@fern/color-picker"
 
-function Example() {
-  const [color, setColor] = useState("#3b82f6")
-  return <ColorPicker value={color} onChange={setColor} />
-}`,
+// Everything is on by default — alpha, swatches,
+// eyedropper, copy, and the comparison well.
+<ColorPicker defaultValue="#3b82f6" />`,
+        render: () => <ColorPicker defaultValue="#3b82f6" />,
+      },
+      {
+        name: "Controlled",
+        code: `const [color, setColor] = useState("#8b5cf6")
+
+<ColorPicker value={color} onChange={setColor} />`,
         render: () => <ControlledPicker />,
       },
       {
-        name: "Alpha",
-        code: `<ColorPicker defaultValue="#8b5cf6cc" alpha />`,
-        render: () => <ColorPicker defaultValue="#8b5cf6cc" alpha />,
-      },
-      {
-        name: "Swatches",
-        code: `<ColorPicker
+        name: "Minimal",
+        code: `// Subtract what you don't need.
+<ColorPicker
   defaultValue="#22c55e"
-  swatches={["#ef4444", "#f97316", "#eab308", "#22c55e"]}
-/>`,
-        render: () => <ColorPicker defaultValue="#22c55e" swatches={SWATCHES} />,
-      },
-      {
-        name: "Full",
-        code: `<ColorPicker
-  defaultValue="#ec4899"
-  alpha
-  eyedropper
-  copyable
-  swatches={swatches}
+  alpha={false}
+  swatches={false}
+  eyedropper={false}
+  copyable={false}
+  comparison={false}
 />`,
         render: () => (
           <ColorPicker
-            defaultValue="#ec4899"
-            alpha
-            eyedropper
-            copyable
-            swatches={SWATCHES}
+            defaultValue="#22c55e"
+            alpha={false}
+            swatches={false}
+            eyedropper={false}
+            copyable={false}
+            comparison={false}
           />
         ),
       },
       {
-        name: "HSL output",
-        code: `<ColorPicker defaultValue="#14b8a6" format="hsl" copyable />`,
+        name: "Custom swatches",
+        code: `<ColorPicker
+  defaultValue="#14b8a6"
+  format="hsl"
+  swatches={["#ef4444", "#f97316", "#eab308", "#22c55e"]}
+/>`,
         render: () => (
-          <ColorPicker defaultValue="#14b8a6" format="hsl" copyable />
+          <ColorPicker
+            defaultValue="#14b8a6"
+            format="hsl"
+            swatches={SWATCHES.slice(0, 4)}
+          />
         ),
       },
       {
@@ -140,31 +144,48 @@ function Example() {
         name: "format",
         type: '"hex" | "rgb" | "hsl"',
         defaultValue: '"hex"',
-        description: "Format of the string passed to callbacks.",
+        description:
+          "Starting output format. Users can cycle it at runtime unless formatToggle is false.",
+      },
+      {
+        name: "formatToggle",
+        type: "boolean",
+        defaultValue: "true",
+        description:
+          "Let the user cycle hex → rgb → hsl by pressing the format label.",
       },
       {
         name: "alpha",
         type: "boolean",
-        defaultValue: "false",
+        defaultValue: "true",
         description: "Show the opacity slider and include alpha in output.",
       },
       {
         name: "swatches",
-        type: "string[]",
-        description: "Preset colors rendered as a row below the controls.",
+        type: "string[] | false",
+        defaultValue: "8 presets",
+        description:
+          "Preset colors. Pass false to hide the row, or an array to replace the palette.",
       },
       {
         name: "eyedropper",
         type: "boolean",
-        defaultValue: "false",
+        defaultValue: "true",
         description:
           "Offer the native screen eyedropper where the browser supports it.",
       },
       {
         name: "copyable",
         type: "boolean",
-        defaultValue: "false",
-        description: "Show a copy-to-clipboard button beside the value.",
+        defaultValue: "true",
+        description: "Show the copy-to-clipboard button.",
+      },
+      {
+        name: "comparison",
+        type: "boolean",
+        defaultValue: "true",
+        description:
+          "Show the starting color beside the current one. Pressing it reverts.",
       },
       {
         name: "disabled",
