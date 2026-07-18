@@ -100,7 +100,7 @@ export function CommandPalette({
         aria-modal="true"
         aria-label="Search documentation"
         className={cn(
-          "relative w-full max-w-lg overflow-hidden rounded-2xl border border-divider bg-bg shadow-2xl",
+          "relative w-full max-w-lg overflow-hidden rounded-2xl border border-separator bg-background shadow-2xl",
           "transition-[opacity,transform] duration-200",
           // Never from scale(0) — nothing in the real world appears from
           // nothing, and a near-scale entrance reads as arriving, not popping.
@@ -108,8 +108,8 @@ export function CommandPalette({
         )}
         style={{ transitionTimingFunction: EASE }}
       >
-        <div className="flex items-center gap-3 border-b border-divider px-4">
-          <span className="text-fg-muted">
+        <div className="flex items-center gap-3 border-b border-separator px-4">
+          <span className="text-foreground-muted">
             <SearchIcon size={16} />
           </span>
           <input
@@ -122,16 +122,16 @@ export function CommandPalette({
             onKeyDown={onKeyDown}
             placeholder="Search blocks…"
             aria-label="Search blocks"
-            className="h-12 w-full bg-transparent text-[14px] text-fg outline-none placeholder:text-fg-muted"
+            className="h-12 w-full bg-transparent text-[14px] text-foreground outline-none placeholder:text-foreground-muted"
           />
-          <kbd className="rounded-md bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-fg-muted">
+          <kbd className="rounded-md bg-default px-1.5 py-0.5 font-mono text-[10px] text-foreground-muted">
             esc
           </kbd>
         </div>
 
         <ul className="max-h-80 overflow-y-auto p-2">
           {results.length === 0 && (
-            <li className="px-3 py-8 text-center text-[13px] text-fg-muted">
+            <li className="px-3 py-8 text-center text-[13px] text-foreground-muted">
               No blocks match “{query}”.
             </li>
           )}
@@ -146,18 +146,18 @@ export function CommandPalette({
                   "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left",
                   "transition-colors duration-100",
                   result.planned && "cursor-not-allowed opacity-45",
-                  index === cursor && !result.planned && "bg-surface-2",
+                  index === cursor && !result.planned && "bg-default",
                 )}
               >
                 <span className="min-w-0">
-                  <span className="block text-[13.5px] font-medium text-fg">
+                  <span className="block text-[13.5px] font-medium text-foreground">
                     {result.name}
                   </span>
-                  <span className="block truncate text-[12px] text-fg-muted">
+                  <span className="block truncate text-[12px] text-foreground-muted">
                     {result.description}
                   </span>
                 </span>
-                <span className="shrink-0 rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] text-fg-muted">
+                <span className="shrink-0 rounded-md bg-default px-1.5 py-0.5 text-[10px] text-foreground-muted">
                   {result.planned ? "Soon" : result.category}
                 </span>
               </button>

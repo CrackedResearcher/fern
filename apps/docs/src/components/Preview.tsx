@@ -35,16 +35,16 @@ export function Preview({
   const width = VIEWPORTS[viewport]
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-divider">
-      <div className="flex items-center justify-between gap-2 border-b border-divider bg-surface-2/40 px-2 py-1.5">
+    <div className="overflow-hidden rounded-2xl border border-separator">
+      <div className="flex items-center justify-between gap-2 border-b border-separator bg-background-secondary px-2 py-1.5">
         <button
           type="button"
           onClick={() => setOverride(!dark)}
           aria-label={dark ? "Preview in light theme" : "Preview in dark theme"}
           className={cn(
-            "grid size-8 place-items-center rounded-lg text-fg-muted",
+            "grid size-8 place-items-center rounded-lg text-foreground-muted",
             "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
-            "hover:bg-surface-2 hover:text-fg",
+            "hover:bg-default hover:text-foreground",
             "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
           )}
           style={{ transitionTimingFunction: EASE }}
@@ -52,7 +52,7 @@ export function Preview({
           {dark ? <SunIcon size={14} /> : <MoonIcon size={14} />}
         </button>
 
-        <div className="flex items-center gap-0.5 rounded-xl bg-surface-2/60 p-0.5">
+        <div className="flex items-center gap-0.5 rounded-xl bg-default-hover p-0.5">
           {(Object.keys(VIEWPORTS) as Viewport[]).map((key) => (
             <button
               key={key}
@@ -62,8 +62,8 @@ export function Preview({
               className={cn(
                 segment,
                 viewport === key
-                  ? "bg-bg font-medium text-fg shadow-sm"
-                  : "text-fg-muted hover:text-fg",
+                  ? "bg-background font-medium text-foreground shadow-sm"
+                  : "text-foreground-muted hover:text-foreground",
               )}
               style={{ transitionTimingFunction: EASE }}
             >
@@ -80,7 +80,7 @@ export function Preview({
         style={{ transitionTimingFunction: EASE }}
       >
         <div
-          className="grid min-h-[440px] place-items-center bg-bg p-8"
+          className="grid min-h-[440px] place-items-center bg-background p-8"
           style={{
             backgroundImage:
               "radial-gradient(currentColor 0.5px, transparent 0.5px)",

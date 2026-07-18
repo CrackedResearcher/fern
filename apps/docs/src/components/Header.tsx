@@ -29,9 +29,9 @@ const THEMES: { id: ThemeMode; label: string; Icon: typeof SunIcon }[] = [
 ]
 
 const iconButton = cn(
-  "grid size-9 place-items-center rounded-xl text-fg-muted",
+  "grid size-9 place-items-center rounded-xl text-foreground-muted",
   "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
-  "hover:bg-surface-2 hover:text-fg",
+  "hover:bg-default hover:text-foreground",
   "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
 )
 
@@ -56,7 +56,9 @@ export function Header({
     : route || "components"
 
   return (
-    <header className="sticky top-0 z-30 border-b border-divider bg-bg/85 backdrop-blur-xl">
+    // Saturation boost alongside the blur: backdrop-blur alone desaturates
+    // what shows through, so colour behind the bar goes muddy without it.
+    <header className="sticky top-0 z-30 border-b border-separator bg-white/90 backdrop-blur-lg backdrop-saturate-150 dark:bg-black/65">
       {/* Row one: identity, search, actions */}
       <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-3 px-4 sm:px-6">
         <button
@@ -73,7 +75,7 @@ export function Header({
           <FernMark />
           <span className="text-[15px] font-semibold tracking-tight">fern</span>
         </a>
-        <span className="hidden shrink-0 rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-fg-muted sm:block">
+        <span className="hidden shrink-0 rounded-full bg-default px-2 py-0.5 font-mono text-[11px] text-foreground-muted sm:block">
           0.1.0
         </span>
 
@@ -84,15 +86,15 @@ export function Header({
           onClick={onOpenSearch}
           className={cn(
             "mx-auto hidden h-9 w-full max-w-md items-center gap-2.5 rounded-xl px-3 md:flex",
-            "border border-divider bg-surface-2/50 text-[13px] text-fg-muted",
-            "transition-colors duration-150 hover:bg-surface-2",
+            "border border-separator bg-background-secondary text-[13px] text-foreground-muted",
+            "transition-colors duration-150 hover:bg-default",
             "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
           )}
           style={{ transitionTimingFunction: EASE }}
         >
           <SearchIcon />
           <span>Search documentation…</span>
-          <kbd className="ml-auto rounded-md bg-surface-3/40 px-1.5 py-0.5 font-mono text-[10px]">
+          <kbd className="ml-auto rounded-md bg-default-hover px-1.5 py-0.5 font-mono text-[10px]">
             ⌘K
           </kbd>
         </button>
@@ -110,7 +112,7 @@ export function Header({
 
           {/* Three-way rather than a toggle: "follow the OS" is a distinct
               choice, and a binary switch silently discards it. */}
-          <div className="hidden items-center gap-0.5 rounded-full border border-divider p-0.5 sm:flex">
+          <div className="hidden items-center gap-0.5 rounded-full border border-separator p-0.5 sm:flex">
             {THEMES.map(({ id, label, Icon }) => (
               <button
                 key={id}
@@ -122,8 +124,8 @@ export function Header({
                   "grid size-7 place-items-center rounded-full transition-colors duration-150",
                   "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
                   theme === id
-                    ? "bg-surface-2 text-fg"
-                    : "text-fg-muted hover:text-fg",
+                    ? "bg-default text-foreground"
+                    : "text-foreground-muted hover:text-foreground",
                 )}
                 style={{ transitionTimingFunction: EASE }}
               >
@@ -137,9 +139,9 @@ export function Header({
             target="_blank"
             rel="noreferrer"
             className={cn(
-              "flex h-9 items-center gap-2 rounded-full border border-divider px-3",
-              "text-[13px] text-fg-muted transition-colors duration-150",
-              "hover:bg-surface-2 hover:text-fg",
+              "flex h-9 items-center gap-2 rounded-full border border-separator px-3",
+              "text-[13px] text-foreground-muted transition-colors duration-150",
+              "hover:bg-default hover:text-foreground",
               "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
             )}
             style={{ transitionTimingFunction: EASE }}
@@ -165,8 +167,8 @@ export function Header({
                   "transition-colors duration-150",
                   "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
                   active
-                    ? "border-fg font-medium text-fg"
-                    : "border-transparent text-fg-muted hover:text-fg",
+                    ? "border-foreground font-medium text-foreground"
+                    : "border-transparent text-foreground-muted hover:text-foreground",
                 )}
                 style={{ transitionTimingFunction: EASE }}
               >

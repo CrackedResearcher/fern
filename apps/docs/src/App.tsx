@@ -80,7 +80,7 @@ export function App() {
 
   return (
     <div className={dark ? "dark" : ""}>
-      <div className="min-h-screen bg-bg text-fg">
+      <div className="min-h-screen bg-background text-foreground">
         <Header
           theme={theme}
           onSetTheme={setTheme}
@@ -89,12 +89,19 @@ export function App() {
           stars={stars}
         />
 
-        <div className="mx-auto flex max-w-[1440px]">
-          <Sidebar slug={block.slug} />
-          <main className="min-w-0 flex-1 px-5 py-10 sm:px-8 lg:px-12">
+        {/* 12-column grid rather than fixed widths: the content column then
+            scales with the viewport instead of the rails eating into it, and
+            the TOC only claims space once there is room for it (xl). */}
+        <div className="mx-auto grid max-w-[1440px] grid-cols-12 px-6">
+          <div className="hidden lg:col-span-2 lg:block">
+            <Sidebar slug={block.slug} />
+          </div>
+          <main className="col-span-12 min-w-0 py-10 lg:col-span-10 lg:px-12 xl:col-span-8">
             <BlockPage block={block} dark={dark} />
           </main>
-          <TableOfContents entries={tocFor(block)} />
+          <div className="hidden xl:col-span-2 xl:block">
+            <TableOfContents entries={tocFor(block)} />
+          </div>
         </div>
 
         <MobileNav

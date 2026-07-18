@@ -28,7 +28,7 @@ function Heading({ id, children }: { id: string; children: React.ReactNode }) {
     >
       <a href={`#${id}`} className="no-underline">
         {children}
-        <span className="ml-2 text-fg-muted opacity-0 transition-opacity group-hover:opacity-100">
+        <span className="ml-2 text-foreground-muted opacity-0 transition-opacity group-hover:opacity-100">
           #
         </span>
       </a>
@@ -48,16 +48,16 @@ function CopyableCommand({ command }: { command: string }) {
     }
   }
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-divider bg-surface-2 py-1 pl-4 pr-1">
-      <code className="flex-1 font-mono text-[13px] text-fg">{command}</code>
+    <div className="flex items-center gap-2 rounded-xl border border-separator bg-default py-1 pl-4 pr-1">
+      <code className="flex-1 font-mono text-[13px] text-foreground">{command}</code>
       <button
         type="button"
         onClick={copy}
         aria-label={copied ? "Copied" : "Copy install command"}
         className={cn(
-          "grid size-8 shrink-0 place-items-center rounded-lg text-fg-muted",
+          "grid size-8 shrink-0 place-items-center rounded-lg text-foreground-muted",
           "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
-          "hover:bg-surface-3/40 hover:text-fg",
+          "hover:bg-default-hover hover:text-foreground",
           "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
         )}
         style={{ transitionTimingFunction: EASE }}
@@ -79,16 +79,16 @@ export function BlockPage({ block, dark }: { block: BlockDoc; dark: boolean }) {
 
   return (
     <article className="mx-auto max-w-3xl pb-20">
-      <p className="mb-2 text-[13px] font-medium text-fg-muted">{block.category}</p>
+      <p className="mb-2 text-[13px] font-medium text-foreground-muted">{block.category}</p>
       <h1 className="text-[34px] font-semibold tracking-[-0.02em] text-balance">
         {block.name}
       </h1>
-      <p className="mt-3 text-[15px] leading-relaxed text-pretty text-fg-muted">
+      <p className="mt-3 text-[15px] leading-relaxed text-pretty text-foreground-muted">
         {block.description}
       </p>
 
       {block.status === "planned" && (
-        <div className="mt-10 rounded-2xl border border-dashed border-divider p-10 text-center text-[14px] text-fg-muted">
+        <div className="mt-10 rounded-2xl border border-dashed border-separator p-10 text-center text-[14px] text-foreground-muted">
           Not built yet.
         </div>
       )}
@@ -118,8 +118,8 @@ export function BlockPage({ block, dark }: { block: BlockDoc; dark: boolean }) {
                     "rounded-lg px-3 py-1.5 text-[13px] transition-colors duration-150",
                     "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
                     index === demoIndex
-                      ? "bg-fg font-medium text-bg"
-                      : "text-fg-muted hover:bg-surface-2",
+                      ? "bg-foreground font-medium text-background"
+                      : "text-foreground-muted hover:bg-default",
                   )}
                   style={{ transitionTimingFunction: EASE }}
                 >
@@ -140,7 +140,7 @@ export function BlockPage({ block, dark }: { block: BlockDoc; dark: boolean }) {
       {block.anatomy && (
         <section className="mt-12">
           <Heading id="anatomy">Anatomy</Heading>
-          <p className="mt-3 text-[14px] leading-relaxed text-pretty text-fg-muted">
+          <p className="mt-3 text-[14px] leading-relaxed text-pretty text-foreground-muted">
             {block.anatomy.description}
           </p>
           <CodeBlock code={block.anatomy.code} dark={dark} className="mt-4" />
@@ -154,9 +154,9 @@ export function BlockPage({ block, dark }: { block: BlockDoc; dark: boolean }) {
             {block.accessibility.map((item) => (
               <li
                 key={item}
-                className="flex gap-3 text-[14px] leading-relaxed text-pretty text-fg-muted"
+                className="flex gap-3 text-[14px] leading-relaxed text-pretty text-foreground-muted"
               >
-                <span aria-hidden className="mt-[7px] size-1.5 shrink-0 rounded-full bg-fg-muted" />
+                <span aria-hidden className="mt-[7px] size-1.5 shrink-0 rounded-full bg-foreground-muted" />
                 {item}
               </li>
             ))}
@@ -172,14 +172,14 @@ export function BlockPage({ block, dark }: { block: BlockDoc; dark: boolean }) {
       )}
 
       {(previous || next) && (
-        <nav className="mt-16 flex items-stretch justify-between gap-4 border-t border-divider pt-6">
+        <nav className="mt-16 flex items-stretch justify-between gap-4 border-t border-separator pt-6">
           {previous ? (
             <a
               href={href(previous.slug)}
-              className="flex flex-1 flex-col gap-1 rounded-xl border border-divider p-4 transition-colors duration-150 hover:bg-surface-2"
+              className="flex flex-1 flex-col gap-1 rounded-xl border border-separator p-4 transition-colors duration-150 hover:bg-default"
               style={{ transitionTimingFunction: EASE }}
             >
-              <span className="text-[12px] text-fg-muted">Previous</span>
+              <span className="text-[12px] text-foreground-muted">Previous</span>
               <span className="text-[14px] font-medium">{previous.name}</span>
             </a>
           ) : (
@@ -188,10 +188,10 @@ export function BlockPage({ block, dark }: { block: BlockDoc; dark: boolean }) {
           {next ? (
             <a
               href={href(next.slug)}
-              className="flex flex-1 flex-col items-end gap-1 rounded-xl border border-divider p-4 transition-colors duration-150 hover:bg-surface-2"
+              className="flex flex-1 flex-col items-end gap-1 rounded-xl border border-separator p-4 transition-colors duration-150 hover:bg-default"
               style={{ transitionTimingFunction: EASE }}
             >
-              <span className="text-[12px] text-fg-muted">Next</span>
+              <span className="text-[12px] text-foreground-muted">Next</span>
               <span className="text-[14px] font-medium">{next.name}</span>
             </a>
           ) : (

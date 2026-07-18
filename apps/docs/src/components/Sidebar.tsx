@@ -8,13 +8,16 @@ function NavList({ slug, onNavigate }: { slug: string; onNavigate?: () => void }
     <nav className="flex flex-col gap-7">
       {CATEGORIES.map((category) => (
         <div key={category} className="flex flex-col gap-1">
-          <h2 className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-fg-muted">
+          <h2 className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
             {category}
           </h2>
           {REGISTRY.filter((block) => block.category === category).map((block) => {
             const active = block.slug === slug
             const planned = block.status === "planned"
             return (
+              // A dot marker plus colour and weight, rather than a filled pill.
+              // At sidebar density a solid background on every active row makes
+              // the rail feel heavier than the content it indexes.
               <a
                 key={block.slug}
                 href={planned ? undefined : href(block.slug)}
@@ -22,19 +25,26 @@ function NavList({ slug, onNavigate }: { slug: string; onNavigate?: () => void }
                 aria-current={active ? "page" : undefined}
                 aria-disabled={planned || undefined}
                 className={cn(
-                  "flex items-center justify-between rounded-xl px-3 py-2 text-[13.5px]",
+                  "flex items-center gap-3 rounded-lg py-1.5 text-[13.5px]",
                   "transition-colors duration-150",
                   "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
                   planned && "cursor-not-allowed opacity-45",
                   active
-                    ? "bg-surface-2 font-medium text-fg"
-                    : !planned && "text-fg-muted hover:bg-surface-2/60 hover:text-fg",
+                    ? "font-medium text-accent dark:text-foreground"
+                    : !planned && "text-foreground-muted hover:text-foreground",
                 )}
                 style={{ transitionTimingFunction: EASE }}
               >
-                {block.name}
+                <span
+                  aria-hidden
+                  className={cn(
+                    "size-1 shrink-0 rounded-full transition-colors duration-150",
+                    active ? "bg-accent dark:bg-foreground" : "bg-background-tertiary",
+                  )}
+                />
+                <span className="flex-1">{block.name}</span>
                 {planned && (
-                  <span className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] font-medium text-fg-muted">
+                  <span className="rounded-md bg-default px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted">
                     Soon
                   </span>
                 )}
@@ -49,7 +59,7 @@ function NavList({ slug, onNavigate }: { slug: string; onNavigate?: () => void }
 
 export function Sidebar({ slug }: { slug: string }) {
   return (
-    <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-60 shrink-0 overflow-y-auto border-r border-divider px-4 py-8 md:block">
+    <aside className="sticky top-[104px] h-[calc(100vh-104px)] overflow-y-auto py-10 pr-4">
       <NavList slug={slug} />
     </aside>
   )
@@ -67,7 +77,7 @@ export function MobileNav({
 }) {
   return (
     <div
-      className={cn("fixed inset-0 z-40 md:hidden", !open && "pointer-events-none")}
+      className={cn("fixed inset-0 z-40 lg:hidden", !open && "pointer-events-none")}
       aria-hidden={!open}
     >
       <div
@@ -80,8 +90,8 @@ export function MobileNav({
       />
       <div
         className={cn(
-          "absolute inset-y-0 left-0 w-72 overflow-y-auto bg-bg px-4 py-5",
-          "border-r border-divider transition-transform duration-200",
+          "absolute inset-y-0 left-0 w-72 overflow-y-auto bg-background px-4 py-5",
+          "border-r border-separator transition-transform duration-200",
           open ? "translate-x-0" : "-translate-x-full",
         )}
         style={{ transitionTimingFunction: EASE }}
@@ -91,7 +101,7 @@ export function MobileNav({
             type="button"
             onClick={onClose}
             aria-label="Close navigation"
-            className="grid size-9 place-items-center rounded-xl text-fg-muted hover:bg-surface-2"
+            className="grid size-9 place-items-center rounded-xl text-foreground-muted hover:bg-default"
           >
             <CloseIcon />
           </button>

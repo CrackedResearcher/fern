@@ -444,11 +444,12 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           "w-[304px] select-none p-4 antialiased",
           // Concentric radii: 28px outer = 12px inner + 16px padding.
           "rounded-[28px] bg-white dark:bg-neutral-900",
-          // A wide diffuse haze reads as nothing on a white page. Definition
-          // comes from a hairline plus a tight contact shadow; the ambient
-          // layer only adds lift once the edge already exists.
-          "shadow-[0_0_0_1px_rgba(0,0,0,0.09),0_1px_2px_rgba(0,0,0,0.05),0_4px_8px_-2px_rgba(0,0,0,0.06),0_16px_32px_-12px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.9)]",
-          "dark:shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_10px_20px_-8px_rgba(0,0,0,0.55),0_32px_64px_-20px_rgba(0,0,0,0.75),inset_0_1px_0_rgba(255,255,255,0.07)]",
+          // Three layers: ambient haze, directional shadow, and a 1px hairline
+          // that does the real work of separating card from page. On dark the
+          // hairline flips to an inset white highlight — a shadow against
+          // near-black is invisible, so the edge has to be lit, not darkened.
+          "shadow-[0_0_15px_0_rgb(0_0_0_/_0.03),0_2px_30px_0_rgb(0_0_0_/_0.08),0_0_1px_0_rgb(0_0_0_/_0.3)]",
+          "dark:shadow-[0_0_15px_0_rgb(0_0_0_/_0.06),0_2px_30px_0_rgb(0_0_0_/_0.22),inset_0_0_1px_0_rgb(255_255_255_/_0.15)]",
           disabled && "pointer-events-none opacity-55 saturate-50",
           className,
         )}
@@ -876,12 +877,13 @@ function Thumb({
         height,
         // Position is deliberately never transitioned. Easing it leaves the
         // thumb trailing the cursor and the whole control reads as laggy.
-        transform: `translate(-50%, -50%) scale(${dragging && !reducedMotion ? 1.18 : 1})`,
+        // Shrinks under the pointer rather than growing. Pressing a physical
+        // control moves it away from you, so scaling down is what reads as
+        // "held"; scaling up reads as a hover affordance instead.
+        transform: `translate(-50%, -50%) scale(${dragging && !reducedMotion ? 0.92 : 1})`,
         transitionProperty: reducedMotion ? "none" : "transform",
-        // Grabbing springs past its target and settles; releasing just eases
-        // back. The overshoot on grab is what makes the thumb feel physical.
-        transitionDuration: `${dragging ? DURATION.enter : DURATION.press}ms`,
-        transitionTimingFunction: dragging ? EASING.spring : EASING.out,
+        transitionDuration: `${DURATION.press}ms`,
+        transitionTimingFunction: EASING.out,
       }}
     />
   )

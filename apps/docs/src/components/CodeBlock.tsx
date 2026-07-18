@@ -48,10 +48,10 @@ export function CodeBlock({
         aria-label={copied ? "Copied" : "Copy code"}
         className={cn(
           "absolute right-3 top-3 z-10 grid size-8 place-items-center rounded-lg",
-          "bg-surface-1/80 text-fg-muted backdrop-blur",
+          "bg-surface/80 text-foreground-muted backdrop-blur",
           "opacity-0 transition-[opacity,background-color,scale] duration-150",
           "group-hover:opacity-100 focus-visible:opacity-100 active:scale-[0.97]",
-          "hover:text-fg",
+          "hover:text-foreground",
           "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
         )}
         style={{ transitionTimingFunction: EASE }}
@@ -62,11 +62,11 @@ export function CodeBlock({
       {/* Wide code scrolls inside its own container so the page never does. */}
       {html ? (
         <div
-          className="fern-code overflow-x-auto rounded-xl border border-divider text-[13px] leading-relaxed"
+          className="fern-code overflow-x-auto rounded-xl border border-separator text-[13px] leading-relaxed"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : (
-        <pre className="overflow-x-auto rounded-xl border border-divider bg-surface-2 p-4 text-[13px] leading-relaxed">
+        <pre className="overflow-x-auto rounded-xl border border-separator bg-default p-4 text-[13px] leading-relaxed">
           <code className="font-mono">{code}</code>
         </pre>
       )}
