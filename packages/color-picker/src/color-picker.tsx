@@ -1,17 +1,9 @@
 "use client"
 
 /**
- * The complete color picker, in one file.
- *
- * Deliberately not split across modules. This package is meant to be copied as
- * well as installed, and a component that arrives as seven files with relative
- * imports between them is not something you can paste into a project — you have
- * to reassemble it first. Only `./color` stays separate, because it is a
- * published entry point of its own (`@fern-ui/color-picker/color`) and is pure
- * maths that a consumer can use without pulling in React.
- *
- * Read it in order: helpers, constants, hooks, props, the component, then the
- * presentational parts and icons it composes.
+ * The complete color picker, in one file — this package is meant to be copied
+ * as well as installed. Only `./color` stays separate: it is a published entry
+ * point and is usable without React.
  */
 
 import * as React from "react"
@@ -31,17 +23,7 @@ import {
   type RGB,
 } from "./color"
 
-/**
- * Class-name joining. Deliberately not named `utils`.
- *
- * A module called "utils" is where unrelated helpers accumulate, because
- * nothing has to justify its name to live there. This one is named for the
- * single thing it does, so anything that is not about composing class names
- * has an obvious reason not to be added to it.
- *
- * Shared rather than inlined because both `color-picker.tsx` and `parts.tsx`
- * need it, and two copies of the same three lines is how they drift.
- */
+
 const cn = (...classes: (string | false | undefined | null)[]) =>
   classes.filter(Boolean).join(" ")
 
@@ -49,14 +31,7 @@ const cn = (...classes: (string | false | undefined | null)[]) =>
 /*                                  Motion                                  */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Motion tokens. No dependencies — every curve here is a plain CSS
- * `cubic-bezier`, so springy motion costs nothing at runtime.
- *
- * These live in the color-picker package for now. Once a second block needs
- * them they move to a shared `@fern-ui/tokens` package; extracting a shared
- * module with exactly one consumer is premature.
- */
+/** Motion tokens. Plain cubic-beziers, so springy motion costs nothing. */
 
 const EASING = {
   /**
@@ -86,14 +61,7 @@ const EASING = {
   soft: "cubic-bezier(0.36, 0.66, 0.4, 1)",
 } as const
 
-/**
- * Durations in milliseconds.
- *
- * Exits are deliberately faster than enters. An element leaving should get out
- * of the way immediately; taking as long to leave as it did to arrive reads as
- * the interface being reluctant. Everything stays under 300ms — past that, UI
- * motion starts to feel like latency rather than polish.
- */
+/** Milliseconds. Exits are faster than enters; nothing exceeds 300ms. */
 const DURATION = {
   /** Press feedback. Must be near-instant to register as a response. */
   press: 120,
@@ -123,17 +91,9 @@ const CHECKERBOARD =
   "repeating-conic-gradient(rgba(140,140,140,0.55) 0% 25%, rgba(255,255,255,0.9) 0% 50%) 50% / 9px 9px"
 
 /**
- * Hue ramp at full chroma, always — it is a *selector*, not a preview.
- *
- * An earlier pass drew it at the current saturation and brightness, reasoning
- * that a vivid rainbow over-promises the outcome. It does, but the cost is far
- * worse than the benefit: at brightness 0 every stop evaluates to rgb(0,0,0)
- * and the rail becomes a solid black bar you cannot pick a hue from. That is
- * precisely where this picker makes a point of *preserving* hue, so the one
- * place the behaviour matters most is the place the control stopped showing it.
- *
- * A hue rail's job is to let you find a hue. Anything that makes two hues
- * indistinguishable has broken it, however honest the preview.
+ * Full chroma always — it is a selector, not a preview. Drawn at the current
+ * saturation and brightness it goes solid black at v=0, where you can no longer
+ * tell two hues apart.
  */
 const HUE_GRADIENT = `linear-gradient(to right, ${[0, 60, 120, 180, 240, 300, 360]
   .map((h) => {
@@ -224,18 +184,9 @@ function useTrackDrag(
   onEnd: () => void,
   disabled: boolean,
   /**
-   * Horizontal inset, in px, of the usable range at each end — set it to the
-   * thumb's radius on a 1D slider.
-   *
-   * A thumb is centred on its value, so at 0% and 100% half of it hangs off the
-   * end of the rail. Insetting the range keeps the thumb inside the track it
-   * belongs to, and because the same inset is applied to the pointer maths the
-   * thumb still lands exactly under the cursor rather than drifting from it.
-   *
-   * The 2D field insets on both axes for the same reason. Its corners stay
-   * selectable — the maths still resolves them to exactly 0 and 1 — but the
-   * thumb no longer hangs half outside the control, and at the bottom-left it
-   * was clearing the card's edge entirely.
+   * Inset of the usable range at each end, in px — the thumb's radius. A thumb
+   * centred on its value hangs half off the rail at 0% and 100%. Applied to the
+   * pointer maths too, so the thumb stays under the cursor.
    */
   inset = 0,
   /** Vertical equivalent, for the 2D field. Sliders leave it at 0. */
@@ -295,12 +246,9 @@ function useTrackDrag(
 }
 
 /**
- * Re-derives HSV from RGB while carrying hue and saturation through the points
- * where they are mathematically undefined — grey has no hue, black has neither.
- *
- * The same rule `stateFromString` applies to dragging, applied to typing. Enter
- * `0 0 0` in the RGB fields without it and the hue slider snaps back to red,
- * which is the exact bug this picker exists to not have.
+ * Carries hue and saturation through the points where they are undefined —
+ * grey has no hue, black has neither. Without it, typing `0 0 0` into the RGB
+ * fields snaps the hue slider back to red.
  */
 function hsvFromRgbPreserving(rgb: RGB, previous: HSV): HSV {
   const next = rgbToHsv(rgb)
@@ -461,30 +409,13 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
 
     const color = toColor(state.hsv, state.alpha, alpha)
     const output = formatColor(color, format)
-    /**
-     * The colour at full opacity, built from the channels rather than by
-     * overriding `alpha` on the record.
-     *
-     * `formatColor(..., "hex")` returns the precomputed `color.hex`, which
-     * already has alpha baked into it, so spreading `{ alpha: 1 }` over the
-     * record changed a field the hex branch never reads. The result was that
-     * `solid` carried the alpha it was meant to strip: at 0% opacity the
-     * opacity thumb faded out completely and the track's end stop went
-     * transparent, so the slider stopped showing which colour it was fading
-     * towards at exactly the end where you need to see it.
-     */
+    // Built from the channels, not by spreading { alpha: 1 } over the record —
+    // formatColor's hex branch returns the precomputed color.hex and never
+    // reads that field, so the override silently kept the alpha.
     const solid = rgbToHex(color.rgb, 1)
 
-    /**
-     * The opacity thumb previews the value it is setting: the colour at the
-     * current alpha, layered over the same checkerboard the preview circle
-     * uses.
-     *
-     * Solid would be a handle that lies — at 15% it read fully opaque. Alpha
-     * alone would be honest but invisible, which is what it was doing at 0%
-     * before the checkerboard went behind it. The rail's end stop stays solid
-     * either way, because that is the colour the track fades *towards*.
-     */
+    // Previews the alpha it sets. Solid reads fully opaque at 15%; alpha alone
+    // vanishes at 0%, hence the checkerboard behind it.
     const translucentThumb = `linear-gradient(0deg, ${rgbToHex(color.rgb, state.alpha)}, ${rgbToHex(color.rgb, state.alpha)}), ${CHECKERBOARD}`
 
     const commit = (next: State, settled = false) => {
@@ -601,16 +532,9 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     }
 
     /**
-     * Filters to hex as it is typed, and previews as soon as the digits form a
-     * complete colour — 3, 4, 6 or 8 of them.
-     *
-     * Length is what makes this safe to do live where a channel field is not.
-     * `#ab` is not a colour at any length, so it previews nothing; `#abc` is
-     * unambiguously one. There is no equivalent of the `7`-then-`77` problem
-     * because an incomplete hex string simply does not parse.
-     *
-     * Anything pasted that is not hex (an `rgb(...)` string) is left alone for
-     * blur to handle, rather than being stripped down to its digits.
+     * Previews once the digits form a complete colour — 3, 4, 6 or 8 of them.
+     * Length is what makes live safe here: an incomplete hex simply does not
+     * parse. Non-hex paste is left for blur rather than stripped to digits.
      */
     const setHexDraft = (text: string) => {
       if (/^[a-z]/i.test(text.trim())) {
@@ -688,16 +612,9 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       )
     }
 
-    /**
-     * Live preview while typing, but only from a *complete* in-range value.
-     *
-     * REDESIGN.md argued against per-keystroke commits on the grounds that
-     * typing `7` toward `77` drives the colour to 7 first. That risk is real
-     * but it is a property of partial input, not of live updating: the field is
-     * filtered to digits and capped at the width of its own maximum, so the
-     * only values reaching here are ones the channel can actually hold. An
-     * empty or out-of-range field previews nothing and waits for blur.
-     */
+    // Only from a complete in-range value. The field is filtered to digits and
+    // capped at its own maximum, so typing 7 toward 77 cannot drive the colour
+    // to 7 first. Out of range previews nothing and waits for blur.
     const previewChannel = (spec: ChannelSpec, text: string) => {
       if (text === "") return
       const parsed = Number(text)
@@ -727,18 +644,9 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       setAnnouncement(formatColor(color, next))
     }
 
-    /**
-     * Read after hydration, not during render.
-     *
-     * `typeof window !== "undefined"` evaluates false on the server and true on
-     * the client, so the server omitted the eyedropper button and the client
-     * rendered it — a hydration mismatch that React resolves by throwing away
-     * and re-rendering the whole subtree. The server snapshot is pinned to
-     * false so both passes agree, and the button appears on the commit after.
-     *
-     * The subscribe callback is a no-op because the capability cannot change
-     * for the lifetime of the document.
-     */
+    // Server snapshot pinned to false so both passes agree — reading `window`
+    // during render is a hydration mismatch that throws away the subtree.
+    // Subscribe is a no-op: the capability cannot change.
     const supportsEyedropper = React.useSyncExternalStore(
       () => () => {},
       () => "EyeDropper" in window,
@@ -1281,14 +1189,9 @@ function LabelledSlider({
 }
 
 /**
- * One editable channel: the letter sits on the tray, the number sits in a
- * raised chip. Keeping the letter outside the chip is what lets four fields fit
- * across 232px — inside, each chip would need its own left padding for a label
- * that is one character wide.
- *
- * `role="spinbutton"` rather than a bare text input: it is what carries the
- * range to a screen reader, and it is the role that makes arrow keys expected
- * rather than surprising.
+ * The letter sits on the tray, not in the chip — inside, each chip would need
+ * its own padding for a one-character label and four would not fit.
+ * `spinbutton` carries the range to a screen reader and makes arrows expected.
  */
 function ChannelField({
   spec,
@@ -1557,16 +1460,8 @@ function EyedropperIcon() {
   )
 }
 
-/**
- * The same copy glyph the docs' code blocks use — two overlapping rounded
- * squares, filled — so a reader sees one copy affordance on the page rather
- * than two marks that nearly match.
- *
- * Duplicated as a path rather than imported: the docs button is built on
- * HeroUI's `<Button>`, and this package takes no runtime dependency beyond
- * React. A shared 16×16 path costs nothing and is the part that actually
- * carries the resemblance.
- */
+// The docs code blocks' copy glyph, duplicated as a path rather than imported
+// — that button is built on HeroUI's, and this package takes no dependencies.
 function CopyIcon() {
   return (
     <svg viewBox="0 0 16 16" width={15} height={15} fill="currentColor" aria-hidden>
