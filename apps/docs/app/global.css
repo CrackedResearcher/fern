@@ -89,9 +89,27 @@
 .dark {
   --color-fd-background: var(--background);
   --color-fd-foreground: var(--foreground);
-  --color-fd-muted-foreground: var(--muted);
   --color-fd-border: var(--border);
   --color-fd-ring: var(--focus);
+}
+
+/**
+ * Sidebar and TOC colour hierarchy runs on these three tokens:
+ *
+ *   headings   --color-fd-foreground        full foreground
+ *   items      --color-fd-muted-foreground  muted
+ *   active     --color-fd-primary           near-black / near-white
+ *
+ * muted-foreground is their literal value, not HeroUI's --muted. The two are
+ * close (#737373 vs ~#71717a) but --muted carries a little blue, which shows
+ * up as a cooler cast across every inactive item in the rail.
+ */
+:root {
+  --color-fd-muted-foreground: #737373;
+}
+
+.dark {
+  --color-fd-muted-foreground: #999;
 }
 
 :root {
@@ -160,6 +178,19 @@
  * wrong result. Each rule notes what it replaces.
  * ────────────────────────────────────────────────────────────────────────────
  */
+
+/**
+ * Antialiased type.
+ *
+ * fern set this before the Fumadocs move and the migration dropped it. macOS
+ * defaults to subpixel antialiasing, which renders noticeably heavier — the
+ * headings and description read bolder than theirs at identical font-size and
+ * weight, which sends you looking for a CSS difference that is not there.
+ */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 /* Nav tab underline is the accent, 2px. */
 #nd-subnav [data-header-tabs] .border-fd-primary {
