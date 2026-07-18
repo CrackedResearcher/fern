@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+/* Tailwind v4 keys `dark:` off prefers-color-scheme by default. The demo needs
+   a manual toggle, so redefine the variant against a `.dark` ancestor. */
+@custom-variant dark (&:where(.dark, .dark *));
