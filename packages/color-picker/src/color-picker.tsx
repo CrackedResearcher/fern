@@ -62,15 +62,16 @@ const RECESSED =
 const RAISED =
   "0 0 0 3px #fff, 0 0 0 4px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.3), 0 3px 8px -2px rgba(0,0,0,0.22)"
 
+/** Palette read off the Figma kit's ColorSwatchPicker, in its order. */
 const DEFAULT_SWATCHES = [
-  "#ef4444",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#14b8a6",
-  "#3b82f6",
+  "#f43f5e",
+  "#d946ef",
   "#8b5cf6",
-  "#ec4899",
+  "#10b981",
+  "#06b6d4",
+  "#84cc16",
+  "#f59e0b",
+  "#f97316",
 ]
 
 const FORMAT_CYCLE: ColorFormat[] = ["hex", "rgb", "hsl"]
@@ -129,6 +130,16 @@ export interface ColorPickerProps
   comparison?: boolean
   /** Block all interaction and dim the control. */
   disabled?: boolean
+  /**
+   * Layout. Mirrors the `_ColorPickerSelect` variants in the HeroUI Figma kit.
+   *
+   * - `default`  — presets above the field, controls below.
+   * - `swatches` — presets move beneath the controls, so the field leads.
+   *
+   * `fields` and `sliders` from the kit are not implemented yet: both need a
+   * colour-model select and per-channel inputs that do not exist here.
+   */
+  variant?: "default" | "swatches"
   /** Accessible name for the whole picker. Defaults to `"Color picker"`. */
   label?: string
 }
@@ -259,6 +270,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       // options — most people never customise, so the box should be full.
       alpha = true,
       swatches = DEFAULT_SWATCHES,
+      variant = "default",
       eyedropper = true,
       copyable = true,
       shuffle = true,
@@ -493,6 +505,55 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       )
     }
 
+    const swatchRow = (
+
+        <div className="flex items-center gap-3 px-2">
+          <PagerButton
+            direction="previous"
+            disabled={disabled || swatchPage === 0}
+            onClick={() => setSwatchPage((page) => Math.max(0, page - 1))}
+          />
+          <div className="flex flex-1 items-center justify-between">
+            {visibleSwatches.map((swatch) => {
+              const selected = swatch.toLowerCase() === color.hex.toLowerCase()
+              return (
+                <button
+                  key={swatch}
+                  type="button"
+                  aria-label={swatch}
+                  aria-pressed={selected}
+                  disabled={disabled}
+                  onClick={() =>
+                    commit(stateFromString(swatch, state.hsv), true)
+                  }
+                  className={cn(
+                    "size-4 shrink-0 rounded-full",
+                    "transition-[scale] duration-150 hover:scale-115 active:scale-[0.97]",
+                    focusRing,
+                  )}
+                  style={{
+                    backgroundColor: swatch,
+                    transitionTimingFunction: EASE_OUT,
+                    // outline + offset leaves a gap showing the card itself,
+                    // so the ring reads on light and dark without a theme flag.
+                    outline: selected ? `2px solid ${swatch}` : undefined,
+                    outlineOffset: selected ? 2 : undefined,
+                    boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.12)",
+                  }}
+                />
+              )
+            })}
+          </div>
+          <PagerButton
+            direction="next"
+            disabled={disabled || swatchPage >= maxSwatchPage}
+            onClick={() =>
+              setSwatchPage((page) => Math.min(maxSwatchPage, page + 1))
+            }
+          />
+        </div>
+    )
+
     return (
       <div
         ref={forwardedRef}
@@ -523,55 +584,12 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         {...props}
       >
         {/* ------------------------------ Swatches ------------------------------ */}
-        {/* Above the field, not below. Presets are where you *start* — putting
-            them after the fine controls implies they're an afterthought. */}
-        {swatchList.length > 0 && (
-          <div className="flex items-center gap-3 px-2">
-            <PagerButton
-              direction="previous"
-              disabled={disabled || swatchPage === 0}
-              onClick={() => setSwatchPage((page) => Math.max(0, page - 1))}
-            />
-            <div className="flex flex-1 items-center justify-between">
-              {visibleSwatches.map((swatch) => {
-                const selected = swatch.toLowerCase() === color.hex.toLowerCase()
-                return (
-                  <button
-                    key={swatch}
-                    type="button"
-                    aria-label={swatch}
-                    aria-pressed={selected}
-                    disabled={disabled}
-                    onClick={() =>
-                      commit(stateFromString(swatch, state.hsv), true)
-                    }
-                    className={cn(
-                      "size-4 shrink-0 rounded-full",
-                      "transition-[scale] duration-150 hover:scale-115 active:scale-[0.97]",
-                      focusRing,
-                    )}
-                    style={{
-                      backgroundColor: swatch,
-                      transitionTimingFunction: EASE_OUT,
-                      // outline + offset leaves a gap showing the card itself,
-                      // so the ring reads on light and dark without a theme flag.
-                      outline: selected ? `2px solid ${swatch}` : undefined,
-                      outlineOffset: selected ? 2 : undefined,
-                      boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.12)",
-                    }}
-                  />
-                )
-              })}
-            </div>
-            <PagerButton
-              direction="next"
-              disabled={disabled || swatchPage >= maxSwatchPage}
-              onClick={() =>
-                setSwatchPage((page) => Math.min(maxSwatchPage, page + 1))
-              }
-            />
-          </div>
-        )}
+        {/* Placement is the whole difference between the two variants. Default
+            puts presets above the field — they are where you *start*, and
+            putting them after the fine controls implies they are an
+            afterthought. The `swatches` variant inverts that, leading with the
+            field and closing on the palette. */}
+        {swatchList.length > 0 && variant === "default" && swatchRow}
 
         {/* ----------------------- Saturation / brightness ---------------------- */}
         <div
@@ -679,6 +697,8 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
               )}
             </div>
           </div>
+
+          {swatchList.length > 0 && variant === "swatches" && swatchRow}
 
           {/* ----------------------------- Value field ---------------------------- */}
           <div className="flex items-center gap-2">

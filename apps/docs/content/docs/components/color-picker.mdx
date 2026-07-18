@@ -36,6 +36,48 @@ const [color, setColor] = useState("#3b82f6")
   </PreviewCode>
 </Preview>
 
+### Variants
+
+Layout follows the `_ColorPickerSelect` variants in the HeroUI Figma kit.
+`default` leads with the presets; `swatches` leads with the field and closes on
+the palette.
+
+<Preview>
+  <PreviewDemo>
+    <ColorPickerSwatches />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<ColorPicker variant="swatches" value={color} onChange={setColor} />
+```
+
+  </PreviewCode>
+</Preview>
+
+### Subtracting parts
+
+Every capability is reachable by default, so a smaller picker is made by
+turning things off rather than by composing them on.
+
+<Preview>
+  <PreviewDemo>
+    <ColorPickerMinimal />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<ColorPicker
+  value={color}
+  onChange={setColor}
+  swatches={false}
+  alpha={false}
+/>
+```
+
+  </PreviewCode>
+</Preview>
+
 ## Anatomy
 
 One component, no composition required. Each capability is a prop rather than a
