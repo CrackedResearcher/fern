@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+/* Tailwind v4 only auto-detects content under the project root, so classes
+   used inside sibling workspace packages are dropped unless declared here. */
+@source "../../../packages/color-picker/src";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
