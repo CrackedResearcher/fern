@@ -1,49 +1,69 @@
-import { readFile } from "node:fs/promises"
-import path from "node:path"
-import { highlight } from "fumadocs-core/highlight"
+"use client"
+
+import { useEffect, useRef, useState } from "react"
 import { PreviewCode } from "@/components/preview"
 
 /**
- * A package source file, rendered in the same code viewer the examples use —
- * clamped with the fade, expanded by the same button, copied by the same
- * control. A second collapse pattern on one page reads as two conventions.
+ * A source file, fetched and highlighted on first expand.
+ *
+ * Inlining every file put the color picker page at 161KB gzipped, nearly all of
+ * it collapsed source a reader never opens, and exhausted the dev server's heap
+ * re-highlighting it on each edit. The blocks are closed by default, so loading
+ * on open costs nothing a reader sees — and it lets a component list every file
+ * it needs rather than a subset that would leave the copy-paste broken.
  */
-export async function ComponentSource({
+export function ComponentSource({
   pkg,
   file,
-  path: repoPath,
+  path,
 }: {
   pkg?: string
   file?: string
   /** Repo-relative path, for components that are not published packages. */
   path?: string
 }) {
-  const root = path.join(process.cwd(), "..", "..")
-  const source = repoPath
-    ? path.join(root, repoPath)
-    : path.join(root, "packages", pkg!, "src", file!)
-  const name = repoPath ? path.basename(repoPath) : file!
-
-  let code: string
-  try {
-    code = await readFile(source, "utf8")
-  } catch {
-    return null
-  }
-
-  // defaultColor:false emits both themes as CSS variables instead of baking
-  // one into an inline style, which no stylesheet can then override.
+  const target = path ?? `packages/${pkg}/src/${file}`
+  const name = target.split("/").pop() ?? target
   const lang = name.endsWith(".ts") ? "typescript" : "tsx"
 
-  const rendered = await highlight(code, {
-    lang,
-    themes: { light: "github-light", dark: "github-dark" },
-    defaultColor: false,
-  })
+  const [html, setHtml] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  // Load once the block is opened, not on mount — that is the whole point.
+  useEffect(() => {
+    const section = ref.current?.closest(".code-section")
+    if (!section) return
+    let done = false
+    const load = () => {
+      if (done) return
+      done = true
+      fetch(`/api/source?file=${encodeURIComponent(target)}`)
+        .then((response) => (response.ok ? response.json() : Promise.reject()))
+        .then((data) => setHtml(data.html))
+        .catch(() => setFailed(true))
+    }
+    const button = [...section.querySelectorAll("button")].find((element) =>
+      /Expand/.test(element.textContent ?? ""),
+    )
+    // No Expand button means the block is short enough to render whole, so
+    // there is nothing to defer.
+    if (!button) load()
+    else button.addEventListener("click", load, { once: true })
+    return () => button?.removeEventListener("click", load)
+  }, [target])
 
   return (
     <PreviewCode standalone label={name} lang={lang}>
-      {rendered}
+      <div ref={ref} className="docs-code-block-wrapper">
+        {html ? (
+          <div dangerouslySetInnerHTML={{ __html: html }} />
+        ) : (
+          <pre className="shiki shiki-themes m-0 px-4 py-4 text-[13px] text-muted">
+            <code>{failed ? `Could not load ${name}` : `Loading ${name}…`}</code>
+          </pre>
+        )}
+      </div>
     </PreviewCode>
   )
 }
