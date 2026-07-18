@@ -7,6 +7,7 @@ import {
   hslToHsv,
   luminance,
   parseColor,
+  rgbToHex,
   rgbToHsv,
   toColor,
   type Color,
@@ -19,6 +20,7 @@ import {
   EASE_OUT,
   HUE_GRADIENT,
   MODELS,
+  FIELD_THUMB_RADIUS,
   THUMB_RADIUS,
   type ChannelSpec,
 } from "./constants"
@@ -194,7 +196,19 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
 
     const color = toColor(state.hsv, state.alpha, alpha)
     const output = formatColor(color, format)
-    const solid = formatColor({ ...color, alpha: 1 }, "hex")
+    /**
+     * The colour at full opacity, built from the channels rather than by
+     * overriding `alpha` on the record.
+     *
+     * `formatColor(..., "hex")` returns the precomputed `color.hex`, which
+     * already has alpha baked into it, so spreading `{ alpha: 1 }` over the
+     * record changed a field the hex branch never reads. The result was that
+     * `solid` carried the alpha it was meant to strip: at 0% opacity the
+     * opacity thumb faded out completely and the track's end stop went
+     * transparent, so the slider stopped showing which colour it was fading
+     * towards at exactly the end where you need to see it.
+     */
+    const solid = rgbToHex(color.rgb, 1)
 
     const commit = (next: State, settled = false) => {
       setState(next)
@@ -220,18 +234,22 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       (x, y) => commit({ ...state, hsv: { ...state.hsv, s: x, v: 1 - y } }),
       settle,
       disabled,
+      FIELD_THUMB_RADIUS,
+      FIELD_THUMB_RADIUS,
     )
     const hue = useTrackDrag(
       (x) => commit({ ...state, hsv: { ...state.hsv, h: x * 360 } }),
       settle,
       disabled,
-      THUMB_RADIUS,
+      FIELD_THUMB_RADIUS,
+  THUMB_RADIUS,
     )
     const opacity = useTrackDrag(
       (x) => commit({ ...state, alpha: x }),
       settle,
       disabled,
-      THUMB_RADIUS,
+      FIELD_THUMB_RADIUS,
+  THUMB_RADIUS,
     )
 
     /* --------------------------------- Keys -------------------------------- */
@@ -602,8 +620,11 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             dragging={field.dragging}
             reducedMotion={reducedMotion}
             style={{
-              left: `${state.hsv.s * 100}%`,
-              top: `${(1 - state.hsv.v) * 100}%`,
+              // Same containment rule as the sliders: travel between the
+              // insets, not 0-100%, so the thumb stays inside the field. At
+              // s=0 v=0 it was centred on the corner and cleared the card.
+              left: `calc(${state.hsv.s} * (100% - ${FIELD_THUMB_RADIUS * 2}px) + ${FIELD_THUMB_RADIUS}px)`,
+              top: `calc(${1 - state.hsv.v} * (100% - ${FIELD_THUMB_RADIUS * 2}px) + ${FIELD_THUMB_RADIUS}px)`,
               background: solid,
               boxShadow: `0 0 0 3px ${fieldThumbRing}, 0 1px 4px rgb(0 0 0 / 0.4)`,
             }}
@@ -759,7 +780,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             id={channelGroupId}
             role="group"
             aria-label="Color channels"
-            className="flex h-11 min-w-0 flex-1 items-center gap-1 rounded-2xl bg-[var(--default,#ebebec)] p-1"
+            className="flex h-12 min-w-0 flex-1 items-center gap-1 rounded-2xl bg-[var(--default,#ebebec)] p-1"
           >
             {format === "hex" ? (
               <>
