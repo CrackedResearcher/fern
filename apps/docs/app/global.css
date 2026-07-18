@@ -331,3 +331,53 @@
 #nd-sidebar [data-radix-scroll-area-viewport] p:not(:first-child) {
   margin-top: 16px;
 }
+
+/**
+ * Code fused to a preview.
+ *
+ * Inside `.component-preview-container` the block is not a standalone panel —
+ * it is the lower half of the preview box, so it drops its own margin, radius,
+ * border and fill and lets the section around it supply all four. Their rules
+ * verbatim (.docs-code-block in their compiled CSS), plus the line-number
+ * gutter at their exact #738a9466.
+ */
+.docs-code-block-wrapper .shiki {
+  margin: 0;
+  padding-top: 16px;
+  padding-inline: 8px;
+  border-style: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.docs-code-block-wrapper .fd-scroll-container {
+  padding: 0;
+  border-style: none;
+  border-radius: 0;
+  background-color: transparent !important;
+  max-height: 75vh;
+}
+.docs-code-block-wrapper .line {
+  padding-left: 0 !important;
+}
+
+/* Line numbers, counter-driven so they survive horizontal scrolling. */
+.docs-code-block-wrapper code {
+  counter-reset: step;
+  counter-increment: step 0;
+}
+.docs-code-block-wrapper code .line::before {
+  content: counter(step);
+  counter-increment: step;
+  display: inline-block;
+  width: 1rem;
+  margin-right: 1.5rem;
+  text-align: right;
+  color: #738a9466;
+}
+
+/* The copy button belongs to the section, not the inner figure. */
+.docs-code-block-wrapper .shiki > div:first-of-type {
+  top: 0.5rem;
+  right: 0.5rem;
+}

@@ -2,7 +2,7 @@ import defaultMdxComponents from "fumadocs-ui/mdx"
 import { CodeBlock, Pre } from "fumadocs-ui/components/codeblock"
 import type { MDXComponents } from "mdx/types"
 import type { ComponentProps } from "react"
-import { Preview } from "@/components/preview"
+import { Preview, PreviewCode, PreviewDemo } from "@/components/preview"
 import { CodeActions } from "@/components/code-actions"
 import { ColorPickerDemo } from "@/components/demos/color-picker-demo"
 
@@ -25,6 +25,8 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
       </CodeBlock>
     ),
     Preview,
+    PreviewDemo,
+    PreviewCode,
     ColorPickerDemo,
     ...components,
   }
