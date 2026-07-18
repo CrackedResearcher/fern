@@ -95,9 +95,9 @@ export function ThemePicker() {
         </Button>
       </Popover.Trigger>
 
-      <Popover.Content className="w-[292px]">
-        <Popover.Dialog className="flex flex-col gap-3 p-1" aria-label="Design theme">
-          <div className="grid grid-cols-4 gap-2">
+      <Popover.Content className="w-[340px]">
+        <Popover.Dialog className="flex flex-col gap-4 p-2" aria-label="Design theme">
+          <div className="grid grid-cols-4 gap-x-2 gap-y-3">
             {PRESETS.map((entry) => {
               const selected = entry.id === preset
               return (
@@ -106,19 +106,24 @@ export function ThemePicker() {
                   type="button"
                   onClick={() => setPreset(entry.id)}
                   aria-pressed={selected}
-                  className="flex flex-col items-center gap-1.5 rounded-xl p-1.5 outline-hidden transition-colors hover:bg-default/60 focus-visible:ring-2 focus-visible:ring-focus/60"
+                  className="flex flex-col items-center gap-2 rounded-xl p-1 outline-hidden transition-colors hover:bg-default/60 focus-visible:ring-2 focus-visible:ring-focus/60"
                 >
+                  {/* Their swatches read as spheres, not flat discs — a light
+                      source top-left and a darker base. A flat fill is the
+                      giveaway that the row was rebuilt rather than matched. */}
                   <span
                     aria-hidden
                     className="size-9 rounded-full"
                     style={{
-                      background: entry.swatch,
+                      background: `radial-gradient(circle at 32% 28%, color-mix(in oklab, ${entry.swatch} 72%, white) 0%, ${entry.swatch} 52%, color-mix(in oklab, ${entry.swatch} 82%, black) 100%)`,
                       outline: selected ? "2px solid var(--accent)" : undefined,
-                      outlineOffset: 2,
-                      boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.12)",
+                      outlineOffset: 3,
+                      boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.08)",
                     }}
                   />
-                  <span className="text-[11px] text-muted">{entry.label}</span>
+                  <span className="text-[11px] leading-none text-foreground">
+                    {entry.label}
+                  </span>
                 </button>
               )
             })}
@@ -126,8 +131,8 @@ export function ThemePicker() {
 
           <Separator />
 
-          <div className="flex items-center justify-between gap-3 px-1.5 pb-1">
-            <span className="flex flex-col">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <span className="flex flex-col gap-0.5">
               <span className="text-sm font-medium">Vibrant palette</span>
               <span className="text-xs text-muted">
                 More saturated, less contrast

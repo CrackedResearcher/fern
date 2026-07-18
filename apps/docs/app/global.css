@@ -198,6 +198,26 @@
   border-style: none;
 }
 
+/* Their widths. `max-w-sm` on the element is 384px; these override it to 300
+   then 400, and shift it 48px left of centre at lg. Without them the trigger
+   sits at 384px and dead-centre, which is close enough to look right and wrong
+   enough to notice beside theirs. */
+@media (min-width: 40rem) {
+  #nd-subnav [data-search-full] {
+    max-width: 300px;
+  }
+}
+@media (min-width: 48rem) {
+  #nd-subnav [data-search-full] {
+    max-width: 400px;
+  }
+}
+@media (min-width: 64rem) {
+  #nd-subnav [data-search-full] {
+    margin-right: 48px;
+  }
+}
+
 /* Header: solid background and a full-viewport-width hairline. */
 #nd-subnav {
   background-color: var(--background);
