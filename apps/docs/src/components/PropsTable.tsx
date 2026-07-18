@@ -30,7 +30,7 @@ export function PropsTable({ props }: { props: PropDoc[] }) {
                   </span>
                 )}
               </td>
-              <td className="px-4 py-3 font-mono text-[12.5px] text-blue-600 dark:text-blue-400">
+              <td className="px-4 py-3 font-mono text-[12.5px] text-accent">
                 {prop.type}
               </td>
               <td className="whitespace-nowrap px-4 py-3 font-mono text-[12.5px] text-fg-muted">

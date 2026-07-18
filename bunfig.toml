@@ -1,0 +1,9 @@
+# bun hardlinks binaries out of its global cache by default. On macOS the
+# hardlink invalidates the binary's code signature, so Gatekeeper SIGKILLs it —
+# esbuild then dies with "The service was stopped: write EPIPE" and vite can't
+# start. Copying preserves the signature.
+#
+# Costs a little disk and install time; buys a toolchain that survives
+# `bun add`.
+[install]
+backend = "copyfile"

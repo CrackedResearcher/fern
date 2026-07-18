@@ -10,35 +10,64 @@
  * Token layer.
  *
  * Surfaces are numbered by elevation rather than named by colour, so a theme
- * swap is a matter of redefining these values and nothing else. Two choices
- * worth calling out, both learned from reading mature dark themes:
+ * swap means redefining these values and nothing else. Three choices worth
+ * calling out, all learned from studying mature dark themes:
  *
- * - Dark background is pure #000, not a near-black. Near-blacks read as washed
- *   next to true black once a card sits on top of them.
+ * - Dark ground is pure #000, not a near-black. Near-blacks read as washed
+ *   once a raised card sits on top of them.
  * - Foreground is cool-tinted rather than pure grey. #ECEDEE and #11181C carry
  *   a slight blue cast that stops text looking dead against a neutral surface.
+ * - The accent is a deeper, more saturated blue than the usual #3b82f6 default.
+ *   At small sizes the default reads washed out against a dark surface.
  */
 @layer base {
   :root {
+    /* Neutral ramp — zinc, which stays cool without turning blue. */
+    --fern-n-50: #fafafa;
+    --fern-n-100: #f4f4f5;
+    --fern-n-200: #e4e4e7;
+    --fern-n-300: #d4d4d8;
+    --fern-n-400: #a1a1aa;
+    --fern-n-500: #71717a;
+    --fern-n-600: #52525b;
+    --fern-n-700: #3f3f46;
+    --fern-n-800: #27272a;
+    --fern-n-900: #18181b;
+
+    /* Accent ramp. */
+    --fern-a-50: #e6f1fe;
+    --fern-a-100: #cce3fd;
+    --fern-a-200: #99c7fb;
+    --fern-a-300: #66aaf9;
+    --fern-a-400: #338ef7;
+    --fern-a-500: #006fee;
+    --fern-a-600: #005bc4;
+    --fern-a-700: #004493;
+
+    /* Light theme assignments. */
     --fern-bg: #ffffff;
     --fern-fg: #11181c;
-    --fern-fg-muted: #71717a;
+    --fern-fg-muted: var(--fern-n-500);
     --fern-surface-1: #ffffff;
-    --fern-surface-2: #f4f4f5;
-    --fern-surface-3: #e4e4e7;
-    --fern-divider: rgb(17 17 17 / 0.12);
-    --fern-focus: #3b82f6;
+    --fern-surface-2: var(--fern-n-100);
+    --fern-surface-3: var(--fern-n-200);
+    --fern-divider: rgb(17 17 17 / 0.15);
+    --fern-focus: var(--fern-a-500);
+    --fern-accent: var(--fern-a-500);
+    --fern-accent-fg: #ffffff;
   }
 
   .dark {
     --fern-bg: #000000;
     --fern-fg: #ecedee;
-    --fern-fg-muted: #a1a1aa;
-    --fern-surface-1: #18181b;
-    --fern-surface-2: #27272a;
-    --fern-surface-3: #3f3f46;
-    --fern-divider: rgb(255 255 255 / 0.14);
-    --fern-focus: #3b82f6;
+    --fern-fg-muted: var(--fern-n-400);
+    --fern-surface-1: var(--fern-n-900);
+    --fern-surface-2: var(--fern-n-800);
+    --fern-surface-3: var(--fern-n-700);
+    --fern-divider: rgb(255 255 255 / 0.15);
+    --fern-focus: var(--fern-a-500);
+    --fern-accent: var(--fern-a-500);
+    --fern-accent-fg: #ffffff;
   }
 }
 
@@ -51,6 +80,8 @@
   --color-surface-3: var(--fern-surface-3);
   --color-divider: var(--fern-divider);
   --color-focus: var(--fern-focus);
+  --color-accent: var(--fern-accent);
+  --color-accent-fg: var(--fern-accent-fg);
 }
 
 html {
