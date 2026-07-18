@@ -7,7 +7,6 @@ import { CodeActions } from "@/components/code-actions"
 import {
   ColorPickerDemo,
   ColorPickerMinimal,
-  ColorPickerSwatches,
 } from "@/components/demos/color-picker-demo"
 
 /**
@@ -32,8 +31,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     PreviewDemo,
     PreviewCode,
     ColorPickerDemo,
-    ColorPickerSwatches,
-    ColorPickerMinimal,
+      ColorPickerMinimal,
     ...components,
   }
 }

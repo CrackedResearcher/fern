@@ -1,6 +1,6 @@
 ---
 title: Color Picker
-description: A saturation field, hue and opacity sliders, and a text input — with full keyboard support and no runtime dependencies beyond React.
+description: A saturation field, hue and opacity sliders, and editable per-channel inputs — with full keyboard support and no runtime dependencies beyond React.
 links:
   - label: Source
     href: https://github.com/CrackedResearcher/fern/tree/main/packages/color-picker/src/color-picker.tsx
@@ -36,25 +36,6 @@ const [color, setColor] = useState("#3b82f6")
   </PreviewCode>
 </Preview>
 
-### Variants
-
-Layout follows the `_ColorPickerSelect` variants in the HeroUI Figma kit.
-`default` leads with the presets; `swatches` leads with the field and closes on
-the palette.
-
-<Preview>
-  <PreviewDemo>
-    <ColorPickerSwatches />
-  </PreviewDemo>
-  <PreviewCode>
-
-```tsx
-<ColorPicker variant="swatches" value={color} onChange={setColor} />
-```
-
-  </PreviewCode>
-</Preview>
-
 ### Subtracting parts
 
 Every capability is reachable by default, so a smaller picker is made by
@@ -70,7 +51,7 @@ turning things off rather than by composing them on.
 <ColorPicker
   value={color}
   onChange={setColor}
-  swatches={false}
+  sliderLabels={false}
   alpha={false}
 />
 ```
@@ -87,13 +68,13 @@ subcomponent, so the default import is already the complete picker.
 <ColorPicker
   // Saturation and brightness field
   // Hue slider
-  // Opacity slider          — alpha
-  // Hex and opacity inputs
-  // Format switcher         — formatToggle
-  // Preset swatches         — swatches
-  // Screen eyedropper       — eyedropper
-  // Copy to clipboard       — copyable
-  // Before/after comparison — comparison
+  // Opacity slider        — alpha
+  // Slider labels         — sliderLabels
+  // Color model select    — formatToggle
+  // Per-channel inputs
+  // Current-color preview
+  // Screen eyedropper     — eyedropper
+  // Copy to clipboard     — copyable
 />
 ```
 
@@ -103,8 +84,10 @@ subcomponent, so the default import is already the complete picker.
   human-readable `aria-valuetext`.
 - Arrow keys nudge by 1%, Shift+arrows by 10%, and Home/End jump to the ends —
   matching native range inputs.
-- Slider hit areas are 40px tall while the visible track stays 24px, clearing
-  the WCAG 2.5.5 target minimum.
+- Action buttons are 40×40, clearing the WCAG 2.5.5 target minimum.
+- Each channel input is a labelled `spinbutton` announcing its value in channel
+  units — "Red, 77", not "77 percent" — and carries its own range.
+- The model select points at the channel group it reshapes with `aria-controls`.
 - Settled values are announced through a polite live region; intermediate drag
   frames are deliberately not, which would otherwise flood a screen reader.
 - The field thumb switches between a light and dark ring based on the luminance
@@ -121,12 +104,11 @@ subcomponent, so the default import is already the complete picker.
 | `defaultValue` | `string` | `"#3b82f6"` | Initial value when uncontrolled. |
 | `onChange` | `(value, color) => void` | — | Fires on every change, including each frame of a drag. Use for live previews. |
 | `onChangeComplete` | `(value, color) => void` | — | Fires once when an interaction settles. Use for network writes and undo history. |
-| `format` | `"hex" \| "rgb" \| "hsl"` | `"hex"` | Starting output format. Users can cycle it at runtime unless `formatToggle` is false. |
-| `formatToggle` | `boolean` | `true` | Let the user cycle hex → rgb → hsl by pressing the format label. |
+| `format` | `"hex" \| "rgb" \| "hsl"` | `"hex"` | Starting color model. Users can change it at runtime unless `formatToggle` is false. |
+| `formatToggle` | `boolean` | `true` | Let the user change the model. Disabling it locks the select. |
 | `alpha` | `boolean` | `true` | Show the opacity slider and include alpha in output. |
-| `swatches` | `string[] \| false` | 8 presets | Preset colors. Pass `false` to hide the row, or an array to replace the palette. |
+| `sliderLabels` | `boolean` | `true` | Show the name and live readout above each slider. |
 | `eyedropper` | `boolean` | `true` | Offer the native screen eyedropper where the browser supports it. |
 | `copyable` | `boolean` | `true` | Show the copy-to-clipboard button. |
-| `comparison` | `boolean` | `true` | Show the starting color beside the current one. Pressing it reverts. |
 | `disabled` | `boolean` | `false` | Block interaction and dim the control. |
 | `label` | `string` | `"Color picker"` | Accessible name for the group. |
