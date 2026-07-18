@@ -6,6 +6,7 @@ import {
   formatColor,
   hslToHsv,
   luminance,
+  parseColor,
   parseHex,
   rgbToHsv,
   hsvToRgb,
@@ -49,6 +50,9 @@ const HUE_GRADIENT = `linear-gradient(to right, ${[0, 60, 120, 180, 240, 300, 36
     return `rgb(${r} ${g} ${b}) ${Math.round((h / 360) * 100)}%`
   })
   .join(", ")})`
+
+/** Half the slider thumb's width. Insets both its travel and the drag maths. */
+const THUMB_RADIUS = 10
 
 // ease-in is never used here — starting slow reads as lag at exactly the
 // moment the user is watching hardest.
@@ -206,6 +210,19 @@ function useTrackDrag(
   onPosition: (x: number, y: number) => void,
   onEnd: () => void,
   disabled: boolean,
+  /**
+   * Horizontal inset, in px, of the usable range at each end — set it to the
+   * thumb's radius on a 1D slider.
+   *
+   * A thumb is centred on its value, so at 0% and 100% half of it hangs off the
+   * end of the rail. Insetting the range keeps the thumb inside the track it
+   * belongs to, and because the same inset is applied to the pointer maths the
+   * thumb still lands exactly under the cursor rather than drifting from it.
+   *
+   * Left at 0 for the 2D field, where reaching the true corner is the point —
+   * that is where pure white and pure black live.
+   */
+  inset = 0,
 ) {
   const trackRef = React.useRef<HTMLDivElement>(null)
   const pointerId = React.useRef<number | null>(null)
@@ -215,8 +232,9 @@ function useTrackDrag(
     const element = trackRef.current
     if (!element) return
     const rect = element.getBoundingClientRect()
+    const usable = rect.width - inset * 2
     onPosition(
-      rect.width ? clamp((event.clientX - rect.left) / rect.width, 0, 1) : 0,
+      usable > 0 ? clamp((event.clientX - rect.left - inset) / usable, 0, 1) : 0,
       rect.height ? clamp((event.clientY - rect.top) / rect.height, 0, 1) : 0,
     )
   }
@@ -262,9 +280,16 @@ function useTrackDrag(
 /*                                   State                                    */
 /* -------------------------------------------------------------------------- */
 
-function stateFromString(input: string, previous?: HSV): State {
-  const parsed = parseHex(input)
-  if (!parsed) return { hsv: previous ?? { h: 0, s: 0, v: 0 }, alpha: 1 }
+function stateFromString(
+  input: string,
+  previous?: HSV,
+  previousAlpha = 1,
+): State {
+  const parsed = parseColor(input)
+  // Unparseable input must not invent a colour. Carrying the previous alpha
+  // through matters as much as the previous hue: resetting it to 1 turned any
+  // string the parser did not understand into a silent "opacity back to 100%".
+  if (!parsed) return { hsv: previous ?? { h: 0, s: 0, v: 0 }, alpha: previousAlpha }
 
   const hsv = rgbToHsv(parsed.rgb)
   // Hue is undefined for greys and saturation is undefined for black. Carrying
@@ -321,6 +346,11 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const [announcement, setAnnouncement] = React.useState("")
     const [copied, setCopied] = React.useState(false)
 
+    const copyTimer = React.useRef<number | undefined>(undefined)
+    // Genuine outside-React cleanup, not derived state — the timer has to be
+    // cancelled if the picker unmounts mid-confirmation.
+    React.useEffect(() => () => window.clearTimeout(copyTimer.current), [])
+
     const reducedMotion = usePrefersReducedMotion()
     const inputId = React.useId()
     // The select reshapes the row beneath it, so it needs to point at it.
@@ -335,7 +365,9 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const [lastValue, setLastValue] = React.useState(value)
     if (value !== undefined && value !== lastValue) {
       setLastValue(value)
-      setState((previous) => stateFromString(value, previous.hsv))
+      setState((previous) =>
+        stateFromString(value, previous.hsv, previous.alpha),
+      )
     }
 
     /**
@@ -388,11 +420,13 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       (x) => commit({ ...state, hsv: { ...state.hsv, h: x * 360 } }),
       settle,
       disabled,
+      THUMB_RADIUS,
     )
     const opacity = useTrackDrag(
       (x) => commit({ ...state, alpha: x }),
       settle,
       disabled,
+      THUMB_RADIUS,
     )
 
     /* --------------------------------- Keys -------------------------------- */
@@ -456,9 +490,14 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
 
     /* ------------------------------- Actions ------------------------------- */
 
+    // Accepts anything the parser understands, not just hex — pasting
+    // `rgb(116 120 57)` into the hex field is a thing people do, and rejecting
+    // a colour the component can read is a worse answer than converting it.
+    // Unparseable text reverts on blur rather than clamping to something near.
     const commitDraft = (text: string) => {
       setDraft(null)
-      if (parseHex(text)) commit(stateFromString(text, state.hsv), true)
+      if (parseColor(text))
+        commit(stateFromString(text, state.hsv, state.alpha), true)
     }
 
     /**
@@ -570,7 +609,10 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       try {
         await navigator.clipboard.writeText(output)
         setCopied(true)
-        window.setTimeout(() => setCopied(false), 1200)
+        // Hold the handle so rapid presses reset one timer rather than stacking
+        // several — otherwise the icon flickers as each stale timeout fires.
+        window.clearTimeout(copyTimer.current)
+        copyTimer.current = window.setTimeout(() => setCopied(false), 1600)
       } catch {
         // Clipboard can be blocked by permissions; failing silently is fine.
       }
@@ -616,11 +658,11 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         aria-disabled={disabled || undefined}
         data-disabled={disabled || undefined}
         className={cn(
-          // 264px, not the kit's 240px. Once the eyedropper shares the readout row
-          // there is not enough width left for a full 8-digit value, and the
-          // readout is the one part that must never truncate — a picker that
-          // cannot show you what you picked has failed at its only job.
-          "flex w-66 select-none flex-col gap-2 pt-4 pr-2 pb-3 pl-2 antialiased",
+          // 320px. The channel row is what sets this now: four RGBA fields plus
+          // their letters have to hold a three-digit value each without the
+          // number crowding its own box, and 264px left them at ~43px. A picker
+          // that cannot show you what you picked has failed at its only job.
+          "flex w-80 select-none flex-col gap-2 pt-4 pr-2 pb-3 pl-2 antialiased",
           "rounded-[20px] bg-[var(--surface,#ffffff)]",
           disabled && "pointer-events-none opacity-50 saturate-50",
           className,
@@ -655,12 +697,20 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           onKeyDown={handleFieldKeys}
           {...field.handlers}
           className={cn(
-            // Wider than tall, and capped. A square field on a 264px card is ~248px
-            // of height before the sliders even start, which makes the popover
-            // tall enough to clip against a viewport edge or push its own
-            // trigger off screen. 4:3 keeps both axes comfortably draggable
-            // while taking ~60px off the total.
-            "relative aspect-[4/3] max-h-[200px] w-full touch-none rounded-2xl",
+            // Wider than tall. A square field is ~304px of height before the
+            // sliders even start, which makes the popover tall enough to clip
+            // against a viewport edge or push its own trigger off screen. 4:3
+            // keeps both axes comfortably draggable while taking ~76px off.
+            //
+            // The cap is a backstop for hosts that widen the card past 320px,
+            // not part of the normal path — at 320 the field is 228px and 4:3
+            // holds. Set it below that and the ratio silently stops applying,
+            // which is what a 200px cap was quietly doing here.
+            //
+            // r12, not r16: the card is r20 with 8px of padding, and a nested
+            // surface reads as concentric only when it steps down by the gap
+            // between them. See RADIUS in tokens.ts.
+            "relative aspect-[4/3] max-h-[240px] w-full touch-none rounded-xl",
             !disabled && "cursor-crosshair",
             "outline-hidden focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-[var(--focus,#0485f7)]/70",
           )}
@@ -704,10 +754,8 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 valueMax={360}
                 valueText={`${Math.round(state.hsv.h)} degrees`}
                 background={HUE_GRADIENT}
-                thumb={{
-                  left: `${(state.hsv.h / 360) * 100}%`,
-                  background: `hsl(${state.hsv.h} 100% 50%)`,
-                }}
+                fraction={state.hsv.h / 360}
+                thumb={{ background: `hsl(${state.hsv.h} 100% 50%)` }}
                 reducedMotion={reducedMotion}
               />
 
@@ -723,7 +771,8 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   valueText={`${Math.round(state.alpha * 100)} percent`}
                   background={CHECKERBOARD}
                   overlay={`linear-gradient(to right, transparent, ${solid})`}
-                  thumb={{ left: `${state.alpha * 100}%`, background: solid }}
+                  fraction={state.alpha}
+                  thumb={{ background: solid }}
                   reducedMotion={reducedMotion}
                 />
               )}
@@ -738,7 +787,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 hundred lines of focus management and typeahead to arrive back
                 where the platform already is — and it would be the only part of
                 this package that needed a portal. */}
-            <div className="relative flex h-10 min-w-0 flex-1 items-center rounded-2xl bg-[var(--default,#ebebec)]">
+            <div className="relative flex h-10 min-w-0 flex-1 items-center rounded-xl bg-[var(--default,#ebebec)]">
               <select
                 value={format}
                 disabled={disabled || !formatToggle}
@@ -748,7 +797,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   changeModel(event.target.value as ColorFormat)
                 }
                 className={cn(
-                  "h-full w-full appearance-none rounded-2xl bg-transparent pr-9 pl-3.5",
+                  "h-full w-full appearance-none rounded-xl bg-transparent pr-9 pl-3.5",
                   "text-[13px] font-medium text-[var(--foreground,#18181b)] outline-hidden",
                   !disabled && formatToggle && "cursor-pointer",
                   focusRing,
@@ -795,7 +844,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             id={channelGroupId}
             role="group"
             aria-label="Color channels"
-            className="flex h-11 min-w-0 flex-1 items-center gap-1 rounded-2xl bg-[var(--default,#ebebec)] p-1.5"
+            className="flex h-11 min-w-0 flex-1 items-center gap-1 rounded-xl bg-[var(--default,#ebebec)] p-1"
           >
             {format === "hex" ? (
               <>
@@ -820,7 +869,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                     if (event.key === "Escape") setDraft(null)
                   }}
                   className={cn(
-                    "h-full w-full min-w-0 rounded-xl bg-[var(--surface,#ffffff)] px-3",
+                    "h-full w-full min-w-0 rounded-lg bg-[var(--surface,#ffffff)] px-3",
                     "font-mono text-[13px] tracking-tight tabular-nums lowercase",
                     "text-[var(--foreground,#18181b)] outline-hidden",
                     focusRing,
@@ -941,7 +990,9 @@ interface LabelledSliderProps {
   valueText: string
   background: string
   overlay?: string
-  thumb: { left: string; background: string }
+  /** Value as 0-1. The thumb's own radius is inset from each end. */
+  fraction: number
+  thumb: { background: string }
   reducedMotion: boolean
 }
 
@@ -963,6 +1014,7 @@ function LabelledSlider({
   valueText,
   background,
   overlay,
+  fraction,
   thumb,
   reducedMotion,
 }: LabelledSliderProps) {
@@ -1017,7 +1069,11 @@ function LabelledSlider({
             dragging={drag.dragging}
             reducedMotion={reducedMotion}
             style={{
-              left: thumb.left,
+              // Travels between the two insets rather than 0-100%, so at either
+              // end the thumb sits flush inside the rail instead of half over
+              // it. `useTrackDrag` is given the same inset, so the thumb stays
+              // under the cursor.
+              left: `calc(${fraction} * (100% - ${THUMB_RADIUS * 2}px) + ${THUMB_RADIUS}px)`,
               top: "50%",
               background: thumb.background,
               boxShadow: RAISED,
@@ -1104,7 +1160,7 @@ function ChannelField({
           }
         }}
         className={cn(
-          "h-8 w-full min-w-0 rounded-[10px] bg-[var(--surface,#ffffff)] px-1 text-center",
+          "h-9 w-full min-w-0 rounded-lg bg-[var(--surface,#ffffff)] px-1 text-center",
           "text-[12px] tabular-nums",
           "text-[var(--foreground,#18181b)] outline-hidden",
           focusRing,
@@ -1268,18 +1324,31 @@ function EyedropperIcon() {
   )
 }
 
+/**
+ * The same copy glyph the docs' code blocks use — two overlapping rounded
+ * squares, filled — so a reader sees one copy affordance on the page rather
+ * than two marks that nearly match.
+ *
+ * Duplicated as a path rather than imported: the docs button is built on
+ * HeroUI's `<Button>`, and this package takes no runtime dependency beyond
+ * React. A shared 16×16 path costs nothing and is the part that actually
+ * carries the resemblance.
+ */
 function CopyIcon() {
   return (
-    <svg {...iconProps} width={14} height={14}>
-      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    <svg viewBox="0 0 16 16" width={15} height={15} fill="currentColor" aria-hidden>
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M12 2.5H8A1.5 1.5 0 0 0 6.5 4v1H8a3 3 0 0 1 3 3v1.5h1A1.5 1.5 0 0 0 13.5 8V4A1.5 1.5 0 0 0 12 2.5M11 11h1a3 3 0 0 0 3-3V4a3 3 0 0 0-3-3H8a3 3 0 0 0-3 3v1H4a3 3 0 0 0-3 3v4a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3zM4 6.5h4A1.5 1.5 0 0 1 9.5 8v4A1.5 1.5 0 0 1 8 13.5H4A1.5 1.5 0 0 1 2.5 12V8A1.5 1.5 0 0 1 4 6.5"
+      />
     </svg>
   )
 }
 
 function CheckIcon() {
   return (
-    <svg {...iconProps} width={14} height={14}>
+    <svg {...iconProps} width={15} height={15} strokeWidth={2.5}>
       <path d="M20 6 9 17l-5-5" />
     </svg>
   )
