@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Tailwind v4 only auto-detects content under the project root, so classes
+   used inside sibling workspace packages are dropped unless declared here. */
+@source "../../../packages/color-picker/src";
+
 /* Tailwind v4 keys `dark:` off prefers-color-scheme by default. The demo needs
    a manual toggle, so redefine the variant against a `.dark` ancestor. */
 @custom-variant dark (&:where(.dark, .dark *));

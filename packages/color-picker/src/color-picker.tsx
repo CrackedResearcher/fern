@@ -18,12 +18,23 @@ const cn = (...classes: (string | false | undefined | null)[]) =>
 
 /** Alpha checkerboard, inlined so the component ships without an asset. */
 const CHECKERBOARD =
-  "repeating-conic-gradient(rgba(0,0,0,0.14) 0% 25%, transparent 0% 50%) 50% / 8px 8px"
+  "repeating-conic-gradient(rgba(0,0,0,0.13) 0% 25%, transparent 0% 50%) 50% / 8px 8px"
 
 const HUE_GRADIENT =
   "linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)"
 
 const EASE = "cubic-bezier(0.2, 0, 0, 1)"
+
+/**
+ * Depth comes from one consistent rule: tracks and wells are *recessed* with an
+ * inset shadow, thumbs and the card are *raised* with a cast shadow plus a
+ * highlight along their top edge. Reversing that on any one element is what
+ * makes a 3D UI read as flat or muddled.
+ */
+const RECESSED =
+  "inset 0 1px 2px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(0,0,0,0.09)"
+const RAISED =
+  "0 0 0 2.5px #fff, 0 1px 3px rgba(0,0,0,0.32), 0 3px 8px -2px rgba(0,0,0,0.28)"
 
 /* -------------------------------------------------------------------------- */
 /*                                   Props                                    */
@@ -56,6 +67,8 @@ export interface ColorPickerProps
   swatches?: string[]
   /** Offer the native screen eyedropper where the browser supports it. */
   eyedropper?: boolean
+  /** Show a copy-to-clipboard button beside the value. */
+  copyable?: boolean
   /** Block all interaction and dim the control. */
   disabled?: boolean
   /** Accessible name for the whole picker. Defaults to `"Color picker"`. */
@@ -91,7 +104,7 @@ function usePrefersReducedMotion() {
 /**
  * Pointer-capture drag. `trackRef` marks the element whose geometry defines
  * 0-1, while the handlers can be attached to a larger padded parent — that
- * split is what lets a 12px-tall slider carry a 44px touch target.
+ * split is what lets a 10px-tall slider carry a 44px touch target.
  */
 function useTrackDrag(
   onPosition: (x: number, y: number) => void,
@@ -174,6 +187,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       alpha = false,
       swatches,
       eyedropper = false,
+      copyable = false,
       disabled = false,
       label = "Color picker",
       className,
@@ -186,8 +200,9 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     )
     const [draft, setDraft] = React.useState<string | null>(null)
     const [announcement, setAnnouncement] = React.useState("")
+    const [copied, setCopied] = React.useState(false)
     const reducedMotion = usePrefersReducedMotion()
-    const hexInputId = React.useId()
+    const inputId = React.useId()
 
     // Sync a controlled value without an effect: compare against the last prop
     // we reconciled and adjust during render. React reruns this pass before
@@ -309,7 +324,11 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
 
     const pickFromScreen = async () => {
       try {
-        const EyeDropperCtor = (window as unknown as { EyeDropper: new () => { open(): Promise<{ sRGBHex: string }> } }).EyeDropper
+        const EyeDropperCtor = (
+          window as unknown as {
+            EyeDropper: new () => { open(): Promise<{ sRGBHex: string }> }
+          }
+        ).EyeDropper
         const result = await new EyeDropperCtor().open()
         commit(stateFromString(result.sRGBHex, state.hsv), true)
       } catch {
@@ -317,13 +336,23 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       }
     }
 
+    const copy = async () => {
+      try {
+        await navigator.clipboard.writeText(output)
+        setCopied(true)
+        window.setTimeout(() => setCopied(false), 1200)
+      } catch {
+        // Clipboard can be blocked by permissions; failing silently is fine.
+      }
+    }
+
     // A white ring disappears on pale colors and a dark ring disappears on deep
-    // ones, so the thumb border tracks the luminance of whatever sits beneath.
-    const thumbRing =
-      luminance(color.rgb) > 0.55 ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.95)"
+    // ones, so the field thumb's border tracks the luminance beneath it.
+    const fieldThumbRing =
+      luminance(color.rgb) > 0.55 ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.98)"
 
     const focusRing =
-      "outline-none focus-visible:ring-[3px] focus-visible:ring-blue-500/60"
+      "outline-none focus-visible:ring-[3px] focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-neutral-900"
 
     return (
       <div
@@ -333,10 +362,12 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         aria-disabled={disabled || undefined}
         data-disabled={disabled || undefined}
         className={cn(
-          "w-[264px] select-none overflow-hidden rounded-2xl bg-white antialiased",
-          "shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_2px_4px_-2px_rgba(0,0,0,0.1),0_12px_32px_-12px_rgba(0,0,0,0.25)]",
-          "dark:bg-neutral-900 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.09),0_12px_32px_-12px_rgba(0,0,0,0.7)]",
-          disabled && "pointer-events-none opacity-50",
+          "w-[280px] select-none p-3 antialiased",
+          // Concentric radii: 28px outer = 16px inner + 12px padding.
+          "rounded-[28px] bg-white dark:bg-neutral-900",
+          "shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_16px_-6px_rgba(0,0,0,0.1),0_28px_56px_-16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.9),0_0_0_1px_rgba(0,0,0,0.05)]",
+          "dark:shadow-[0_8px_16px_-6px_rgba(0,0,0,0.5),0_28px_56px_-16px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.07),0_0_0_1px_rgba(255,255,255,0.08)]",
+          disabled && "pointer-events-none opacity-55 saturate-50",
           className,
         )}
         {...props}
@@ -355,7 +386,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           onKeyDown={handleFieldKeys}
           {...field.handlers}
           className={cn(
-            "relative aspect-[5/4] w-full touch-none",
+            "relative aspect-[5/4] w-full touch-none rounded-2xl",
             !disabled && "cursor-crosshair",
             "outline-none focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-blue-500/70",
           )}
@@ -363,55 +394,41 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             backgroundColor: `hsl(${state.hsv.h} 100% 50%)`,
             backgroundImage:
               "linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent)",
+            boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.12), inset 0 1px 3px rgba(0,0,0,0.15)",
           }}
         >
           <Thumb
-            size={16}
+            size={18}
             dragging={field.dragging}
             reducedMotion={reducedMotion}
             style={{
               left: `${state.hsv.s * 100}%`,
               top: `${(1 - state.hsv.v) * 100}%`,
               background: solid,
-              boxShadow: `0 0 0 2px ${thumbRing}, 0 1px 4px rgba(0,0,0,0.45)`,
+              boxShadow: `0 0 0 3px ${fieldThumbRing}, 0 2px 6px rgba(0,0,0,0.4)`,
             }}
           />
         </div>
 
         {/* ------------------------------ Controls ------------------------------ */}
-        <div className="flex items-center gap-3 px-3 pt-3">
-          {eyedropper && supportsEyedropper ? (
-            <button
-              type="button"
-              onClick={pickFromScreen}
-              disabled={disabled}
-              aria-label="Pick a color from the screen"
-              className={cn(
-                "grid size-9 shrink-0 place-items-center rounded-xl",
-                "text-neutral-600 dark:text-neutral-300",
-                "shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]",
-                "transition-[background-color,scale] duration-150 active:scale-[0.96]",
-                "hover:bg-neutral-100 dark:hover:bg-neutral-800",
-                focusRing,
-              )}
-              style={{ transitionTimingFunction: EASE }}
-            >
-              <EyedropperIcon />
-            </button>
-          ) : (
+        <div className="mt-3 flex items-center gap-3">
+          {/* Current color well — recessed to sit opposite the raised thumbs. */}
+          <div
+            aria-hidden
+            className="size-11 shrink-0 rounded-full"
+            style={{ background: CHECKERBOARD, boxShadow: RECESSED }}
+          >
             <div
-              aria-hidden
-              className="size-9 shrink-0 rounded-xl shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]"
-              style={{ background: CHECKERBOARD }}
-            >
-              <div
-                className="size-full rounded-xl transition-colors duration-150"
-                style={{ backgroundColor: output, transitionTimingFunction: EASE }}
-              />
-            </div>
-          )}
+              className="size-full rounded-full transition-colors duration-150"
+              style={{
+                backgroundColor: output,
+                boxShadow: "inset 0 1px 2px rgba(0,0,0,0.2)",
+                transitionTimingFunction: EASE,
+              }}
+            />
+          </div>
 
-          <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex min-w-0 flex-1 flex-col justify-center">
             <SliderTrack
               drag={hue}
               onKeyDown={handleHueKeys}
@@ -446,42 +463,78 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           </div>
         </div>
 
-        {/* ------------------------------ Hex field ----------------------------- */}
-        <div className="px-3 pb-3 pt-1">
-          <label htmlFor={hexInputId} className="sr-only">
+        {/* ------------------------------ Value row ----------------------------- */}
+        <div className="mt-3 flex items-center gap-2">
+          <label htmlFor={inputId} className="sr-only">
             Color value
           </label>
-          <input
-            id={hexInputId}
-            value={draft ?? output}
-            disabled={disabled}
-            spellCheck={false}
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            onChange={(event) => setDraft(event.target.value)}
-            onBlur={(event) => commitDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault()
-                commitDraft(event.currentTarget.value)
-              }
-              if (event.key === "Escape") setDraft(null)
-            }}
-            className={cn(
-              "h-9 w-full rounded-xl bg-neutral-100 px-3",
-              "font-mono text-[13px] tabular-nums lowercase tracking-tight",
-              "text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100",
-              "transition-shadow duration-150",
-              focusRing,
+          <div
+            className="flex h-11 min-w-0 flex-1 items-center rounded-2xl bg-neutral-100 pl-3 pr-1 dark:bg-neutral-800/80"
+            style={{ boxShadow: RECESSED }}
+          >
+            <span className="mr-2 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+              {format}
+            </span>
+            <input
+              id={inputId}
+              value={draft ?? output}
+              disabled={disabled}
+              spellCheck={false}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              onChange={(event) => setDraft(event.target.value)}
+              onBlur={(event) => commitDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault()
+                  commitDraft(event.currentTarget.value)
+                }
+                if (event.key === "Escape") setDraft(null)
+              }}
+              className={cn(
+                "h-full w-full min-w-0 bg-transparent",
+                "font-mono text-[13px] lowercase tabular-nums tracking-tight",
+                "text-neutral-900 outline-none dark:text-neutral-100",
+              )}
+            />
+            {copyable && (
+              <IconButton
+                onClick={copy}
+                disabled={disabled}
+                label={copied ? "Copied" : "Copy color value"}
+                focusRing={focusRing}
+              >
+                {copied ? <CheckIcon /> : <CopyIcon />}
+              </IconButton>
             )}
-            style={{ transitionTimingFunction: EASE }}
-          />
+          </div>
+
+          {eyedropper && supportsEyedropper && (
+            <button
+              type="button"
+              onClick={pickFromScreen}
+              disabled={disabled}
+              aria-label="Pick a color from the screen"
+              className={cn(
+                "grid size-11 shrink-0 place-items-center rounded-2xl",
+                "bg-white text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300",
+                "shadow-[0_1px_2px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.07),inset_0_1px_0_rgba(255,255,255,0.9)]",
+                "dark:shadow-[0_1px_2px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.06)]",
+                "transition-[scale,background-color] duration-150 active:scale-[0.96]",
+                "hover:bg-neutral-50 dark:hover:bg-neutral-700",
+                focusRing,
+              )}
+              style={{ transitionTimingFunction: EASE }}
+            >
+              <EyedropperIcon />
+            </button>
+          )}
         </div>
 
         {/* ------------------------------ Swatches ------------------------------ */}
         {swatches && swatches.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 border-t border-black/[0.06] px-3 py-2.5 dark:border-white/10">
+          <div className="mt-3 flex flex-wrap gap-2 border-t border-black/[0.07] pt-3 dark:border-white/[0.08]">
             {swatches.map((swatch) => {
               const selected = swatch.toLowerCase() === color.hex.toLowerCase()
               return (
@@ -493,16 +546,16 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   disabled={disabled}
                   onClick={() => commit(stateFromString(swatch, state.hsv), true)}
                   className={cn(
-                    "size-6 rounded-lg",
-                    "transition-[scale,box-shadow] duration-150 active:scale-[0.96]",
-                    selected
-                      ? "shadow-[inset_0_0_0_1px_rgba(0,0,0,0.14),0_0_0_2px_rgb(59,130,246)]"
-                      : "shadow-[inset_0_0_0_1px_rgba(0,0,0,0.14)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.16)]",
+                    "size-6 rounded-full",
+                    "transition-[scale] duration-150 hover:scale-110 active:scale-[0.96]",
                     focusRing,
                   )}
                   style={{
                     backgroundColor: swatch,
                     transitionTimingFunction: EASE,
+                    boxShadow: selected
+                      ? `0 0 0 2px #fff, 0 0 0 4px ${swatch}, 0 1px 3px rgba(0,0,0,0.3)`
+                      : "inset 0 0 0 1px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.15)",
                   }}
                 />
               )
@@ -538,7 +591,7 @@ interface SliderTrackProps {
 }
 
 /**
- * A 10px-tall track inside a 44px-tall hit area. The visual bar stays slim
+ * A 10px-tall track inside a 40px-tall hit area. The visible bar stays slim
  * while the pointer target clears the WCAG 2.5.5 minimum on touch.
  */
 function SliderTrack({
@@ -568,28 +621,31 @@ function SliderTrack({
       onKeyDown={onKeyDown}
       {...drag.handlers}
       className={cn(
-        "group relative flex h-11 items-center touch-none rounded-lg",
+        "relative flex h-10 items-center rounded-xl touch-none",
         !disabled && "cursor-pointer",
-        "outline-none focus-visible:ring-[3px] focus-visible:ring-blue-500/60",
+        "outline-none focus-visible:ring-[3px] focus-visible:ring-blue-500/50",
       )}
     >
       <div
         ref={drag.trackRef}
-        className="relative h-2.5 w-full rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]"
-        style={{ background }}
+        className="relative h-2.5 w-full rounded-full"
+        style={{ background, boxShadow: RECESSED }}
       >
         {overlay && (
-          <div className="absolute inset-0 rounded-full" style={{ background: overlay }} />
+          <div
+            className="absolute inset-0 rounded-full"
+            style={{ background: overlay, boxShadow: RECESSED }}
+          />
         )}
         <Thumb
-          size={14}
+          size={16}
           dragging={drag.dragging}
           reducedMotion={reducedMotion}
           style={{
             left: thumb.left,
             top: "50%",
             background: thumb.background,
-            boxShadow: "0 0 0 2px #fff, 0 1px 4px rgba(0,0,0,0.45)",
+            boxShadow: RAISED,
           }}
         />
       </div>
@@ -618,7 +674,7 @@ function Thumb({
         height: size,
         // Position is deliberately never transitioned. Easing it leaves the
         // thumb trailing the cursor and the whole control reads as laggy.
-        transform: `translate(-50%, -50%) scale(${dragging && !reducedMotion ? 1.15 : 1})`,
+        transform: `translate(-50%, -50%) scale(${dragging && !reducedMotion ? 1.18 : 1})`,
         transitionProperty: reducedMotion ? "none" : "transform",
         transitionDuration: "150ms",
         transitionTimingFunction: EASE,
@@ -627,22 +683,74 @@ function Thumb({
   )
 }
 
+function IconButton({
+  onClick,
+  disabled,
+  label,
+  focusRing,
+  children,
+}: {
+  onClick: () => void
+  disabled: boolean
+  label: string
+  focusRing: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className={cn(
+        "grid size-9 shrink-0 place-items-center rounded-xl",
+        "text-neutral-500 dark:text-neutral-400",
+        "transition-[scale,background-color,color] duration-150 active:scale-[0.96]",
+        "hover:bg-black/5 hover:text-neutral-800 dark:hover:bg-white/10 dark:hover:text-neutral-100",
+        focusRing,
+      )}
+      style={{ transitionTimingFunction: EASE }}
+    >
+      {children}
+    </button>
+  )
+}
+
+const iconProps = {
+  width: 15,
+  height: 15,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+}
+
 function EyedropperIcon() {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
+    <svg {...iconProps} width={16} height={16}>
       <path d="m2 22 1-1h3l9-9" />
       <path d="M3 21v-3l9-9" />
       <path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z" />
+    </svg>
+  )
+}
+
+function CopyIcon() {
+  return (
+    <svg {...iconProps}>
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </svg>
+  )
+}
+
+function CheckIcon() {
+  return (
+    <svg {...iconProps}>
+      <path d="M20 6 9 17l-5-5" />
     </svg>
   )
 }

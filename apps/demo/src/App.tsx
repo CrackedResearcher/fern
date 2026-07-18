@@ -25,7 +25,10 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 
 export function App() {
   const [color, setColor] = useState("#3b82f6")
-  const [dark, setDark] = useState(false)
+  // Readable from the URL so headless screenshots can capture either theme.
+  const [dark, setDark] = useState(
+    () => new URLSearchParams(window.location.search).get("theme") === "dark",
+  )
 
   return (
     <div className={dark ? "dark" : ""}>
