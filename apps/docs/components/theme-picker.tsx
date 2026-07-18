@@ -25,32 +25,10 @@ const PRESETS: { id: Preset; label: string; swatch: string }[] = [
 
 const PRESET_KEY = "fern-preset"
 
-const PaletteIcon = () => (
-  <svg viewBox="0 0 16 16" width="1em" height="1em" fill="none" aria-hidden className="size-3.5 text-foreground">
-    <path
-      fill="currentColor"
-      fillRule="evenodd"
-      d="M11.773 7.412c-.064.064-.27.249-1.017-.027-.75-.277-1.706-.928-2.695-1.918-.99-.99-1.64-1.945-1.918-2.695-.276-.747-.091-.953-.027-1.017s.27-.249 1.017.027q.14.052.29.121c.7.324 1.54.93 2.405 1.797.99.99 1.641 1.945 1.918 2.695.276.747.091.953.027 1.017M7 6.528c.85.85 1.738 1.535 2.581 1.972H1.694v-.027a1.3 1.3 0 0 1 .1-.507l2.802-4.33.172-.26C5.16 4.383 5.956 5.485 7 6.529m3.89-3.889c2.147 2.148 3.24 4.537 1.944 5.834a13 13 0 0 1-2.127 1.719L6.352 13.01s-1.945 1.296-4.537-1.296C-.778 9.12.518 7.176.518 7.176l2.818-4.355A13 13 0 0 1 5.056.694C6.351-.602 8.74.491 10.888 2.64M12.748 15c.966 0 1.75-.765 1.75-1.71 0-1.234-1.17-2.76-1.512-3.178a.3.3 0 0 0-.237-.111.31.31 0 0 0-.24.112c-.34.422-1.511 1.96-1.511 3.178 0 .944.784 1.71 1.75 1.71"
-      clipRule="evenodd"
-    />
-  </svg>
-)
-
 /**
- * Theme preset picker.
- *
- * Structure mirrors theirs: a 4-column grid of round swatches with labels.
- * Built on HeroUI's Popover and Button rather than hand-rolled equivalents, so
- * the trigger height and popover elevation come from the same implementation
- * their header uses.
- *
- * Theirs also carries a "Vibrant palette" switch. Dropped here: it multiplied
- * the accent's chroma, which is a second axis of colour on a control whose job
- * is picking one accent, and it doubled the stored state for a setting nobody
- * asked for twice.
- *
- * Presets are applied to <html>, which is where next-themes also writes, so a
- * preset and the light/dark class compose instead of fighting.
+ * A 4-column grid of swatches, on HeroUI's Popover so the trigger and elevation
+ * match their header. Presets apply to <html>, where next-themes also writes,
+ * so a preset and the light/dark class compose instead of fighting.
  */
 export function ThemePicker() {
   const [preset, setPreset] = useState<Preset>("default")
@@ -94,13 +72,8 @@ export function ThemePicker() {
         </Button>
       </Popover.Trigger>
 
-      {/*
-       * 256px, sized to the content rather than picked round.
-       *
-       * At 340px each column was 75px holding a 36px swatch and a 48px label —
-       * 27px of slack per column, 108px of the popover doing nothing. The four
-       * columns now sit at 54px, which is the widest label plus a little air.
-       */}
+      {/* 256px, sized to the content: four 54px columns, the widest label
+          plus a little air. */}
       <Popover.Content className="w-64">
         <Popover.Dialog className="p-2" aria-label="Design theme">
           <div className="grid grid-cols-4 gap-x-2 gap-y-3">

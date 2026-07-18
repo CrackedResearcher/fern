@@ -81,11 +81,8 @@ const DURATION = {
 
 
 /**
- * Alpha checkerboard, inlined so the component ships without an asset.
- *
- * Mid-grey rather than black: a black-on-transparent checker is invisible
- * against a dark card, which is exactly where the opacity track needs to read.
- * A neutral grey holds contrast on both light and dark surfaces.
+ * Alpha checkerboard, inlined so the component ships without an asset. Mid-grey
+ * rather than black — black on transparent vanishes against a dark card.
  */
 const CHECKERBOARD =
   "repeating-conic-gradient(rgba(140,140,140,0.55) 0% 25%, rgba(255,255,255,0.9) 0% 50%) 50% / 9px 9px"
@@ -293,12 +290,8 @@ export interface ColorPickerProps
   /** Show the opacity slider and include alpha in the output. */
   alpha?: boolean
   /**
-   * Show the name and live readout above each slider.
-   *
-   * On by default: in HEX and RGBA the readout is the only place the hue
-   * appears at all, and a number you can aim at is what separates a slider you
-   * can use deliberately from one you can only nudge. Turn it off for a
-   * compact picker where the two bars are self-evident.
+   * Show the name and live readout above each slider. On by default: in HEX and
+   * RGBA the readout is the only place the hue appears at all.
    */
   sliderLabels?: boolean
   /** Offer the native screen eyedropper where the browser supports it. */
@@ -623,11 +616,8 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     }
 
     /**
-     * Accepts "77", "77%", "77°", or " 77 " — anything a person would type.
-     *
-     * Out-of-range reverts rather than clamping. Clamping turns a fat-fingered
-     * `2555` into 255 and looks like it worked; reverting shows the entry was
-     * rejected, which is the honest outcome for a typo.
+     * Accepts "77", "77%", "77°" or " 77 ". Out-of-range reverts rather than
+     * clamping — clamping turns a fat-fingered 2555 into 255 and looks correct.
      */
     const commitChannel = (spec: ChannelSpec, text: string) => {
       setChannelDraft(null)
@@ -688,13 +678,9 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const focusRing =
       "outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface,#ffffff)]"
 
-    /**
-     * Declared once and rendered from one of two places depending on the model,
-     * so the two sites cannot drift. Whichever row it lands in, it copies the
-     * value the channel row is displaying — `#747839` in HEX,
-     * `rgb(116 120 57)` in RGBA. A copy button that always emits hex regardless
-     * of the selected model is a trap.
-     */
+    // Declared once, rendered from one of two rows, so they cannot drift. It
+    // copies what the channel row displays — a button that always emits hex
+    // regardless of the selected model is a trap.
     const copyButton = (
       <RoundButton
         onClick={copy}
@@ -1078,11 +1064,8 @@ interface LabelledSliderProps {
 }
 
 /**
- * A labelled slider: name on the left, live value on the right, track below.
- *
- * The readout matters more than it looks. Without it the only way to know the
- * hue is to read it back out of the hex field, which is a translation task;
- * showing the number turns the slider into something you can aim with.
+ * Name on the left, live value on the right, track below. The readout is what
+ * makes the slider something you can aim with rather than only nudge.
  */
 function LabelledSlider({
   drag,
@@ -1439,12 +1422,8 @@ const iconProps = {
 }
 
 /**
- * Filled pen, to match the copy glyph beside it — the stroked Lucide
- * eyedropper next to a filled copy mark read as two different icon sets.
- *
- * `fill` is currentColor, not the #B5B5B5 the export carried: the button owns
- * the colour so the icon can follow the theme and the hover state. A literal
- * grey here would sit unchanged on a dark card and ignore hover entirely.
+ * Filled, to match the copy glyph beside it. currentColor rather than the
+ * #B5B5B5 the export carried, so it follows the theme and the hover state.
  */
 function EyedropperIcon() {
   return (

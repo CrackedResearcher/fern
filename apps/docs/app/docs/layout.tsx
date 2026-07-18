@@ -39,17 +39,9 @@ export default function Layout({ children }: { children: ReactNode }) {
       ]}
       themeSwitch={{ mode: "light-dark-system" }}
       nav={{
-        /**
-         * Their site runs the "top" nav mode. It is not cosmetic — inside the
-         * layout it switches four things at once (index.tsx:353-410): the left
-         * block gets `flex-1` so the search trigger centres rather than sitting
-         * against the sidebar, the logo stays visible on desktop instead of
-         * being `md:hidden`, and the search grows to `max-w-sm` with
-         * `rounded-xl ps-2.5` instead of `max-w-[240px]`.
-         *
-         * The default, "auto", produced a narrow left-aligned search and no
-         * header logo — which is most of what read as "the header is wrong".
-         */
+        /* "top" is not cosmetic: it centres the search, keeps the logo on
+           desktop, and widens the trigger (index.tsx:353-410). "auto" gives a
+           narrow left-aligned search and no logo. */
         mode: "top",
         // Their version sits beside the logo, not in the right-hand cluster —
         // `<div class="flex items-center gap-4">logo v3.2.2 ⌄</div>`.

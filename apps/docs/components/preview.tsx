@@ -6,29 +6,13 @@ import { cn } from "@/components/cn"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 
 /**
- * Live demo with its source fused to the bottom edge, as one box.
+ * Live demo with its source fused to the bottom edge, as one box. The demo
+ * omits its bottom border because the code section supplies it — drawing both
+ * puts a 2px seam through the middle.
  *
- * Their `.component-preview-container`: the preview pane is closed on three
- * sides with a top radius, and the code section below supplies the bottom edge.
- * The preview deliberately omits its own bottom border — drawing both would put
- * a 2px seam through the middle of the box.
- *
- * Used as two slots so a fenced code block can live inside it in MDX:
- *
- *   <Preview>
- *     <PreviewDemo><ColorPickerDemo /></PreviewDemo>
- *     <PreviewCode>
- *     ```tsx
- *     …
- *     ```
- *     </PreviewCode>
- *   </Preview>
- *
- * The slots are separate exports rather than `Preview.Demo` / `Preview.Code`.
- * Preview is a client component, and static properties hung off one do not
- * survive the RSC boundary — by the time MDX resolves the dotted name on the
- * server it is undefined, and the page 500s with "Expected component
- * `Preview.Code` to be defined".
+ * Separate exports rather than `Preview.Demo`: static properties on a client
+ * component do not survive the RSC boundary, and MDX resolves the dotted name
+ * on the server, where it is undefined.
  */
 export function Preview({ children }: { children: ReactNode }) {
   return (
@@ -68,15 +52,9 @@ export function PreviewCode({
   const [overflows, setOverflows] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
 
-  /**
-   * Whether the snippet is actually taller than the clamp.
-   *
-   * A genuine outside-React measurement, not derived state — the height depends
-   * on font loading and container width, neither of which React knows about, so
-   * it has to be observed rather than computed. Without this the button
-   * rendered on every block, including five-line ones where expanding and
-   * collapsing look identical and the control is pure noise.
-   */
+  // Measured, not derived: the height depends on font loading and container
+  // width. Without it the Expand button rendered on every block, including
+  // five-line ones where expanding changes nothing.
   useEffect(() => {
     const element = contentRef.current
     if (!element) return

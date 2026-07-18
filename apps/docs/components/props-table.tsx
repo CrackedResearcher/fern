@@ -9,25 +9,13 @@ export interface PropRow {
 }
 
 /**
- * The props reference, built to HeroUI's `Table` primary variant.
+ * Built to HeroUI's Table primary variant — a grey root with the body as a card
+ * inside it — read off packages/styles/components/table.css on the v3 branch.
+ * They ship no Table to this app, so this is a rebuild, not a wrapper.
  *
- * Their design is a grey root with the body as a white card nested inside it:
- * `.table-root--primary` is `bg-surface-secondary px-1 pb-1` at r20, and
- * `.table__cell` is `bg-surface`, so the 4px of side and bottom padding is what
- * shows as a frame around the body. No top padding — the header sits flush and
- * reads as part of the frame rather than as a row of the card.
- *
- * Read off packages/styles/components/table.css on the v3 branch rather than
- * eyeballed. HeroUI v3 does not ship a Table component to this app — there is
- * no table CSS in @heroui/styles and no `Table` export in @heroui/react — so
- * this is a rebuild against their published rules, not a wrapper.
- *
- * One deviation: their cells use `border-separator-tertiary/50`, which this app
- * does not define. Falls back to `separator/50`, the same token their row
- * borders use.
- *
- * `not-prose` because the surrounding typography styles would otherwise put
- * their own table borders and cell padding back on top of these.
+ * Their cells use border-separator-tertiary, which this app does not define;
+ * falls back to separator/50. `not-prose` stops the typography styles putting
+ * table borders back on top.
  */
 export function PropsTable({ rows }: { rows: PropRow[] }) {
   return (
@@ -87,14 +75,8 @@ export function PropsTable({ rows }: { rows: PropRow[] }) {
   )
 }
 
-/**
- * Monospace pill for the three scannable columns.
- *
- * A plain markdown table renders the name, type and default in the same weight
- * as the description, so the three things a reader scans for are the three
- * hardest to pick out. `whitespace-nowrap` keeps a union type from wrapping
- * mid-token — the horizontal scroll above is the escape hatch instead.
- */
+/** Monospace pill, so the three scannable columns do not read at the same
+ *  weight as the prose beside them. */
 function Chip({ children }: { children: ReactNode }) {
   return (
     <code className="inline-block rounded-md bg-surface-secondary px-2 py-1 font-mono text-[13px] whitespace-nowrap text-foreground">

@@ -106,15 +106,9 @@ function numbersIn(input: string): number[] {
 }
 
 /**
- * Parses every string this component can *emit* — hex, `rgb()`, and `hsl()`,
- * with or without alpha, comma- or space-separated.
- *
- * It has to accept all three because a controlled picker round-trips its own
- * output: the parent stores whatever `onChange` gave it and hands it straight
- * back as `value`. When the parser only understood hex, selecting RGBA or HSL
- * meant every change came back unparseable — alpha snapped to 100% and typed
- * channel values never stuck. Emitting a format you cannot read is a closed
- * loop that silently loses the colour.
+ * Parses every string this component can emit — hex, rgb() and hsl(). It has to
+ * accept all three because a controlled picker round-trips its own output:
+ * emitting a format you cannot read silently loses the colour.
  */
 export function parseColor(input: string): { rgb: RGB; a: number } | null {
   const text = input.trim()
