@@ -1,0 +1,56 @@
+---
+title: Code Block
+description: A code viewer with a filename bar, copy button, and collapse for long files.
+---
+
+<PreviewCode standalone label="button.tsx">
+
+```tsx
+export function Button({ children }: { children: React.ReactNode }) {
+  return <button className="rounded-lg px-3 py-2">{children}</button>
+}
+```
+
+</PreviewCode>
+
+## Usage
+
+```tsx
+import { PreviewCode } from "@/components/preview"
+
+<PreviewCode standalone label="button.tsx">
+  {/* a fenced code block, or highlighted output */}
+</PreviewCode>
+```
+
+## When to use what
+
+- **`label`** names the file. Falls back to `lang` when omitted, so the bar
+  always says what you are looking at.
+- **`standalone`** rounds all four corners. Leave it off when the block is
+  fused to a preview above it.
+- **`lineNumbers`** adds the gutter. Off by default — numbers are noise unless
+  you are pointing at a specific line.
+- Blocks taller than 150px collapse behind an **Expand code** button. Shorter
+  ones render whole, with no button.
+
+## Rendering a source file
+
+`ComponentSource` reads a file from a package and pipes it through the same
+viewer, so a copy-paste component can show exactly what you would copy.
+
+```tsx
+<ComponentSource pkg="color-picker" file="color-picker.tsx" />
+```
+
+## Props
+
+<PropsTable
+  rows={[
+    { name: "children", type: "ReactNode", description: "The code. A fenced block in MDX, or highlighted output." },
+    { name: "label", type: "string", description: "Filename shown in the bar. Falls back to lang." },
+    { name: "lang", type: "string", description: "Language shown when there is no filename." },
+    { name: "standalone", type: "boolean", default: "false", description: "Round all four corners, for a block with no preview above it." },
+    { name: "lineNumbers", type: "boolean", default: "false", description: "Show the line-number gutter." },
+  ]}
+/>

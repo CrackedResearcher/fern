@@ -332,18 +332,11 @@
 .docs-code-block-wrapper .shiki {
   margin: 0;
   padding-top: 16px;
-  /*
-   * Matches the top. Their rule sets only padding-top, so the last line sat
-   * flush against the bottom edge while the first had 16px above it, and the
-   * block read as though it had been cut off.
-   *
-   * Padding rather than blank lines in the MDX: an empty line at the end of a
-   * fence is real content, so it lands in the clipboard and in anything that
-   * reads textContent off the <pre>. Spacing is presentation, so it belongs
-   * here.
-   */
+  /* Their rule sets only padding-top, leaving the last line flush. Padding
+     rather than blank lines in the MDX, which would land in the clipboard. */
   padding-bottom: 16px;
-  padding-inline: 8px;
+  /* 16px: with the gutter off, 8px puts the first character on the border. */
+  padding-inline: 16px;
   border-style: none;
   border-radius: 0;
   background: transparent;
@@ -377,6 +370,7 @@
 .docs-code-block-wrapper .shiki-themes code {
   display: block;
   padding: 0;
+  border: 0;
   border-radius: 0;
   background: transparent;
   font-family: var(--font-mono);
@@ -393,7 +387,8 @@
   counter-reset: step;
   counter-increment: step 0;
 }
-.docs-code-block-wrapper code .line::before {
+/* Opt-in: blocks pass lineNumbers to get the gutter. */
+.docs-code-block-wrapper[data-line-numbers] code .line::before {
   content: counter(step);
   counter-increment: step;
   display: inline-block;
@@ -401,6 +396,12 @@
   margin-right: 1.5rem;
   text-align: right;
   color: #738a9466;
+}
+
+/* A fenced block inside a labelled PreviewCode brings its own copy button from
+   the MDX pre override, duplicating the one in the filename bar. */
+.code-section[data-has-bar] figure .absolute {
+  display: none;
 }
 
 /* The copy button belongs to the section, not the inner figure. */
