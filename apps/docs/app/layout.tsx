@@ -12,7 +12,12 @@ import { UrlTheme } from "@/components/url-theme"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "fern — React UI blocks",
+  title: {
+    // Pages supply their own title; this appends the site name. The absolute
+    // form is what the bare landing page uses, since "fern | fern" reads badly.
+    template: "%s | fern",
+    default: "fern — React UI blocks",
+  },
   description:
     "Thoughtfully designed React UI blocks. Low-dependency, copy-paste, yours to edit.",
 }

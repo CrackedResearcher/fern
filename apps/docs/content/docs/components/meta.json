@@ -1,6 +1,6 @@
 {
   "title": "Components",
-  "icon": "Cubes3",
+  "icon": "Components",
   "root": true,
   "pages": [
     "---Inputs---",

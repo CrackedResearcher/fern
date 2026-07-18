@@ -88,6 +88,7 @@ export async function generateMetadata(props: {
   if (!page) notFound()
 
   return {
+    // Bare title — the root layout's template turns this into "<name> | fern".
     title: page.data.title,
     description: page.data.description,
   }
