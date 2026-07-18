@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@heroui/react"
-import { useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 
 /**
  * Live demo with its source fused to the bottom edge, as one box.
@@ -44,30 +44,62 @@ export function PreviewDemo({ children }: { children: ReactNode }) {
   )
 }
 
+/** Height the code is clamped to before it is worth offering to expand. */
+const COLLAPSED_MAX = 150
+
 export function PreviewCode({ children }: { children: ReactNode }) {
   const [expanded, setExpanded] = useState(false)
+  const [overflows, setOverflows] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  /**
+   * Whether the snippet is actually taller than the clamp.
+   *
+   * A genuine outside-React measurement, not derived state — the height depends
+   * on font loading and container width, neither of which React knows about, so
+   * it has to be observed rather than computed. Without this the button
+   * rendered on every block, including five-line ones where expanding and
+   * collapsing look identical and the control is pure noise.
+   */
+  useEffect(() => {
+    const element = contentRef.current
+    if (!element) return
+    // A few px of tolerance: content that lands within a rounding error of the
+    // clamp would otherwise flip the button on and off as the layout settles.
+    const measure = () =>
+      setOverflows(element.scrollHeight > COLLAPSED_MAX + 8)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  const clamped = overflows && !expanded
 
   return (
     <div className="code-section relative rounded-b-xl border border-separator bg-transparent">
       <div
+        ref={contentRef}
         className={
-          expanded
-            ? "docs-code-block-wrapper relative"
-            : // Opaque for the first 20%, then fading out, so the cut reads as
+          clamped
+            ? // Opaque for the first 20%, then fading out, so the cut reads as
               // "there is more" rather than as a crop.
               "docs-code-block-wrapper relative max-h-[150px] overflow-hidden [mask-image:linear-gradient(#000_0%_20%,transparent_100%)]"
+            : "docs-code-block-wrapper relative"
         }
       >
         {children}
       </div>
-      <Button
-        size="sm"
-        variant="tertiary"
-        className="absolute right-1/2 bottom-2 translate-x-1/2 bg-surface text-xs shadow-sm shadow-black/5"
-        onPress={() => setExpanded((value) => !value)}
-      >
-        {expanded ? "Collapse code" : "Expand code"}
-      </Button>
+      {overflows && (
+        <Button
+          size="sm"
+          variant="tertiary"
+          className="absolute right-1/2 bottom-2 translate-x-1/2 bg-surface text-xs shadow-sm shadow-black/5"
+          onPress={() => setExpanded((value) => !value)}
+        >
+          {expanded ? "Collapse code" : "Expand code"}
+        </Button>
+      )}
     </div>
   )
 }

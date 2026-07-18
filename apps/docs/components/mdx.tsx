@@ -4,9 +4,12 @@ import type { MDXComponents } from "mdx/types"
 import type { ComponentProps } from "react"
 import { Preview, PreviewCode, PreviewDemo } from "@/components/preview"
 import { CodeActions } from "@/components/code-actions"
+import { PropsTable } from "@/components/props-table"
 import {
+  ColorPickerCommit,
   ColorPickerDemo,
   ColorPickerMinimal,
+  ColorPickerModel,
 } from "@/components/demos/color-picker-demo"
 
 /**
@@ -30,8 +33,11 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Preview,
     PreviewDemo,
     PreviewCode,
+    PropsTable,
     ColorPickerDemo,
-      ColorPickerMinimal,
+    ColorPickerModel,
+    ColorPickerCommit,
+    ColorPickerMinimal,
     ...components,
   }
 }
