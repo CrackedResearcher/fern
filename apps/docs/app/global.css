@@ -218,6 +218,36 @@
   }
 }
 
+/* Both header rows drop their own border. The single hairline under the whole
+   header comes from #nd-subnav::after below — with `border-b` left on each row
+   you get a line above the tab row as well as under it, which is the doubled
+   rule their header does not have. Heights and tab spacing are their resolved
+   values too. */
+#nd-subnav [data-header-body],
+#nd-subnav [data-header-tabs] {
+  border-style: none;
+}
+#nd-subnav [data-header-body] {
+  height: 52px;
+}
+#nd-subnav [data-header-tabs] {
+  gap: 4px;
+  padding-inline: 16px;
+}
+#nd-subnav [data-header-tabs] a {
+  padding-inline: 4px;
+  padding-bottom: 8px;
+}
+@media (min-width: 48rem) {
+  #nd-subnav [data-header-body] {
+    height: 56px;
+  }
+  #nd-subnav [data-header-tabs] {
+    gap: 12px;
+    padding-inline: 24px;
+  }
+}
+
 /* Header: solid background and a full-viewport-width hairline. */
 #nd-subnav {
   background-color: var(--background);

@@ -228,7 +228,7 @@ export function LayoutHeaderTabs({
   return (
     <div className={cn("flex flex-row items-end gap-6", className)} {...props}>
       {filteredOptions?.map((option, i) => {
-        const {props: {className, ...rest} = {}, title, unlisted, url} = option;
+        const {props: {className, ...rest} = {}, icon, title, unlisted, url} = option;
         const isSelected = selectedIdx === i;
 
         return (
@@ -243,7 +243,19 @@ export function LayoutHeaderTabs({
             )}
             {...rest}
           >
-            {title}
+            {/* MODIFIED by fern: render the tab's icon alongside its title.
+                LayoutTab carries an `icon`, and the source loader resolves
+                meta.json's icon name into an element, but this component only
+                ever rendered `{title}` — so the icons were silently dropped.
+                Their deployed site shows them, wrapped exactly like this. */}
+            {icon ? (
+              <div aria-label={typeof title === "string" ? title : undefined} className="flex items-center gap-2">
+                {icon}
+                <span>{title}</span>
+              </div>
+            ) : (
+              title
+            )}
           </Link>
         );
       })}
