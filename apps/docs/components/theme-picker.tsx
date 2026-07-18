@@ -1,6 +1,6 @@
 "use client"
 
-import { Button, Popover, Separator, Switch } from "@heroui/react"
+import { Button, Popover } from "@heroui/react"
 import { useEffect, useState } from "react"
 
 export type Preset =
@@ -24,7 +24,6 @@ const PRESETS: { id: Preset; label: string; swatch: string }[] = [
 ]
 
 const PRESET_KEY = "fern-preset"
-const VIBRANT_KEY = "fern-vibrant"
 
 const PaletteIcon = () => (
   <svg viewBox="0 0 16 16" width="1em" height="1em" fill="none" aria-hidden className="size-3.5 text-foreground">
@@ -40,25 +39,27 @@ const PaletteIcon = () => (
 /**
  * Theme preset picker.
  *
- * Structure mirrors theirs: a 4-column grid of round swatches with labels, a
- * separator, then a "Vibrant palette" row with a switch. Built from HeroUI's
- * Popover/Button/Switch/Separator rather than hand-rolled equivalents, so the
- * trigger height, popover elevation and switch geometry come from the same
- * implementation their header uses.
+ * Structure mirrors theirs: a 4-column grid of round swatches with labels.
+ * Built on HeroUI's Popover and Button rather than hand-rolled equivalents, so
+ * the trigger height and popover elevation come from the same implementation
+ * their header uses.
+ *
+ * Theirs also carries a "Vibrant palette" switch. Dropped here: it multiplied
+ * the accent's chroma, which is a second axis of colour on a control whose job
+ * is picking one accent, and it doubled the stored state for a setting nobody
+ * asked for twice.
  *
  * Presets are applied to <html>, which is where next-themes also writes, so a
  * preset and the light/dark class compose instead of fighting.
  */
 export function ThemePicker() {
   const [preset, setPreset] = useState<Preset>("default")
-  const [vibrant, setVibrant] = useState(false)
 
   // Read the stored choice after mount. Reading during render would disagree
   // with the server pass and throw away the tree on hydration.
   useEffect(() => {
     const stored = window.localStorage.getItem(PRESET_KEY) as Preset | null
     if (stored) setPreset(stored)
-    setVibrant(window.localStorage.getItem(VIBRANT_KEY) === "true")
   }, [])
 
   // Writing to <html> is genuine outside-React synchronisation, not derived
@@ -67,10 +68,8 @@ export function ThemePicker() {
     const root = document.documentElement
     if (preset === "default") root.removeAttribute("data-preset")
     else root.setAttribute("data-preset", preset)
-    root.toggleAttribute("data-vibrant", vibrant)
     window.localStorage.setItem(PRESET_KEY, preset)
-    window.localStorage.setItem(VIBRANT_KEY, String(vibrant))
-  }, [preset, vibrant])
+  }, [preset])
 
   const active = PRESETS.find((entry) => entry.id === preset) ?? PRESETS[0]!
 
@@ -96,7 +95,7 @@ export function ThemePicker() {
       </Popover.Trigger>
 
       <Popover.Content className="w-[340px]">
-        <Popover.Dialog className="flex flex-col gap-4 p-2" aria-label="Design theme">
+        <Popover.Dialog className="p-2" aria-label="Design theme">
           <div className="grid grid-cols-4 gap-x-2 gap-y-3">
             {PRESETS.map((entry) => {
               const selected = entry.id === preset
@@ -129,21 +128,6 @@ export function ThemePicker() {
             })}
           </div>
 
-          <Separator />
-
-          <div className="flex items-center justify-between gap-3 px-1">
-            <span className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium">Vibrant palette</span>
-              <span className="text-xs text-muted">
-                More saturated, less contrast
-              </span>
-            </span>
-            <Switch
-              isSelected={vibrant}
-              onChange={setVibrant}
-              aria-label="Vibrant palette"
-            />
-          </div>
         </Popover.Dialog>
       </Popover.Content>
     </Popover>
