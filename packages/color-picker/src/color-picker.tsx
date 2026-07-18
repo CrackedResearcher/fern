@@ -90,23 +90,8 @@ export interface ColorPickerProps
   eyedropper?: boolean
   /** Show the copy-to-clipboard button. */
   copyable?: boolean
-  /**
-   * Show the starting color beside the current one. Pressing it reverts —
-   * picking is comparative, so the value you began with should stay reachable.
-   */
-  comparison?: boolean
   /** Block all interaction and dim the control. */
   disabled?: boolean
-  /**
-   * Layout. Mirrors the `_ColorPickerSelect` variants in the HeroUI Figma kit.
-   *
-   * - `default`  — presets above the field, controls below.
-   * - `swatches` — presets move beneath the controls, so the field leads.
-   *
-   * `fields` and `sliders` from the kit are not implemented yet: both need a
-   * colour-model select and per-channel inputs that do not exist here.
-   */
-  variant?: "default" | "swatches"
   /** Accessible name for the whole picker. Defaults to `"Color picker"`. */
   label?: string
 }
@@ -161,10 +146,8 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       // options — most people never customise, so the box should be full.
       alpha: alphaProp,
       sliderLabels = true,
-      variant = "default",
       eyedropper = true,
       copyable = true,
-      comparison = true,
       disabled = false,
       label = "Color picker",
       className,
@@ -196,9 +179,6 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     // The select reshapes the row beneath it, so it needs to point at it.
     const channelGroupId = React.useId()
 
-    // The colour the picker opened with, kept for the comparison well.
-    const [initial] = React.useState(value ?? defaultValue)
-
     // Sync a controlled value without an effect: compare against the last prop
     // we reconciled and adjust during render. React reruns this pass before
     // committing, so nothing extra is painted.
@@ -210,22 +190,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       )
     }
 
-    /**
-     * Composition follows the variant, and an explicit prop always wins.
-     *
-     * The kit's `swatches` layout is a *reduced* one — field, hue, presets, and
-     * nothing else. It is not the default layout with the presets moved, which
-     * is what an earlier pass shipped.
-     *
-     * Dropping the readout is a real accessibility question, not just a visual
-     * one: without it there is no on-screen text for the current value. The
-     * sliders keep their labels and aria-valuetext and the polite live region
-     * still announces settled values, so the value stays reachable to a screen
-     * reader — but a sighted user loses it, which is why `default` keeps the
-     * field and this variant is opt-in.
-     */
-    const alpha = alphaProp ?? variant === "default"
-    const showValueField = variant === "default"
+    const alpha = alphaProp ?? true
 
     const color = toColor(state.hsv, state.alpha, alpha)
     const output = formatColor(color, format)
@@ -556,15 +521,19 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           // their letters have to hold a three-digit value each without the
           // number crowding its own box, and 264px left them at ~43px. A picker
           // that cannot show you what you picked has failed at its only job.
+          // r24 to match HeroUI's .popover, which resolves to
+          // min(32px, --radius-3xl) = 24px. Measured against the live
+          // stylesheet, not inferred — the picker is a popover surface and
+          // should not be the one overlay on the page with its own corner.
+          //
           // Padding is uniform, and that is load-bearing rather than tidy.
-          // Concentric nesting is outer = inner + padding, so a card at r20
-          // with 8px of inset wants its children at r12 — but the inset has to
-          // be the *same* on every edge for one corner radius to satisfy it.
-          // At 16px top and 8px sides the top corners needed r4 while the sides
-          // needed r12, and no single value is both: the field's curve visibly
-          // fought the card's. 8px everywhere makes r12 correct on all four.
+          // Concentric nesting is outer = inner + padding, so r24 with an 8px
+          // inset wants its children at r16 — but the inset has to be the
+          // *same* on every edge for one radius to satisfy it. At 16px top and
+          // 8px sides the top corners wanted one value and the sides another,
+          // and the field's curve visibly fought the card's.
           "flex w-80 select-none flex-col gap-4 p-2 antialiased",
-          "rounded-[20px] bg-[var(--surface,#ffffff)]",
+          "rounded-3xl bg-[var(--surface,#ffffff)]",
           disabled && "pointer-events-none opacity-50 saturate-50",
           className,
         )}
@@ -608,10 +577,10 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             // holds. Set it below that and the ratio silently stops applying,
             // which is what a 200px cap was quietly doing here.
             //
-            // r12, not r16: the card is r20 with 8px of padding, and a nested
-            // surface reads as concentric only when it steps down by the gap
-            // between them. See RADIUS in tokens.ts.
-            "relative aspect-[4/3] max-h-[240px] w-full touch-none rounded-xl",
+            // r16 = card r24 - 8px padding. A nested surface reads as
+            // concentric only when it steps down by the gap between them.
+            // See RADIUS in tokens.ts.
+            "relative aspect-[4/3] max-h-[240px] w-full touch-none rounded-2xl",
             !disabled && "cursor-crosshair",
             "outline-hidden focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-[var(--focus,#0485f7)]/70",
           )}
@@ -689,13 +658,13 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           </div>
 
           {/* --------------------------- Model + actions -------------------------- */}
-          {showValueField && (
+          {(
           <div className="flex items-center gap-2">
             {/* A native select, deliberately. A custom listbox is several
                 hundred lines of focus management and typeahead to arrive back
                 where the platform already is — and it would be the only part of
                 this package that needed a portal. */}
-            <div className="relative flex h-10 min-w-0 flex-1 items-center rounded-xl bg-[var(--default,#ebebec)]">
+            <div className="relative flex h-10 min-w-0 flex-1 items-center rounded-2xl bg-[var(--default,#ebebec)]">
               <select
                 value={format}
                 disabled={disabled || !formatToggle}
@@ -705,7 +674,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   changeModel(event.target.value as ColorFormat)
                 }
                 className={cn(
-                  "h-full w-full appearance-none rounded-xl bg-transparent pr-9 pl-3.5",
+                  "h-full w-full appearance-none rounded-2xl bg-transparent pr-9 pl-3.5",
                   "text-[13px] font-medium text-[var(--foreground,#18181b)] outline-hidden",
                   !disabled && formatToggle && "cursor-pointer",
                   focusRing,
@@ -732,17 +701,33 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 the preview is lying about the value. */}
             <div
               aria-hidden
-              className="size-10 shrink-0 rounded-full"
-              style={{
-                background: CHECKERBOARD,
-                boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.12)",
-              }}
+              className="relative size-10 shrink-0 rounded-full"
+              style={{ background: CHECKERBOARD }}
             >
               <div
                 className="size-full rounded-full"
+                style={{ backgroundColor: output }}
+              />
+              {/*
+               * One hairline, on its own layer above both fills.
+               *
+               * It was on the checkerboard *and* on the colour disc, which are
+               * coincident circles — two 1px rings antialiasing against the
+               * same edge is what made the rim look brittle on dark colours.
+               *
+               * Black over a light colour, white over a dark one, rather than
+               * one tinted neutral for both: a near-black hairline on a dark
+               * swatch picks up the fill beneath it and reads as grime on the
+               * edge instead of as a defined edge.
+               */}
+              <div
+                className="absolute inset-0 rounded-full"
                 style={{
-                  backgroundColor: output,
-                  boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.12)",
+                  boxShadow: `inset 0 0 0 1px ${
+                    luminance(color.rgb) > 0.5
+                      ? "rgb(0 0 0 / 0.12)"
+                      : "rgb(255 255 255 / 0.16)"
+                  }`,
                 }}
               />
             </div>
@@ -768,13 +753,13 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           )}
 
           {/* ----------------------------- Channel row ---------------------------- */}
-          {showValueField && (
+          {(
           <div className="flex items-center gap-2">
           <div
             id={channelGroupId}
             role="group"
             aria-label="Color channels"
-            className="flex h-11 min-w-0 flex-1 items-center gap-1 rounded-xl bg-[var(--default,#ebebec)] p-1"
+            className="flex h-11 min-w-0 flex-1 items-center gap-1 rounded-2xl bg-[var(--default,#ebebec)] p-1"
           >
             {format === "hex" ? (
               <>
@@ -803,7 +788,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                     if (event.key === "Escape") setDraft(null)
                   }}
                   className={cn(
-                    "h-full w-full min-w-0 rounded-lg bg-[var(--surface,#ffffff)] px-3",
+                    "h-full w-full min-w-0 rounded-xl bg-[var(--surface,#ffffff)] px-3",
                     "font-mono text-[13px] tracking-tight tabular-nums lowercase",
                     "text-[var(--foreground,#18181b)] outline-hidden",
                     focusRing,

@@ -6,11 +6,22 @@
  * exactly one consumer is premature.
  */
 
-/** Radius scale. Nested surfaces should step down by their parent's padding. */
+/**
+ * Radius scale. Nested surfaces step down by their parent's padding, so these
+ * are meant to be used as a chain rather than picked individually:
+ *
+ *   card    r24  — matches HeroUI's .popover, min(32px, --radius-3xl)
+ *     - 8px padding
+ *   surface r16  — field, model select, channel tray
+ *     - 4px padding
+ *   control r12  — the channel chips inside the tray
+ *
+ * Breaking the chain at any link is what makes nested corners read as wrong.
+ */
 export const RADIUS = {
-  small: 8,
-  medium: 12,
-  large: 14,
+  control: 12,
+  surface: 16,
+  card: 24,
 } as const
 
 /**

@@ -208,7 +208,7 @@ export function ChannelField({
           }
         }}
         className={cn(
-          "h-9 w-full min-w-0 rounded-lg bg-[var(--surface,#ffffff)] px-1 text-center",
+          "h-9 w-full min-w-0 rounded-xl bg-[var(--surface,#ffffff)] px-1 text-center",
           "text-[12px] tabular-nums",
           "text-[var(--foreground,#18181b)] outline-hidden",
           focusRing,
