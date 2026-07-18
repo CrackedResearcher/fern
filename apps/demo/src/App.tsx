@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ColorPicker } from "@fern/color-picker"
+import { ColorPicker } from "@fern-ui/color-picker"
 
 const SWATCHES = [
   "#ef4444",

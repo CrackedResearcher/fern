@@ -6,7 +6,7 @@ Thoughtfully designed React UI blocks. Low-dependency, copy-paste, yours to edit
 
 | Package | Description |
 | --- | --- |
-| [`@fern/color-picker`](packages/color-picker) | Accessible color picker with alpha, swatches, and eyedropper. |
+| [`@fern-ui/color-picker`](packages/color-picker) | Accessible color picker with alpha, swatches, and eyedropper. |
 
 ## Principles
 

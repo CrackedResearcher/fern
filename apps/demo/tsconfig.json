@@ -11,7 +11,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "paths": {
-      "@fern/color-picker": ["../../packages/color-picker/src/index.ts"]
+      "@fern-ui/color-picker": ["../../packages/color-picker/src/index.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]
