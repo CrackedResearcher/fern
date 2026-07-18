@@ -501,6 +501,29 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     }
 
     /**
+     * Filters to hex as it is typed, and previews as soon as the digits form a
+     * complete colour — 3, 4, 6 or 8 of them.
+     *
+     * Length is what makes this safe to do live where a channel field is not.
+     * `#ab` is not a colour at any length, so it previews nothing; `#abc` is
+     * unambiguously one. There is no equivalent of the `7`-then-`77` problem
+     * because an incomplete hex string simply does not parse.
+     *
+     * Anything pasted that is not hex (an `rgb(...)` string) is left alone for
+     * blur to handle, rather than being stripped down to its digits.
+     */
+    const setHexDraft = (text: string) => {
+      if (/^[a-z]/i.test(text.trim())) {
+        setDraft(text)
+        return
+      }
+      const digits = text.replace(/[^0-9a-fA-F]/g, "").slice(0, 8)
+      setDraft(`#${digits}`)
+      if ([3, 4, 6, 8].includes(digits.length))
+        commit(stateFromString(`#${digits}`, state.hsv, state.alpha), false)
+    }
+
+    /**
      * The channels the current model exposes. Switching model reshapes this row
      * and never touches the colour — the value is held in HSV, and every model
      * is a view onto it.
@@ -532,6 +555,56 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             ]
           : []
 
+    /** Writes one channel into the colour. `settled` gates onChangeComplete. */
+    const applyChannel = (
+      spec: ChannelSpec,
+      parsed: number,
+      settled: boolean,
+    ) => {
+      if (spec.key === "a") {
+        commit({ ...state, alpha: parsed / 100 }, settled)
+        return
+      }
+      if (format === "rgb") {
+        const rgb = { ...color.rgb, [spec.key]: Math.round(parsed) }
+        commit({ ...state, hsv: hsvFromRgbPreserving(rgb, state.hsv) }, settled)
+        return
+      }
+      const hsl = {
+        ...color.hsl,
+        [spec.key]: spec.key === "h" ? parsed : parsed / 100,
+      }
+      // Hue is carried from state rather than round-tripped: at s=0 or l=0/1 the
+      // HSL hue is undefined, and reading it back would discard the live one.
+      commit(
+        {
+          ...state,
+          hsv: {
+            ...hslToHsv(hsl),
+            h: spec.key === "h" ? parsed : state.hsv.h,
+          },
+        },
+        settled,
+      )
+    }
+
+    /**
+     * Live preview while typing, but only from a *complete* in-range value.
+     *
+     * REDESIGN.md argued against per-keystroke commits on the grounds that
+     * typing `7` toward `77` drives the colour to 7 first. That risk is real
+     * but it is a property of partial input, not of live updating: the field is
+     * filtered to digits and capped at the width of its own maximum, so the
+     * only values reaching here are ones the channel can actually hold. An
+     * empty or out-of-range field previews nothing and waits for blur.
+     */
+    const previewChannel = (spec: ChannelSpec, text: string) => {
+      if (text === "") return
+      const parsed = Number(text)
+      if (Number.isNaN(parsed) || parsed < spec.min || parsed > spec.max) return
+      applyChannel(spec, parsed, false)
+    }
+
     /**
      * Accepts "77", "77%", "77°", or " 77 " — anything a person would type.
      *
@@ -545,26 +618,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         text.replace("%", "").replace("°", "").trim(),
       )
       if (Number.isNaN(parsed) || parsed < spec.min || parsed > spec.max) return
-
-      if (spec.key === "a") {
-        commit({ ...state, alpha: parsed / 100 }, true)
-        return
-      }
-      if (format === "rgb") {
-        const rgb = { ...color.rgb, [spec.key]: Math.round(parsed) }
-        commit({ ...state, hsv: hsvFromRgbPreserving(rgb, state.hsv) }, true)
-        return
-      }
-      const hsl = {
-        ...color.hsl,
-        [spec.key]: spec.key === "h" ? parsed : parsed / 100,
-      }
-      // Hue is carried from state rather than round-tripped: at s=0 or l=0/1 the
-      // HSL hue is undefined, and reading it back would discard the live one.
-      commit(
-        { ...state, hsv: { ...hslToHsv(hsl), h: spec.key === "h" ? parsed : state.hsv.h } },
-        true,
-      )
+      applyChannel(spec, parsed, true)
     }
 
     const changeModel = (next: ColorFormat) => {
@@ -662,7 +716,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           // their letters have to hold a three-digit value each without the
           // number crowding its own box, and 264px left them at ~43px. A picker
           // that cannot show you what you picked has failed at its only job.
-          "flex w-80 select-none flex-col gap-2 pt-4 pr-2 pb-3 pl-2 antialiased",
+          "flex w-80 select-none flex-col gap-4 pt-4 pr-2 pb-4 pl-2 antialiased",
           "rounded-[20px] bg-[var(--surface,#ffffff)]",
           disabled && "pointer-events-none opacity-50 saturate-50",
           className,
@@ -741,9 +795,14 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         </div>
 
         {/* ------------------------------ Controls ------------------------------ */}
-        <div className="flex flex-col gap-2 px-1">
+        {/* One spacing scale, three steps: 16px between sections, 12px
+            between the two sliders, 6px from a label to the track it names.
+            A single gap everywhere reads as one undifferentiated stack — the
+            model select and the channel row are separate ideas and were
+            sitting as close together as a label sits to its own slider. */}
+        <div className="flex flex-col gap-4 px-1">
           <div className="flex items-end gap-2">
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex min-w-0 flex-1 flex-col gap-3">
               <LabelledSlider
                 drag={hue}
                 onKeyDown={handleHueKeys}
@@ -859,7 +918,11 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="off"
-                  onChange={(event) => setDraft(event.target.value)}
+                  // 9 = "#" + 8 digits, the longest form (#rrggbbaa). Without a
+                  // cap the field accepted unbounded text that could never
+                  // parse.
+                  maxLength={9}
+                  onChange={(event) => setHexDraft(event.target.value)}
                   onBlur={(event) => commitDraft(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
@@ -887,6 +950,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   disabled={disabled}
                   focusRing={focusRing}
                   onDraft={(text) => setChannelDraft({ key: spec.key, text })}
+                  onPreview={(text) => previewChannel(spec, text)}
                   onCommit={(text) => commitChannel(spec, text)}
                   onStep={(delta) =>
                     commitChannel(
@@ -1019,7 +1083,7 @@ function LabelledSlider({
   reducedMotion,
 }: LabelledSliderProps) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between px-0.5">
         <span className="text-[12px] text-[var(--muted,#71717a)]">
           {label}
@@ -1101,6 +1165,7 @@ function ChannelField({
   disabled,
   focusRing,
   onDraft,
+  onPreview,
   onCommit,
   onStep,
   onCancel,
@@ -1110,6 +1175,7 @@ function ChannelField({
   disabled: boolean
   focusRing: string
   onDraft: (text: string) => void
+  onPreview: (text: string) => void
   onCommit: (text: string) => void
   onStep: (delta: number) => void
   onCancel: () => void
@@ -1136,7 +1202,18 @@ function ChannelField({
         disabled={disabled}
         spellCheck={false}
         autoComplete="off"
-        onChange={(event) => onDraft(event.target.value)}
+        // Capped at the width of the channel's own maximum, so 255 fits and
+        // 2555 cannot be typed in the first place. Filtering to digits here
+        // rather than validating later means the field never holds text the
+        // channel could not accept.
+        maxLength={String(spec.max).length}
+        onChange={(event) => {
+          const digits = event.target.value
+            .replace(/[^0-9]/g, "")
+            .slice(0, String(spec.max).length)
+          onDraft(digits)
+          onPreview(digits)
+        }}
         onFocus={(event) => event.currentTarget.select()}
         onBlur={(event) => onCommit(event.target.value)}
         onKeyDown={(event) => {
@@ -1314,12 +1391,24 @@ const iconProps = {
   "aria-hidden": true,
 }
 
+/**
+ * Filled pen, to match the copy glyph beside it — the stroked Lucide
+ * eyedropper next to a filled copy mark read as two different icon sets.
+ *
+ * `fill` is currentColor, not the #B5B5B5 the export carried: the button owns
+ * the colour so the icon can follow the theme and the hover state. A literal
+ * grey here would sit unchanged on a dark card and ignore hover entirely.
+ */
 function EyedropperIcon() {
   return (
-    <svg {...iconProps} width={16} height={16}>
-      <path d="m2 22 1-1h3l9-9" />
-      <path d="M3 21v-3l9-9" />
-      <path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z" />
+    <svg
+      viewBox="9.002 16.003 20.004 20.004"
+      width={16}
+      height={16}
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M28.126 16.883C26.953 15.71 25.075 15.71 23.902 16.883 23.902 16.883 21.79 18.995 21.79 18.995 21.79 18.995 20.969 18.174 20.969 18.174 20.5 17.704 19.795 17.704 19.327 18.174 19.327 18.174 18.388 18.995 18.388 18.995 17.918 19.464 17.918 20.168 18.388 20.638 18.388 20.638 24.254 26.504 24.254 26.504 24.723 26.973 25.427 26.973 25.896 26.504 25.896 26.504 26.717 25.683 26.717 25.683 27.187 25.213 27.187 24.509 26.717 24.04 26.717 24.04 26.014 23.219 26.014 23.219 26.014 23.219 28.126 21.106 28.126 21.106 29.298 19.934 29.298 18.056 28.126 16.883ZM12.404 28.381C9.823 30.962 11.348 32.135 9.002 35.185 9.002 35.185 9.823 36.007 9.823 36.007 12.874 33.66 14.047 35.185 16.628 32.604 16.628 32.604 22.611 26.621 22.611 26.621 22.611 26.621 18.388 22.397 18.388 22.397 18.388 22.397 12.404 28.381 12.404 28.381Z" />
     </svg>
   )
 }
