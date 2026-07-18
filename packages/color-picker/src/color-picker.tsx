@@ -119,8 +119,6 @@ export interface ColorPickerProps
   eyedropper?: boolean
   /** Show the copy-to-clipboard button. */
   copyable?: boolean
-  /** Show a randomise button that jumps to an arbitrary colour. */
-  shuffle?: boolean
   /**
    * Show the starting color beside the current one. Pressing it reverts —
    * picking is comparative, so the value you began with should stay reachable.
@@ -271,7 +269,6 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       variant = "default",
       eyedropper = true,
       copyable = true,
-      shuffle = true,
       comparison = true,
       disabled = false,
       label = "Color picker",
@@ -496,21 +493,6 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     // Presets page rather than wrap. A wrapping grid changes the card's height
     // as the palette grows; a pager keeps the layout fixed at any length.
 
-    const randomize = () => {
-      // Random hue, but saturation and value kept in a usable band — fully
-      // random HSV mostly returns muddy near-black and washed-out pastels.
-      commit(
-        {
-          hsv: {
-            h: Math.floor(Math.random() * 360),
-            s: 0.55 + Math.random() * 0.4,
-            v: 0.6 + Math.random() * 0.35,
-          },
-          alpha: state.alpha,
-        },
-        true,
-      )
-    }
 
     const swatchRow = (
 
@@ -571,7 +553,11 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         aria-disabled={disabled || undefined}
         data-disabled={disabled || undefined}
         className={cn(
-          "flex w-60 select-none flex-col gap-2 pt-4 pr-2 pb-3 pl-2 antialiased",
+          // 264px, not the kit's 240px. Once the eyedropper shares the readout row
+          // there is not enough width left for a full 8-digit value, and the
+          // readout is the one part that must never truncate — a picker that
+          // cannot show you what you picked has failed at its only job.
+          "flex w-66 select-none flex-col gap-2 pt-4 pr-2 pb-3 pl-2 antialiased",
           "rounded-[20px] bg-[var(--surface,#ffffff)]",
           disabled && "pointer-events-none opacity-50 saturate-50",
           className,
@@ -683,28 +669,6 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
               )}
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
-              {eyedropper && supportsEyedropper && (
-                <SquareButton
-                  onClick={pickFromScreen}
-                  disabled={disabled}
-                  label="Pick a color from the screen"
-                  focusRing={focusRing}
-                >
-                  <EyedropperIcon />
-                </SquareButton>
-              )}
-              {shuffle && (
-                <SquareButton
-                  onClick={randomize}
-                  disabled={disabled}
-                  label="Random color"
-                  focusRing={focusRing}
-                >
-                  <ShuffleIcon />
-                </SquareButton>
-              )}
-            </div>
           </div>
 
           {swatchList.length > 0 && variant === "swatches" && swatchRow}
@@ -798,6 +762,20 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
               )}
             </div>
 
+            {/* Both live here, not beside a slider. They are ways of *setting
+                the value*, so they belong with the value — and parking them
+                next to Opacity made that track shorter than Hue, leaving two
+                sibling sliders visibly unequal. */}
+            {eyedropper && supportsEyedropper && (
+              <SquareButton
+                onClick={pickFromScreen}
+                disabled={disabled}
+                label="Pick a color from the screen"
+                focusRing={focusRing}
+              >
+                <EyedropperIcon />
+              </SquareButton>
+            )}
             {comparison && initial.toLowerCase() !== color.hex.toLowerCase() && (
               <button
                 type="button"
@@ -1196,13 +1174,6 @@ function CheckIcon() {
   )
 }
 
-function ShuffleIcon() {
-  return (
-    <svg {...iconProps} width={15} height={15}>
-      <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
-    </svg>
-  )
-}
 
 function ChevronIcon() {
   return (
