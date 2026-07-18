@@ -1,0 +1,32 @@
+fern
+Copyright the fern contributors
+
+This product includes software developed by HeroUI.
+
+────────────────────────────────────────────────────────────────────────────
+
+@heroui/styles
+https://github.com/heroui-inc/heroui/tree/v3/packages/styles
+Copyright (c) HeroUI <support@heroui.com>
+
+fern's documentation site depends on @heroui/styles for its theme
+foundation: colour, elevation, radius, spacing, and the component style
+layer. The package is consumed as a published npm dependency. No HeroUI
+source files are copied into this repository.
+
+Licence note: the package ships an Apache License 2.0 LICENSE file, while
+its package.json declares "license": "MIT". The two disagree. fern
+complies with the stricter of the two — the Apache-2.0 text as shipped —
+by retaining this NOTICE and the attribution above. Anyone redistributing
+fern should confirm the current upstream licence rather than relying on
+this note.
+
+The Apache-2.0 licence text as distributed is available at:
+  node_modules/@heroui/styles/LICENSE
+  http://www.apache.org/licenses/LICENSE-2.0
+
+────────────────────────────────────────────────────────────────────────────
+
+The published fern packages under packages/ do not depend on
+@heroui/styles. They read CSS custom properties with literal fallbacks and
+carry no runtime dependencies beyond React.

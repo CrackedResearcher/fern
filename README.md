@@ -42,6 +42,18 @@ packages/          one folder per block
 apps/docs          docs site and live playground
 ```
 
+## Theme foundation
+
+The documentation site's colour, elevation, radius, spacing, and component
+styles come from [`@heroui/styles`](https://github.com/heroui-inc/heroui/tree/v3/packages/styles)
+by HeroUI, consumed as a pinned npm dependency rather than copied in. See
+[`NOTICE`](NOTICE) for attribution and a note on the package's conflicting
+licence metadata.
+
+The published blocks under `packages/` do **not** depend on it. They read CSS
+custom properties with literal fallbacks, so they pick up a host's theme where
+one exists and render correctly where it does not.
+
 ## License
 
 MIT
