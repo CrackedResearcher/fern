@@ -6,6 +6,53 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/**
+ * Token layer.
+ *
+ * Surfaces are numbered by elevation rather than named by colour, so a theme
+ * swap is a matter of redefining these values and nothing else. Two choices
+ * worth calling out, both learned from reading mature dark themes:
+ *
+ * - Dark background is pure #000, not a near-black. Near-blacks read as washed
+ *   next to true black once a card sits on top of them.
+ * - Foreground is cool-tinted rather than pure grey. #ECEDEE and #11181C carry
+ *   a slight blue cast that stops text looking dead against a neutral surface.
+ */
+@layer base {
+  :root {
+    --fern-bg: #ffffff;
+    --fern-fg: #11181c;
+    --fern-fg-muted: #71717a;
+    --fern-surface-1: #ffffff;
+    --fern-surface-2: #f4f4f5;
+    --fern-surface-3: #e4e4e7;
+    --fern-divider: rgb(17 17 17 / 0.12);
+    --fern-focus: #3b82f6;
+  }
+
+  .dark {
+    --fern-bg: #000000;
+    --fern-fg: #ecedee;
+    --fern-fg-muted: #a1a1aa;
+    --fern-surface-1: #18181b;
+    --fern-surface-2: #27272a;
+    --fern-surface-3: #3f3f46;
+    --fern-divider: rgb(255 255 255 / 0.14);
+    --fern-focus: #3b82f6;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--fern-bg);
+  --color-fg: var(--fern-fg);
+  --color-fg-muted: var(--fern-fg-muted);
+  --color-surface-1: var(--fern-surface-1);
+  --color-surface-2: var(--fern-surface-2);
+  --color-surface-3: var(--fern-surface-3);
+  --color-divider: var(--fern-divider);
+  --color-focus: var(--fern-focus);
+}
+
 html {
   -webkit-font-smoothing: antialiased;
   scroll-behavior: smooth;
