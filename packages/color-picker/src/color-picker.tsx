@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   clamp,
   formatColor,
+  hslToHsv,
   luminance,
   parseHex,
   rgbToHsv,
@@ -12,6 +13,7 @@ import {
   type Color,
   type ColorFormat,
   type HSV,
+  type RGB,
 } from "./color"
 import { DURATION, EASING } from "./motion"
 
@@ -74,7 +76,47 @@ const DEFAULT_SWATCHES = [
   "#f97316",
 ]
 
-const FORMAT_CYCLE: ColorFormat[] = ["hex", "rgb", "hsl"]
+/**
+ * The colour models offered by the select. `rgb` is labelled RGBA because the
+ * row it produces includes an alpha field — naming it RGB would promise three
+ * fields and deliver four.
+ */
+const MODELS: { value: ColorFormat; label: string }[] = [
+  { value: "hex", label: "HEX" },
+  { value: "rgb", label: "RGBA" },
+  { value: "hsl", label: "HSL" },
+]
+
+/**
+ * One editable channel. `min`/`max` are real bounds, not display hints: input
+ * outside them reverts rather than clamping, so a typo reads as "nothing
+ * happened" instead of silently becoming a different colour.
+ */
+interface ChannelSpec {
+  key: string
+  short: string
+  name: string
+  value: number
+  min: number
+  max: number
+}
+
+/**
+ * Re-derives HSV from RGB while carrying hue and saturation through the points
+ * where they are mathematically undefined — grey has no hue, black has neither.
+ *
+ * The same rule `stateFromString` applies to dragging, applied to typing. Enter
+ * `0 0 0` in the RGB fields without it and the hue slider snaps back to red,
+ * which is the exact bug this picker exists to not have.
+ */
+function hsvFromRgbPreserving(rgb: RGB, previous: HSV): HSV {
+  const next = rgbToHsv(rgb)
+  return {
+    h: next.s === 0 || next.v === 0 ? previous.h : next.h,
+    s: next.v === 0 ? previous.s : next.s,
+    v: next.v,
+  }
+}
 
 
 /* -------------------------------------------------------------------------- */
@@ -282,12 +324,19 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     )
     const [format, setFormat] = React.useState(initialFormat)
     const [draft, setDraft] = React.useState<string | null>(null)
-    const [alphaDraft, setAlphaDraft] = React.useState<string | null>(null)
+    // One draft at a time: only the focused field can be mid-edit, and keying
+    // it means switching fields cannot leave a stale value behind in another.
+    const [channelDraft, setChannelDraft] = React.useState<{
+      key: string
+      text: string
+    } | null>(null)
     const [announcement, setAnnouncement] = React.useState("")
     const [copied, setCopied] = React.useState(false)
 
     const reducedMotion = usePrefersReducedMotion()
     const inputId = React.useId()
+    // The select reshapes the row beneath it, so it needs to point at it.
+    const channelGroupId = React.useId()
 
     // The colour the picker opened with, kept for the comparison well.
     const [initial] = React.useState(value ?? defaultValue)
@@ -424,18 +473,76 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       if (parseHex(text)) commit(stateFromString(text, state.hsv), true)
     }
 
-    /** Accepts "40", "40%", or " 40 " — anything a person would actually type. */
-    const commitAlphaDraft = (text: string) => {
-      setAlphaDraft(null)
-      const parsed = Number.parseFloat(text.replace("%", "").trim())
-      if (Number.isNaN(parsed)) return
-      commit({ ...state, alpha: clamp(parsed / 100, 0, 1) }, true)
+    /**
+     * The channels the current model exposes. Switching model reshapes this row
+     * and never touches the colour — the value is held in HSV, and every model
+     * is a view onto it.
+     */
+    const channels: ChannelSpec[] =
+      format === "rgb"
+        ? [
+            { key: "r", short: "R", name: "Red", value: color.rgb.r, min: 0, max: 255 },
+            { key: "g", short: "G", name: "Green", value: color.rgb.g, min: 0, max: 255 },
+            { key: "b", short: "B", name: "Blue", value: color.rgb.b, min: 0, max: 255 },
+            ...(alpha
+              ? [
+                  {
+                    key: "a",
+                    short: "A",
+                    name: "Alpha",
+                    value: Math.round(state.alpha * 100),
+                    min: 0,
+                    max: 100,
+                  },
+                ]
+              : []),
+          ]
+        : format === "hsl"
+          ? [
+              { key: "h", short: "H", name: "Hue", value: Math.round(color.hsl.h), min: 0, max: 360 },
+              { key: "s", short: "S", name: "Saturation", value: Math.round(color.hsl.s * 100), min: 0, max: 100 },
+              { key: "l", short: "L", name: "Lightness", value: Math.round(color.hsl.l * 100), min: 0, max: 100 },
+            ]
+          : []
+
+    /**
+     * Accepts "77", "77%", "77°", or " 77 " — anything a person would type.
+     *
+     * Out-of-range reverts rather than clamping. Clamping turns a fat-fingered
+     * `2555` into 255 and looks like it worked; reverting shows the entry was
+     * rejected, which is the honest outcome for a typo.
+     */
+    const commitChannel = (spec: ChannelSpec, text: string) => {
+      setChannelDraft(null)
+      const parsed = Number.parseFloat(
+        text.replace("%", "").replace("°", "").trim(),
+      )
+      if (Number.isNaN(parsed) || parsed < spec.min || parsed > spec.max) return
+
+      if (spec.key === "a") {
+        commit({ ...state, alpha: parsed / 100 }, true)
+        return
+      }
+      if (format === "rgb") {
+        const rgb = { ...color.rgb, [spec.key]: Math.round(parsed) }
+        commit({ ...state, hsv: hsvFromRgbPreserving(rgb, state.hsv) }, true)
+        return
+      }
+      const hsl = {
+        ...color.hsl,
+        [spec.key]: spec.key === "h" ? parsed : parsed / 100,
+      }
+      // Hue is carried from state rather than round-tripped: at s=0 or l=0/1 the
+      // HSL hue is undefined, and reading it back would discard the live one.
+      commit(
+        { ...state, hsv: { ...hslToHsv(hsl), h: spec.key === "h" ? parsed : state.hsv.h } },
+        true,
+      )
     }
 
-    const cycleFormat = () => {
-      const next =
-        FORMAT_CYCLE[(FORMAT_CYCLE.indexOf(format) + 1) % FORMAT_CYCLE.length]!
+    const changeModel = (next: ColorFormat) => {
       setFormat(next)
+      setChannelDraft(null)
       setAnnouncement(formatColor(color, next))
     }
 
@@ -678,127 +785,132 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
 
           {swatchList.length > 0 && variant === "swatches" && swatchRow}
 
-          {/* ----------------------------- Value field ---------------------------- */}
+          {/* --------------------------- Model + actions -------------------------- */}
           {showValueField && (
           <div className="flex items-center gap-2">
-            <label htmlFor={inputId} className="sr-only">
-              Color value
-            </label>
-            <div className="flex h-9 min-w-0 flex-1 items-center rounded-xl bg-[var(--default,#ebebec)]">
-              <button
-                type="button"
-                onClick={cycleFormat}
+            {/* A native select, deliberately. A custom listbox is several
+                hundred lines of focus management and typeahead to arrive back
+                where the platform already is — and it would be the only part of
+                this package that needed a portal. */}
+            <div className="relative flex h-10 min-w-0 flex-1 items-center rounded-2xl bg-[var(--default,#ebebec)]">
+              <select
+                value={format}
                 disabled={disabled || !formatToggle}
-                aria-label={`Color format: ${format}. Press to change.`}
+                aria-label="Color model"
+                aria-controls={channelGroupId}
+                onChange={(event) =>
+                  changeModel(event.target.value as ColorFormat)
+                }
                 className={cn(
-                  "flex h-full shrink-0 items-center gap-1 rounded-l-xl pr-1.5 pl-3",
-                  "text-[10px] font-semibold tracking-wide uppercase",
-                  "text-[var(--muted,#71717a)]",
-                  formatToggle &&
-                    "transition-colors duration-150 hover:text-[var(--foreground,#18181b)]",
+                  "h-full w-full appearance-none rounded-2xl bg-transparent pr-9 pl-3.5",
+                  "text-[13px] font-medium text-[var(--foreground,#18181b)] outline-hidden",
+                  !disabled && formatToggle && "cursor-pointer",
                   focusRing,
                 )}
-                style={{ transitionTimingFunction: EASE_OUT }}
               >
-                {format}
-                {formatToggle && <ChevronIcon />}
-              </button>
-
+                {MODELS.map((model) => (
+                  <option key={model.value} value={model.value}>
+                    {model.label}
+                  </option>
+                ))}
+              </select>
               <span
                 aria-hidden
-                className="h-4 w-px shrink-0 bg-[var(--separator,rgb(0_0_0/0.1))]"
-              />
-
-              {/* Current colour, inline with its own value — the swatch and the
-                  text it describes should not be in different places. */}
-              <span
-                aria-hidden
-                className="ml-2.5 size-4 shrink-0 rounded-full"
-                style={{
-                  background: CHECKERBOARD,
-                  boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.15)",
-                }}
+                className="pointer-events-none absolute right-3 flex text-[var(--muted,#71717a)]"
               >
-                <span
-                  className="block size-full rounded-full"
-                  style={{ backgroundColor: output }}
-                />
+                <ChevronIcon />
               </span>
-
-              <input
-                id={inputId}
-                value={draft ?? output}
-                disabled={disabled}
-                spellCheck={false}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                onChange={(event) => setDraft(event.target.value)}
-                onBlur={(event) => commitDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault()
-                    commitDraft(event.currentTarget.value)
-                  }
-                  if (event.key === "Escape") setDraft(null)
-                }}
-                className={cn(
-                  "h-full w-full min-w-0 bg-transparent px-2",
-                  "font-mono text-[13px] tracking-tight tabular-nums lowercase",
-                  "text-[var(--foreground,#18181b)] outline-hidden",
-                )}
-              />
-
-              {copyable && (
-                <IconButton
-                  onClick={copy}
-                  disabled={disabled}
-                  label={copied ? "Copied" : "Copy color value"}
-                  focusRing={focusRing}
-                >
-                  {/* Both icons stay mounted and cross-fade. Toggling
-                      visibility would pop; blur bridges the two states so the
-                      eye reads one object changing rather than two swapping. */}
-                  <IconSwap showSecond={copied} reducedMotion={reducedMotion}>
-                    <CopyIcon />
-                    <CheckIcon />
-                  </IconSwap>
-                </IconButton>
-              )}
             </div>
 
-            {/* Both live here, not beside a slider. They are ways of *setting
-                the value*, so they belong with the value — and parking them
-                next to Opacity made that track shorter than Hue, leaving two
-                sibling sliders visibly unequal. */}
             {eyedropper && supportsEyedropper && (
-              <SquareButton
+              <RoundButton
                 onClick={pickFromScreen}
                 disabled={disabled}
                 label="Pick a color from the screen"
                 focusRing={focusRing}
               >
                 <EyedropperIcon />
-              </SquareButton>
+              </RoundButton>
             )}
-            {comparison && initial.toLowerCase() !== color.hex.toLowerCase() && (
-              <button
-                type="button"
-                onClick={() => commit(stateFromString(initial, state.hsv), true)}
+
+            {copyable && (
+              <RoundButton
+                onClick={copy}
                 disabled={disabled}
-                aria-label={`Revert to ${initial}`}
-                title={`Revert to ${initial}`}
-                className={cn(
-                  "size-9 shrink-0 rounded-xl",
-                  "transition-[scale] duration-150 active:scale-[0.97]",
-                  focusRing,
-                )}
-                style={{
-                  backgroundColor: initial,
-                  transitionTimingFunction: EASE_OUT,
-                  boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.12)",
-                }}
-              />
+                label={copied ? "Copied" : "Copy color value"}
+                focusRing={focusRing}
+              >
+                {/* Both icons stay mounted and cross-fade. Toggling visibility
+                    would pop; blur bridges the two states so the eye reads one
+                    object changing rather than two swapping. */}
+                <IconSwap showSecond={copied} reducedMotion={reducedMotion}>
+                  <CopyIcon />
+                  <CheckIcon />
+                </IconSwap>
+              </RoundButton>
+            )}
+          </div>
+          )}
+
+          {/* ----------------------------- Channel row ---------------------------- */}
+          {showValueField && (
+          <div
+            id={channelGroupId}
+            role="group"
+            aria-label="Color channels"
+            className="flex h-11 items-center gap-1 rounded-2xl bg-[var(--default,#ebebec)] p-1.5"
+          >
+            {format === "hex" ? (
+              <>
+                <label htmlFor={inputId} className="sr-only">
+                  Hex color value
+                </label>
+                <input
+                  id={inputId}
+                  value={draft ?? output}
+                  disabled={disabled}
+                  spellCheck={false}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  onChange={(event) => setDraft(event.target.value)}
+                  onBlur={(event) => commitDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault()
+                      commitDraft(event.currentTarget.value)
+                    }
+                    if (event.key === "Escape") setDraft(null)
+                  }}
+                  className={cn(
+                    "h-full w-full min-w-0 rounded-xl bg-[var(--surface,#ffffff)] px-3",
+                    "font-mono text-[13px] tracking-tight tabular-nums lowercase",
+                    "text-[var(--foreground,#18181b)] outline-hidden",
+                    focusRing,
+                  )}
+                />
+              </>
+            ) : (
+              channels.map((spec) => (
+                <ChannelField
+                  key={spec.key}
+                  spec={spec}
+                  draft={
+                    channelDraft?.key === spec.key ? channelDraft.text : null
+                  }
+                  disabled={disabled}
+                  focusRing={focusRing}
+                  onDraft={(text) => setChannelDraft({ key: spec.key, text })}
+                  onCommit={(text) => commitChannel(spec, text)}
+                  onStep={(delta) =>
+                    commitChannel(
+                      spec,
+                      String(clamp(spec.value + delta, spec.min, spec.max)),
+                    )
+                  }
+                  onCancel={() => setChannelDraft(null)}
+                />
+              ))
             )}
           </div>
           )}
@@ -977,8 +1089,93 @@ function LabelledSlider({
   )
 }
 
-/** 32×32 action button sitting beside the sliders. */
-function SquareButton({
+/**
+ * One editable channel: the letter sits on the tray, the number sits in a
+ * raised chip. Keeping the letter outside the chip is what lets four fields fit
+ * across 232px — inside, each chip would need its own left padding for a label
+ * that is one character wide.
+ *
+ * `role="spinbutton"` rather than a bare text input: it is what carries the
+ * range to a screen reader, and it is the role that makes arrow keys expected
+ * rather than surprising.
+ */
+function ChannelField({
+  spec,
+  draft,
+  disabled,
+  focusRing,
+  onDraft,
+  onCommit,
+  onStep,
+  onCancel,
+}: {
+  spec: ChannelSpec
+  draft: string | null
+  disabled: boolean
+  focusRing: string
+  onDraft: (text: string) => void
+  onCommit: (text: string) => void
+  onStep: (delta: number) => void
+  onCancel: () => void
+}) {
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-0.5">
+      <span
+        aria-hidden
+        className="shrink-0 pl-0.5 text-[11px] text-[var(--muted,#71717a)]"
+      >
+        {spec.short}
+      </span>
+      <input
+        role="spinbutton"
+        // Named in channel units — "Red, 77", never "77 percent". A screen
+        // reader user editing four fields needs to know which one they are in.
+        aria-label={spec.name}
+        aria-valuenow={spec.value}
+        aria-valuemin={spec.min}
+        aria-valuemax={spec.max}
+        aria-valuetext={`${spec.name}, ${spec.value}`}
+        inputMode="numeric"
+        value={draft ?? String(spec.value)}
+        disabled={disabled}
+        spellCheck={false}
+        autoComplete="off"
+        onChange={(event) => onDraft(event.target.value)}
+        onFocus={(event) => event.currentTarget.select()}
+        onBlur={(event) => onCommit(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault()
+            onCommit(event.currentTarget.value)
+            return
+          }
+          if (event.key === "Escape") {
+            onCancel()
+            return
+          }
+          // Shift multiplies by 10, matching the sliders and native ranges.
+          const step = event.shiftKey ? 10 : 1
+          if (event.key === "ArrowUp") {
+            event.preventDefault()
+            onStep(step)
+          } else if (event.key === "ArrowDown") {
+            event.preventDefault()
+            onStep(-step)
+          }
+        }}
+        className={cn(
+          "h-8 w-full min-w-0 rounded-[10px] bg-[var(--surface,#ffffff)] px-1 text-center",
+          "text-[12px] tabular-nums",
+          "text-[var(--foreground,#18181b)] outline-hidden",
+          focusRing,
+        )}
+      />
+    </div>
+  )
+}
+
+/** 40×40 circular action button. Clears the WCAG 2.5.5 target minimum. */
+function RoundButton({
   onClick,
   disabled,
   label,
@@ -999,7 +1196,7 @@ function SquareButton({
       aria-label={label}
       title={label}
       className={cn(
-        "grid size-8 shrink-0 place-items-center rounded-2xl",
+        "grid size-10 shrink-0 place-items-center rounded-full",
         "bg-[var(--default,#ebebec)] text-[var(--muted,#52525b)]",
         "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
         "hover:bg-[var(--default-hover,#e0e0e2)] hover:text-[var(--foreground,#18181b)]",
@@ -1011,6 +1208,7 @@ function SquareButton({
     </button>
   )
 }
+
 
 
 function Thumb({
@@ -1107,38 +1305,6 @@ function IconSwap({
   )
 }
 
-function IconButton({
-  onClick,
-  disabled,
-  label,
-  focusRing,
-  children,
-}: {
-  onClick: () => void
-  disabled: boolean
-  label: string
-  focusRing: string
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      className={cn(
-        "grid size-9 shrink-0 place-items-center rounded-xl",
-        "text-[var(--muted,#71717a)]",
-        "transition-[scale,background-color,color] duration-150 active:scale-[0.97]",
-        "hover:bg-[var(--default,#ebebec)] hover:text-[var(--foreground,#18181b)]",
-        focusRing,
-      )}
-      style={{ transitionTimingFunction: EASE_OUT }}
-    >
-      {children}
-    </button>
-  )
-}
 
 const iconProps = {
   width: 15,

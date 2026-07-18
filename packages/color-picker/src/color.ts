@@ -106,6 +106,16 @@ export function hsvToHsl({ h, s, v }: HSV): HSL {
   return { h, s: denom === 0 ? 0 : (v - l) / denom, l }
 }
 
+/**
+ * Inverse of `hsvToHsl`. Needed because the HSL channel fields are authored in
+ * HSL but the picker's state is HSV — without this, typing into the S or L
+ * field would have no way back into the model the field and sliders read from.
+ */
+export function hslToHsv({ h, s, l }: HSL): HSV {
+  const v = l + s * Math.min(l, 1 - l)
+  return { h, s: v === 0 ? 0 : 2 * (1 - l / v), v }
+}
+
 export type ColorFormat = "hex" | "rgb" | "hsl"
 
 /** The full colour, in every representation, handed to change callbacks. */
