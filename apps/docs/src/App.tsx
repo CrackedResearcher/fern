@@ -2,12 +2,15 @@ import { useEffect, useState, useSyncExternalStore } from "react"
 import { BlockPage, tocFor } from "./components/BlockPage"
 import { CommandPalette } from "./components/CommandPalette"
 import { Header, type ThemeMode } from "./components/Header"
+import { type Preset } from "./components/ThemePicker"
 import { MobileNav, Sidebar } from "./components/Sidebar"
 import { TableOfContents } from "./components/TableOfContents"
 import { useRoute } from "./lib/router"
 import { REGISTRY } from "./registry"
 
 const THEME_KEY = "fern-theme"
+const PRESET_KEY = "fern-preset"
+const VIBRANT_KEY = "fern-vibrant"
 const DARK_QUERY = "(prefers-color-scheme: dark)"
 
 function subscribeToSystemTheme(callback: () => void) {
@@ -29,6 +32,12 @@ export function App() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
   const [stars, setStars] = useState<string | null>(null)
+  const [preset, setPreset] = useState<Preset>(
+    () => (window.localStorage.getItem(PRESET_KEY) as Preset | null) ?? "default",
+  )
+  const [vibrant, setVibrant] = useState(
+    () => window.localStorage.getItem(VIBRANT_KEY) === "true",
+  )
   const route = useRoute()
 
   const systemDark = useSyncExternalStore(
@@ -50,6 +59,11 @@ export function App() {
   useEffect(() => {
     window.localStorage.setItem(THEME_KEY, theme)
   }, [theme])
+
+  useEffect(() => {
+    window.localStorage.setItem(PRESET_KEY, preset)
+    window.localStorage.setItem(VIBRANT_KEY, String(vibrant))
+  }, [preset, vibrant])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -86,7 +100,11 @@ export function App() {
   }, [])
 
   return (
-    <div className={dark ? "dark" : ""}>
+    <div
+      className={dark ? "dark" : ""}
+      data-preset={preset === "default" ? undefined : preset}
+      data-vibrant={vibrant || undefined}
+    >
       <div className="min-h-screen bg-background text-foreground">
         <Header
           theme={theme}
@@ -94,6 +112,10 @@ export function App() {
           onOpenSearch={() => setSearchOpen(true)}
           onOpenNav={() => setNavOpen(true)}
           stars={stars}
+          preset={preset}
+          onSetPreset={setPreset}
+          vibrant={vibrant}
+          onSetVibrant={setVibrant}
         />
 
         {/* 12-column grid rather than fixed widths: the content column then

@@ -13,6 +13,7 @@ import {
   SparkIcon,
   SunIcon,
 } from "./icons"
+import { ThemePicker, type Preset } from "./ThemePicker"
 
 export type ThemeMode = "light" | "dark" | "system"
 
@@ -41,12 +42,20 @@ export function Header({
   onOpenSearch,
   onOpenNav,
   stars,
+  preset,
+  onSetPreset,
+  vibrant,
+  onSetVibrant,
 }: {
   theme: ThemeMode
   onSetTheme: (mode: ThemeMode) => void
   onOpenSearch: () => void
   onOpenNav: () => void
   stars: string | null
+  preset: Preset
+  onSetPreset: (preset: Preset) => void
+  vibrant: boolean
+  onSetVibrant: (vibrant: boolean) => void
 }) {
   const route = useRoute()
   // Every block route lives under the Components tab, so it stays lit while
@@ -109,6 +118,13 @@ export function Header({
           >
             <SearchIcon size={16} />
           </button>
+
+          <ThemePicker
+            preset={preset}
+            onSetPreset={onSetPreset}
+            vibrant={vibrant}
+            onSetVibrant={onSetVibrant}
+          />
 
           {/* Three-way rather than a toggle: "follow the OS" is a distinct
               choice, and a binary switch silently discards it. */}

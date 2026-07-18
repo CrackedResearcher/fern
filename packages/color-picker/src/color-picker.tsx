@@ -567,7 +567,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           className={cn(
             "relative aspect-square w-full touch-none rounded-2xl",
             !disabled && "cursor-crosshair",
-            "outline-hidden focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-[#006FEE]/70",
+            "outline-hidden focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-[#0485f7]/70",
           )}
           style={{
             backgroundColor: `hsl(${state.hsv.h} 100% 50%)`,
@@ -902,7 +902,7 @@ function LabelledSlider({
           // while the pointer target clears a comfortable touch size.
           "relative flex h-8 touch-none items-center rounded-xl",
           !disabled && "cursor-pointer",
-          "outline-hidden focus-visible:ring-[3px] focus-visible:ring-[#006FEE]/50",
+          "outline-hidden focus-visible:ring-[3px] focus-visible:ring-[#0485f7]/50",
         )}
       >
         <div
@@ -993,7 +993,7 @@ function PagerButton({
         "text-neutral-400 dark:text-neutral-500",
         "transition-[color,opacity] duration-150",
         "hover:text-neutral-900 disabled:opacity-30 dark:hover:text-neutral-100",
-        "outline-hidden focus-visible:ring-2 focus-visible:ring-[#006FEE]/50",
+        "outline-hidden focus-visible:ring-2 focus-visible:ring-[#0485f7]/50",
       )}
       style={{ transitionTimingFunction: EASE_OUT }}
     >
