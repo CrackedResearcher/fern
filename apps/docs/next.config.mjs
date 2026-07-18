@@ -46,6 +46,26 @@ const config = {
    * on the next render with no build step in between.
    */
   transpilePackages: ["@fern-ui/color-picker"],
+  /**
+   * Moving content into root folders to generate the tab row changed every
+   * page URL and left /docs itself with nothing behind it. These keep the old
+   * paths working instead of 404ing.
+   */
+  async redirects() {
+    return [
+      { source: "/docs", destination: "/docs/getting-started", permanent: false },
+      {
+        source: "/docs/color-picker",
+        destination: "/docs/components/color-picker",
+        permanent: false,
+      },
+      {
+        source: "/docs/country-picker",
+        destination: "/docs/components/country-picker",
+        permanent: false,
+      },
+    ]
+  },
   turbopack: {
     resolveAlias: {
       "tw-animate-css": twAnimateCss,

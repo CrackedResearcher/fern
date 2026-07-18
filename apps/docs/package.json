@@ -10,6 +10,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@gravity-ui/icons": "^2.20.0",
+    "@heroui/react": "^3.2.2",
+    "clsx": "^2.1.1",
     "fumadocs-core": "16.11.5",
     "fumadocs-ui": "16.11.5",
     "next": "16.2.10",

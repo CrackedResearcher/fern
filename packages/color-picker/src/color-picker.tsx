@@ -415,8 +415,23 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       setAnnouncement(formatColor(color, next))
     }
 
-    const supportsEyedropper =
-      typeof window !== "undefined" && "EyeDropper" in window
+    /**
+     * Read after hydration, not during render.
+     *
+     * `typeof window !== "undefined"` evaluates false on the server and true on
+     * the client, so the server omitted the eyedropper button and the client
+     * rendered it — a hydration mismatch that React resolves by throwing away
+     * and re-rendering the whole subtree. The server snapshot is pinned to
+     * false so both passes agree, and the button appears on the commit after.
+     *
+     * The subscribe callback is a no-op because the capability cannot change
+     * for the lifetime of the document.
+     */
+    const supportsEyedropper = React.useSyncExternalStore(
+      () => () => {},
+      () => "EyeDropper" in window,
+      () => false,
+    )
 
     const pickFromScreen = async () => {
       try {
