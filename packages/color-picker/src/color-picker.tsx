@@ -807,6 +807,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     return (
       <div
         ref={forwardedRef}
+        data-slot="color-picker"
         role="group"
         aria-label={label}
         aria-disabled={disabled || undefined}
@@ -851,6 +852,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         {/* ----------------------- Saturation / brightness ---------------------- */}
         <div
           ref={field.trackRef}
+          data-slot="field"
           role="slider"
           tabIndex={disabled ? -1 : 0}
           aria-label="Saturation and brightness"
@@ -968,6 +970,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 this package that needed a portal. */}
             <div className="relative flex h-10 min-w-0 flex-1 items-center rounded-2xl bg-[var(--default,#ebebec)]">
               <select
+                data-slot="model-select"
                 value={format}
                 disabled={disabled || !formatToggle}
                 aria-label="Color model"
@@ -1002,6 +1005,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 like a lighter colour — the transparency has to be visible or
                 the preview is lying about the value. */}
             <div
+              data-slot="preview"
               aria-hidden
               className="relative size-10 shrink-0 rounded-full"
               style={{ background: CHECKERBOARD }}
@@ -1058,6 +1062,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           {(
           <div className="flex items-center gap-2">
           <div
+            data-slot="channels"
             id={channelGroupId}
             role="group"
             aria-label="Color channels"
@@ -1069,6 +1074,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   Hex color value
                 </label>
                 <input
+                  data-slot="hex-input"
                   id={inputId}
                   value={draft ?? output}
                   disabled={disabled}
@@ -1214,6 +1220,8 @@ function LabelledSlider({
       )}
 
       <div
+        data-slot="slider"
+        data-channel={label.toLowerCase()}
         role="slider"
         tabIndex={disabled ? -1 : 0}
         aria-label={label}
@@ -1237,6 +1245,7 @@ function LabelledSlider({
         )}
       >
         <div
+          data-slot="track"
           ref={drag.trackRef}
           className="relative h-5 w-full rounded-full"
           style={{ background, boxShadow: RECESSED }}
@@ -1311,6 +1320,7 @@ function ChannelField({
         {spec.short}
       </span>
       <input
+        data-slot="channel-input"
         role="spinbutton"
         // Named in channel units — "Red, 77", never "77 percent". A screen
         // reader user editing four fields needs to know which one they are in.
@@ -1386,6 +1396,7 @@ function RoundButton({
   return (
     <button
       type="button"
+      data-slot="action"
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
@@ -1426,6 +1437,7 @@ function Thumb({
 }) {
   return (
     <div
+      data-slot="thumb"
       aria-hidden
       className="pointer-events-none absolute rounded-full"
       style={{

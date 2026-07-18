@@ -123,6 +123,25 @@ itself.
 }
 ```
 
+Every part carries a `data-slot`, so you can restyle the internals from your own
+stylesheet without forking the component.
+
+```css
+[data-slot="track"]        { border-radius: 4px; }
+[data-slot="channels"]     { background: #3b1d5e; }
+[data-slot="slider"][data-channel="opacity"] { display: none; }
+```
+
+`color-picker` · `field` · `slider` (with `data-channel="hue" | "opacity"`) ·
+`track` · `thumb` · `model-select` · `preview` · `action` · `channels` ·
+`hex-input` · `channel-input`
+
+<Callout type="info">
+  `className` on the root is appended, not merged — passing a utility that
+  conflicts with one the component already sets will not reliably win. Use the
+  variables and slots above, or copy the component in and edit it directly.
+</Callout>
+
 ## Keyboard
 
 Arrow keys step 1, Shift+arrows step 10, Home/End jump — on the field and both
