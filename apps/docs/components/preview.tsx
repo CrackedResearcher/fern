@@ -97,7 +97,12 @@ export function PreviewCode({
       data-has-bar={(label ?? lang) ? "" : undefined}
       className={
         standalone
-          ? "code-section relative my-4 rounded-xl border border-separator bg-surface-secondary px-1 pb-1"
+          ? cn(
+              "code-section relative my-4 rounded-xl border border-separator bg-surface-secondary",
+              // The bar fills the top when there is one; without it the surface
+              // needs its own inset there or it sits flush to the edge.
+              (label ?? lang) ? "px-1 pb-1" : "p-1",
+            )
           : "code-section relative rounded-b-xl border border-separator bg-transparent"
       }
     >
@@ -118,12 +123,12 @@ export function PreviewCode({
               // "there is more" rather than as a crop.
               cn(
                 "docs-code-block-wrapper relative max-h-[150px] overflow-hidden [mask-image:linear-gradient(#000_0%_20%,transparent_100%)]",
-                standalone && "rounded-lg bg-background",
+                standalone && "rounded-lg bg-surface",
               )
             : standalone
               // A whole source file expands to tens of thousands of pixels,
               // which loses the page. Scroll it inside the block instead.
-              ? "docs-code-block-wrapper relative max-h-[70vh] overflow-auto rounded-lg bg-background"
+              ? "docs-code-block-wrapper relative max-h-[70vh] overflow-auto rounded-lg bg-surface"
               : "docs-code-block-wrapper relative"
         }
       >
