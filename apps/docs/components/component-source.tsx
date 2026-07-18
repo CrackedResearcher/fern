@@ -1,14 +1,13 @@
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { highlight } from "fumadocs-core/highlight"
+import { PreviewCode } from "@/components/preview"
 import { CodeActions } from "@/components/code-actions"
 
 /**
- * Renders a package source file for copy-paste, collapsed.
- *
- * A native <details> rather than a client toggle: the block is closed on load,
- * costs no JavaScript, and is keyboard-operable and findable by browser search
- * without any work.
+ * A package source file, rendered in the same code viewer the examples use —
+ * clamped with the fade, expanded by the same button, copied by the same
+ * control. A second collapse pattern on one page reads as two conventions.
  */
 export async function ComponentSource({
   pkg,
@@ -17,15 +16,7 @@ export async function ComponentSource({
   pkg: string
   file: string
 }) {
-  const source = path.join(
-    process.cwd(),
-    "..",
-    "..",
-    "packages",
-    pkg,
-    "src",
-    file,
-  )
+  const source = path.join(process.cwd(), "..", "..", "packages", pkg, "src", file)
 
   let code: string
   try {
@@ -39,22 +30,12 @@ export async function ComponentSource({
     themes: { light: "github-light", dark: "github-dark" },
   })
 
-  const lines = code.split("\n").length
-
   return (
-    <details className="not-prose group my-4 overflow-hidden rounded-xl border border-separator">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-surface-secondary px-4 py-3 text-sm">
-        <span className="font-mono text-foreground">{file}</span>
-        <span className="flex items-center gap-3 text-muted">
-          <span className="text-xs tabular-nums">{lines} lines</span>
-          <span className="text-xs group-open:hidden">Show</span>
-          <span className="hidden text-xs group-open:inline">Hide</span>
-        </span>
-      </summary>
-      <figure className="docs-code-block-wrapper relative m-0 max-h-[60vh] overflow-auto border-t border-separator">
-        <CodeActions className="sticky top-2 z-10 float-right mr-2" />
+    <PreviewCode standalone label={file}>
+      <figure className="relative m-0">
+        <CodeActions className="absolute top-2 right-2 z-10" />
         {rendered}
       </figure>
-    </details>
+    </PreviewCode>
   )
 }
