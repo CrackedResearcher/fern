@@ -100,12 +100,19 @@ export function App() {
   }, [])
 
   return (
+    // Two elements, not one, and the split is load-bearing. The outer element
+    // is where the foundation's variables land (.light/.dark) and where a
+    // preset overrides --accent. The inner one *derives* from those — a
+    // custom property that references itself on the element that defines it is
+    // a cycle, and CSS discards it silently.
     <div
-      className={dark ? "dark" : ""}
+      className={dark ? "dark" : "light"}
       data-preset={preset === "default" ? undefined : preset}
-      data-vibrant={vibrant || undefined}
     >
-      <div className="min-h-screen bg-background text-foreground">
+      <div
+        className="fern-root min-h-screen bg-background text-foreground"
+        data-vibrant={vibrant || undefined}
+      >
         <Header
           theme={theme}
           onSetTheme={setTheme}

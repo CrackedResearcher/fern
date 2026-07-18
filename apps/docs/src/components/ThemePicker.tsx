@@ -10,7 +10,7 @@ export type Preset =
   | "amber"
   | "slate"
 
-/** Swatch colours mirror the accent each preset sets in theme.css. */
+/** Swatch colours mirror the accent each preset sets in index.css. */
 export const PRESETS: { id: Preset; label: string; swatch: string }[] = [
   { id: "default", label: "Default", swatch: "oklch(0.6204 0.195 253.83)" },
   { id: "sky", label: "Sky", swatch: "oklch(0.72 0.132 220.5)" },
