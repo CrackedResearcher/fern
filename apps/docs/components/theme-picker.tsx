@@ -94,7 +94,14 @@ export function ThemePicker() {
         </Button>
       </Popover.Trigger>
 
-      <Popover.Content className="w-[340px]">
+      {/*
+       * 256px, sized to the content rather than picked round.
+       *
+       * At 340px each column was 75px holding a 36px swatch and a 48px label —
+       * 27px of slack per column, 108px of the popover doing nothing. The four
+       * columns now sit at 54px, which is the widest label plus a little air.
+       */}
+      <Popover.Content className="w-64">
         <Popover.Dialog className="p-2" aria-label="Design theme">
           <div className="grid grid-cols-4 gap-x-2 gap-y-3">
             {PRESETS.map((entry) => {

@@ -1392,7 +1392,12 @@ function RoundButton({
       title={label}
       className={cn(
         "grid size-10 shrink-0 place-items-center rounded-full",
-        "bg-[var(--default,#ebebec)] text-[var(--muted,#52525b)]",
+        // #71717a, matching every other --muted fallback in this file. It read
+        // #52525b, so a themed page rendered the icons and the slider labels
+        // the same colour while an unthemed one rendered the icons darker —
+        // one token resolving to two literals means the fallback does not
+        // preserve the relationship the theme describes.
+        "bg-[var(--default,#ebebec)] text-[var(--muted,#71717a)]",
         "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
         "hover:bg-[var(--default-hover,#e0e0e2)] hover:text-[var(--foreground,#18181b)]",
         focusRing,
