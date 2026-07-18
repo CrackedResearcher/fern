@@ -133,7 +133,7 @@ export function BlockPage({ block, dark }: { block: BlockDoc; dark: boolean }) {
             <Preview pageDark={dark}>{demo.render()}</Preview>
           </div>
 
-          <CodeBlock code={demo.code} dark={dark} className="mt-3" />
+          <CodeBlock code={demo.code} dark={dark} attached />
         </section>
       )}
 

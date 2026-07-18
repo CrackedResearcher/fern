@@ -1,25 +1,57 @@
 import { useEffect, useState } from "react"
 import { cn, EASE } from "../lib/cn"
 import { highlight, type CodeLang } from "../lib/highlight"
+import { useCopy } from "../lib/useCopy"
 import { CheckIcon, CopyIcon } from "./icons"
+
+/**
+ * Cross-fades the copy and check icons in place.
+ *
+ * Both stay mounted and swap opacity and scale. Toggling which one renders
+ * would pop, and popping is what makes a confirmation feel unreliable — the
+ * affordance has to read as one object changing state, not two swapping.
+ */
+function CopyGlyph({ copied }: { copied: boolean }) {
+  const shared =
+    "absolute inset-0 grid place-items-center transition-[opacity,scale] duration-150"
+  return (
+    <span className="relative grid size-3.5 place-items-center">
+      <span
+        className={cn(shared, copied ? "scale-50 opacity-0" : "scale-100 opacity-100")}
+        style={{ transitionTimingFunction: EASE }}
+      >
+        <CopyIcon />
+      </span>
+      <span
+        className={cn(shared, copied ? "scale-100 opacity-100" : "scale-50 opacity-0")}
+        style={{ transitionTimingFunction: EASE }}
+      >
+        <CheckIcon />
+      </span>
+    </span>
+  )
+}
 
 export function CodeBlock({
   code,
   lang = "tsx",
   dark,
   className,
+  /** True when the block sits directly beneath a preview and shares its frame. */
+  attached = false,
 }: {
   code: string
   lang?: CodeLang
   dark: boolean
   className?: string
+  attached?: boolean
 }) {
   const [html, setHtml] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
+  const { copied, copy } = useCopy()
 
-  // Highlighting is async (the grammar and wasm load on demand), so this is a
-  // genuine external synchronisation rather than derivable state. The plain
-  // code renders first and is replaced once the highlighter resolves.
+  // Highlighting is async — the grammar and wasm load on demand — so this is a
+  // real external synchronisation. Plain code renders first and is replaced
+  // once the highlighter resolves.
   useEffect(() => {
     let active = true
     highlight(code, lang, dark).then((result) => {
@@ -30,44 +62,43 @@ export function CodeBlock({
     }
   }, [code, lang, dark])
 
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(code)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1200)
-    } catch {
-      // Clipboard can be blocked by permissions; failing silently is fine.
-    }
-  }
-
   return (
-    <div className={cn("group relative", className)}>
+    <div
+      className={cn(
+        "group relative overflow-hidden",
+        // The frame belongs to the section, not the code. Standalone blocks
+        // are borderless; only a block joined to a preview carries the edge
+        // that closes that shared box.
+        attached
+          ? "rounded-b-xl border-r border-b border-l border-separator"
+          : "rounded-xl",
+        className,
+      )}
+    >
       <button
         type="button"
-        onClick={copy}
+        onClick={() => copy(code)}
         aria-label={copied ? "Copied" : "Copy code"}
         className={cn(
-          "absolute right-3 top-3 z-10 grid size-8 place-items-center rounded-lg",
-          "bg-surface/80 text-foreground-muted backdrop-blur",
-          "opacity-0 transition-[opacity,background-color,scale] duration-150",
-          "group-hover:opacity-100 focus-visible:opacity-100 active:scale-[0.97]",
+          "absolute top-3 right-2 z-10 grid size-8 place-items-center rounded-lg",
+          "text-muted backdrop-blur-lg transition-colors duration-150",
           "hover:text-foreground",
-          "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
+          "outline-hidden focus-visible:ring-2 focus-visible:ring-focus/60",
         )}
         style={{ transitionTimingFunction: EASE }}
       >
-        {copied ? <CheckIcon /> : <CopyIcon />}
+        <CopyGlyph copied={copied} />
       </button>
 
       {/* Wide code scrolls inside its own container so the page never does. */}
       {html ? (
         <div
-          className="fern-code overflow-x-auto rounded-b-xl border border-separator text-[13px] leading-relaxed"
+          className="fern-code overflow-x-auto"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : (
-        <pre className="overflow-x-auto rounded-b-xl border border-separator p-4 text-[13px] leading-relaxed">
-          <code className="font-mono">{code}</code>
+        <pre className="fern-code-fallback overflow-x-auto p-4">
+          <code className="font-mono text-[13px] leading-relaxed">{code}</code>
         </pre>
       )}
     </div>
