@@ -210,6 +210,18 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
      */
     const solid = rgbToHex(color.rgb, 1)
 
+    /**
+     * The opacity thumb previews the value it is setting: the colour at the
+     * current alpha, layered over the same checkerboard the preview circle
+     * uses.
+     *
+     * Solid would be a handle that lies — at 15% it read fully opaque. Alpha
+     * alone would be honest but invisible, which is what it was doing at 0%
+     * before the checkerboard went behind it. The rail's end stop stays solid
+     * either way, because that is the colour the track fades *towards*.
+     */
+    const translucentThumb = `linear-gradient(0deg, ${rgbToHex(color.rgb, state.alpha)}, ${rgbToHex(color.rgb, state.alpha)}), ${CHECKERBOARD}`
+
     const commit = (next: State, settled = false) => {
       setState(next)
       const nextColor = toColor(next.hsv, next.alpha, alpha)
@@ -674,7 +686,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   background={CHECKERBOARD}
                   overlay={`linear-gradient(to right, transparent, ${solid})`}
                   fraction={state.alpha}
-                  thumb={{ background: solid }}
+                  thumb={{ background: translucentThumb }}
                   reducedMotion={reducedMotion}
                 />
               )}
