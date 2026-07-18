@@ -1,48 +1,53 @@
 import type { PropDoc } from "../registry"
 
+/**
+ * Built on the foundation's own table classes rather than hand-rolled
+ * utilities, so column separators, row hover, header treatment and the
+ * corner-rounding rules come from the same place their docs get them.
+ *
+ * The secondary variant is the one their documentation tables use: a
+ * standalone rounded header strip over transparent rows, rather than the
+ * primary variant's white card sunk into a grey tray.
+ */
 export function PropsTable({ props }: { props: PropDoc[] }) {
   return (
-    <div className="mt-4 overflow-x-auto rounded-2xl border border-separator">
-      <table className="w-full min-w-[680px] border-collapse text-left">
-        <thead>
-          <tr className="border-b border-separator bg-background-secondary">
-            {["Prop", "Type", "Default", "Description"].map((heading) => (
-              <th
-                key={heading}
-                className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted"
-              >
-                {heading}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {props.map((prop) => (
-            <tr
-              key={prop.name}
-              className="border-b border-separator last:border-0 align-top"
-            >
-              <td className="whitespace-nowrap px-4 py-3 font-mono text-[12.5px] font-medium">
-                {prop.name}
-                {prop.required && (
-                  <span className="ml-1 text-red-500" title="Required">
-                    *
-                  </span>
-                )}
-              </td>
-              <td className="px-4 py-3 font-mono text-[12.5px] text-accent">
-                {prop.type}
-              </td>
-              <td className="whitespace-nowrap px-4 py-3 font-mono text-[12.5px] text-foreground-muted">
-                {prop.defaultValue ?? "—"}
-              </td>
-              <td className="px-4 py-3 text-[13px] text-pretty text-foreground-muted">
-                {prop.description}
-              </td>
+    <div className="table-root table-root--secondary mt-4">
+      <div className="table__scroll-container">
+        <table className="table__content min-w-[680px]">
+          <thead className="table__header">
+            <tr>
+              {["Prop", "Type", "Default", "Description"].map((heading) => (
+                <th key={heading} className="table__column">
+                  {heading}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="table__body">
+            {props.map((prop) => (
+              <tr key={prop.name} className="table__row">
+                <td className="table__cell font-mono text-[12.5px] font-medium whitespace-nowrap">
+                  {prop.name}
+                  {prop.required && (
+                    <span className="ml-1 text-danger" title="Required">
+                      *
+                    </span>
+                  )}
+                </td>
+                <td className="table__cell font-mono text-[12.5px] text-accent">
+                  {prop.type}
+                </td>
+                <td className="table__cell font-mono text-[12.5px] whitespace-nowrap text-muted">
+                  {prop.defaultValue ?? "—"}
+                </td>
+                <td className="table__cell text-[13px] text-pretty text-muted">
+                  {prop.description}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
