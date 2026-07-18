@@ -1,0 +1,80 @@
+---
+title: Color Picker
+description: A saturation field, hue and opacity sliders, and a text input — with full keyboard support and no runtime dependencies beyond React.
+---
+
+## Installation
+
+```bash
+bun add @fern-ui/color-picker
+```
+
+## Usage
+
+<Preview>
+  <ColorPickerDemo />
+</Preview>
+
+```tsx
+import { ColorPicker } from "@fern-ui/color-picker"
+
+const [color, setColor] = useState("#3b82f6")
+
+// One picker, everything included. Every capability is
+// reachable without configuration — subtract with props
+// only if you need less.
+<ColorPicker value={color} onChange={setColor} />
+```
+
+## Anatomy
+
+One component, no composition required. Each capability is a prop rather than a
+subcomponent, so the default import is already the complete picker.
+
+```tsx
+<ColorPicker
+  // Saturation and brightness field
+  // Hue slider
+  // Opacity slider          — alpha
+  // Hex and opacity inputs
+  // Format switcher         — formatToggle
+  // Preset swatches         — swatches
+  // Screen eyedropper       — eyedropper
+  // Copy to clipboard       — copyable
+  // Before/after comparison — comparison
+/>
+```
+
+## Accessibility
+
+- Every control is a labelled `role="slider"` carrying `aria-valuenow` and a
+  human-readable `aria-valuetext`.
+- Arrow keys nudge by 1%, Shift+arrows by 10%, and Home/End jump to the ends —
+  matching native range inputs.
+- Slider hit areas are 40px tall while the visible track stays 24px, clearing
+  the WCAG 2.5.5 target minimum.
+- Settled values are announced through a polite live region; intermediate drag
+  frames are deliberately not, which would otherwise flood a screen reader.
+- The field thumb switches between a light and dark ring based on the luminance
+  beneath it, so it stays visible across the whole gamut.
+- `prefers-reduced-motion` removes the thumb scale and icon transitions.
+- A drag owns a single pointer id, so a second finger cannot hijack it
+  mid-gesture.
+
+## API reference
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | — | Controlled value. Accepts `#rgb`, `#rgba`, `#rrggbb`, or `#rrggbbaa`. |
+| `defaultValue` | `string` | `"#3b82f6"` | Initial value when uncontrolled. |
+| `onChange` | `(value, color) => void` | — | Fires on every change, including each frame of a drag. Use for live previews. |
+| `onChangeComplete` | `(value, color) => void` | — | Fires once when an interaction settles. Use for network writes and undo history. |
+| `format` | `"hex" \| "rgb" \| "hsl"` | `"hex"` | Starting output format. Users can cycle it at runtime unless `formatToggle` is false. |
+| `formatToggle` | `boolean` | `true` | Let the user cycle hex → rgb → hsl by pressing the format label. |
+| `alpha` | `boolean` | `true` | Show the opacity slider and include alpha in output. |
+| `swatches` | `string[] \| false` | 8 presets | Preset colors. Pass `false` to hide the row, or an array to replace the palette. |
+| `eyedropper` | `boolean` | `true` | Offer the native screen eyedropper where the browser supports it. |
+| `copyable` | `boolean` | `true` | Show the copy-to-clipboard button. |
+| `comparison` | `boolean` | `true` | Show the starting color beside the current one. Pressing it reverts. |
+| `disabled` | `boolean` | `false` | Block interaction and dim the control. |
+| `label` | `string` | `"Color picker"` | Accessible name for the group. |
