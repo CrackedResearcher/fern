@@ -1,11 +1,6 @@
 /**
- * Layer order matters and is declared once, here.
- *
- * Fumadocs owns the docs *shell* (sidebar, TOC, code blocks, search) and
- * @heroui/styles owns the *design foundation* (colour, elevation, radius) plus
- * the component classes. That is exactly how heroui.com is built, and it is why
- * the two stylesheets are imported side by side rather than one replacing the
- * other.
+ * Layer order, declared once. Fumadocs owns the shell; @heroui/styles owns the
+ * design foundation. Both are imported rather than one replacing the other.
  */
 @layer theme, base, components, utilities;
 
@@ -76,14 +71,9 @@
 }
 
 /**
- * ────────────────────────────────────────────────────────────────────────────
- * FUMADOCS → HEROUI TOKEN BRIDGE
- *
- * Fumadocs styles its shell from --color-fd-*. heroui.com re-points those at
- * the HeroUI tokens so one palette drives both, and these are the mappings read
- * out of their compiled CSS. Without this the shell keeps Fumadocs' stock
- * neutral palette and no amount of component work makes the page match.
- * ────────────────────────────────────────────────────────────────────────────
+ * Fumadocs styles its shell from --color-fd-*; re-pointing those at the HeroUI
+ * tokens is what makes one palette drive both. Without it the shell keeps
+ * Fumadocs' stock neutrals no matter what the components do.
  */
 :root,
 .dark {
@@ -93,17 +83,8 @@
   --color-fd-ring: var(--focus);
 }
 
-/**
- * Sidebar and TOC colour hierarchy runs on these three tokens:
- *
- *   headings   --color-fd-foreground        full foreground
- *   items      --color-fd-muted-foreground  muted
- *   active     --color-fd-primary           near-black / near-white
- *
- * muted-foreground is their literal value, not HeroUI's --muted. The two are
- * close (#737373 vs ~#71717a) but --muted carries a little blue, which shows
- * up as a cooler cast across every inactive item in the rail.
- */
+/* Their literal #737373, not HeroUI's --muted. The two are close, but --muted
+   carries a little blue that reads as a cooler cast across the whole rail. */
 :root {
   --color-fd-muted-foreground: #737373;
 }

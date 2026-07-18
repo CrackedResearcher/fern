@@ -43,17 +43,10 @@ const ExternalIcon = ({ className }: { className?: string }) => (
 )
 
 /**
- * Page actions: copy the page as Markdown, plus a dropdown of ways to hand it
- * to an assistant.
- *
- * Mirrors their ViewOptions (apps/docs/src/components/ai/page-actions.tsx):
- * a ButtonGroup whose second button is icon-only with a ButtonGroup.Separator
- * and a chevron that rotates when open, opening a Dropdown of title +
- * description rows, with an external-link mark on the ones that leave the site.
- *
- * Their "Add to Cursor" / "Add to VS Code" rows are deliberately not copied:
- * both are MCP install deep-links pointing at @heroui/react-mcp. fern has no
- * MCP server, so those rows would install nothing.
+ * Copy the page as Markdown, plus a dropdown of ways to hand it to an
+ * assistant. Mirrors their ViewOptions, minus the "Add to Cursor" / "Add to
+ * VS Code" rows — both are MCP deep-links to @heroui/react-mcp, and fern has
+ * no MCP server, so they would install nothing.
  */
 export function CopyMarkdown({
   markdown,

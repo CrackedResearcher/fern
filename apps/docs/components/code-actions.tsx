@@ -32,16 +32,9 @@ const CheckIcon = () => (
 )
 
 /**
- * Replaces Fumadocs' copy button in the code block's Actions slot.
- *
- * Theirs is `.button.button--icon-only.button--sm.button--ghost` with
- * `-mt-0.5 bg-transparent text-muted` — a 36×32 pill carrying HeroUI's copy
- * glyph. Fumadocs' default is a generic `p-1 rounded-md` button with Lucide's
- * clipboard, which is a different size *and* a different mark.
- *
- * The code text is read off the enclosing <figure> rather than threaded
- * through as a prop: the Actions slot has no access to the source, and the
- * rendered <pre> is the same string the reader is looking at.
+ * Replaces Fumadocs' copy button, which ships a different size and a different
+ * glyph (Lucide's clipboard) to HeroUI's. The code is read off the enclosing
+ * block rather than passed as a prop — the Actions slot has no access to it.
  */
 export function CodeActions({ className }: { className?: string }) {
   const ref = useRef<HTMLButtonElement>(null)

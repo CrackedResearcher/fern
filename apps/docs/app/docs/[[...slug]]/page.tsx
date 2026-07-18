@@ -13,22 +13,9 @@ import { getMDXComponents } from "@/components/mdx"
 import { CopyMarkdown, ResourceLinks } from "@/components/page-actions"
 
 /**
- * Page structure mirrors their docs app's own `page.tsx` (heroui v3,
- * apps/docs/src/app/[lang]/docs/[[...slug]]/page.tsx):
- *
- *   <section className="flex flex-col gap-2">
- *     <div className="flex flex-wrap items-center justify-between gap-2">
- *       <DocsTitle/> … <ViewOptions/>
- *     </div>
- *     <DocsDescription className="text-md mt-2 mb-4"/>
- *     <ComponentLinks/>
- *   </section>
- *   <DocsBody className="prose-sm"/>
- *
- * The title row is a *justify-between* flex, which is what puts the copy
- * control opposite the heading rather than under it. Getting that wrapper
- * wrong is why fern's pages read as bare next to theirs even once the shell
- * matched.
+ * Mirrors heroui v3's own docs page.tsx. The title row is a justify-between
+ * flex — that wrapper is what puts the copy control opposite the heading
+ * rather than under it.
  */
 /** Raw MDX for the copy button, read the same way their docs app reads it. */
 const getRawMDX = cache(async (pagePath: string): Promise<string> => {
