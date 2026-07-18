@@ -10,6 +10,7 @@ export interface PropDoc {
   name: string
   type: string
   defaultValue?: string
+  required?: boolean
   description: string
 }
 
@@ -27,6 +28,10 @@ export interface BlockDoc {
   status: "ready" | "planned"
   install?: string
   demos?: DemoDoc[]
+  /** Structural shape of the block, so consumers can see what they're getting. */
+  anatomy?: { description: string; code: string }
+  /** Concrete accessibility guarantees, not a checkbox claim. */
+  accessibility?: string[]
   props?: PropDoc[]
 }
 
@@ -68,6 +73,30 @@ const [color, setColor] = useState("#3b82f6")
 <ColorPicker value={color} onChange={setColor} />`,
         render: () => <ControlledPicker />,
       },
+    ],
+    anatomy: {
+      description:
+        "One component, no composition required. Each capability is a prop rather than a subcomponent, so the default import is already the complete picker.",
+      code: `<ColorPicker
+  // Saturation and brightness field
+  // Hue slider
+  // Opacity slider          — alpha
+  // Hex and opacity inputs
+  // Format switcher         — formatToggle
+  // Preset swatches         — swatches
+  // Screen eyedropper       — eyedropper
+  // Copy to clipboard       — copyable
+  // Before/after comparison — comparison
+/>`,
+    },
+    accessibility: [
+      "Every control is a labelled role=\"slider\" carrying aria-valuenow and a human-readable aria-valuetext.",
+      "Arrow keys nudge by 1%, Shift+arrows by 10%, and Home/End jump to the ends — matching native range inputs.",
+      "Slider hit areas are 40px tall while the visible track stays 24px, clearing the WCAG 2.5.5 target minimum.",
+      "Settled values are announced through a polite live region; intermediate drag frames are deliberately not, which would otherwise flood a screen reader.",
+      "The field thumb switches between a light and dark ring based on the luminance beneath it, so it stays visible across the whole gamut.",
+      "prefers-reduced-motion removes the thumb scale and icon transitions.",
+      "A drag owns a single pointer id, so a second finger cannot hijack it mid-gesture.",
     ],
     props: [
       {
