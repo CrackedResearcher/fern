@@ -2,7 +2,6 @@ import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { highlight } from "fumadocs-core/highlight"
 import { PreviewCode } from "@/components/preview"
-import { CodeActions } from "@/components/code-actions"
 
 /**
  * A package source file, rendered in the same code viewer the examples use —
@@ -25,17 +24,19 @@ export async function ComponentSource({
     return null
   }
 
+  // defaultColor:false emits both themes as CSS variables instead of baking
+  // one into an inline style, which no stylesheet can then override.
+  const lang = file.endsWith(".ts") ? "typescript" : "tsx"
+
   const rendered = await highlight(code, {
-    lang: file.endsWith(".ts") ? "typescript" : "tsx",
+    lang,
     themes: { light: "github-light", dark: "github-dark" },
+    defaultColor: false,
   })
 
   return (
-    <PreviewCode standalone label={file}>
-      <figure className="relative m-0">
-        <CodeActions className="absolute top-2 right-2 z-10" />
-        {rendered}
-      </figure>
+    <PreviewCode standalone label={file} lang={lang}>
+      {rendered}
     </PreviewCode>
   )
 }

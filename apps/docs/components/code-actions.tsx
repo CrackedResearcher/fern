@@ -53,7 +53,11 @@ export function CodeActions({ className }: { className?: string }) {
   useEffect(() => () => window.clearTimeout(timer.current), [])
 
   const copy = async () => {
-    const code = ref.current?.closest("figure")?.querySelector("pre")?.textContent
+    // Scopes to the figure when inline, or to the whole block when the button
+    // sits in a filename bar outside it.
+    const code = ref.current
+      ?.closest("figure, .code-section")
+      ?.querySelector("pre")?.textContent
     if (!code) return
     try {
       await navigator.clipboard.writeText(code)
