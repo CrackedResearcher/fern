@@ -322,7 +322,11 @@ export const CountryPicker = React.forwardRef<
             role="listbox"
             aria-label={label}
             onScroll={measureEdges}
-            style={{ maxHeight: position.maxHeight - 64 }}
+            // No cap with no results: there is nothing to scroll, and the cap
+            // clipped the empty state's illustration instead.
+            style={{
+              maxHeight: results.length ? position.maxHeight - 64 : undefined,
+            }}
             className={cn(
               "overflow-y-auto overscroll-contain",
               "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",

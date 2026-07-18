@@ -32,7 +32,9 @@ export function ScrollFade({ side }: { side: "top" | "bottom" }) {
         // inset-x-0: the panel's own padding already insets this wrapper, so
         // a second inset left the row edges poking out past the fade.
         "pointer-events-none absolute inset-x-0 z-20 h-6",
-        side === "top" ? "top-0" : "bottom-0",
+        // The panel is r16 with 4px of padding, so its inner corner is r12.
+        // Square corners here overhang that curve and sit on the border.
+        side === "top" ? "top-0 rounded-t-xl" : "bottom-0 rounded-b-xl",
       )}
       style={{
         background: `linear-gradient(to ${side === "top" ? "bottom" : "top"}, ${SURFACE}, transparent)`,
@@ -182,7 +184,7 @@ export function EmptyState({
       role="status"
       className="flex flex-col items-center gap-1 px-6 py-10 text-center"
     >
-      <span aria-hidden className="mb-1 text-[var(--muted,#71717a)]">
+      <span aria-hidden className="mb-2 text-[var(--muted,#71717a)]">
         {icon ?? <GlobeIcon />}
       </span>
       <p className="text-[14px] font-medium text-[var(--foreground,#18181b)]">
