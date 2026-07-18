@@ -65,11 +65,12 @@ export function Header({
     : route || "components"
 
   return (
-    // Saturation boost alongside the blur: backdrop-blur alone desaturates
-    // what shows through, so colour behind the bar goes muddy without it.
-    <header className="sticky top-0 z-30 border-b border-separator bg-white/90 backdrop-blur-lg backdrop-saturate-150 dark:bg-black/65">
+    // Opaque, not translucent. A blurred bar over scrolling content is a
+    // nice trick that costs a compositing layer and smears the type behind
+    // it; a solid bar with a hairline reads cleaner at this density.
+    <header className="sticky top-0 z-30 bg-background after:absolute after:bottom-[-1px] after:left-1/2 after:h-px after:w-screen after:-translate-x-1/2 after:bg-separator after:content-['']">
       {/* Row one: identity, search, actions */}
-      <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-3 px-4 sm:px-6">
+      <div className="mx-auto flex h-13 max-w-[1400px] md:h-14 items-center gap-3 px-4 sm:px-6">
         <button
           type="button"
           onClick={onOpenNav}
@@ -169,8 +170,8 @@ export function Header({
       </div>
 
       {/* Row two: section tabs */}
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-6">
-        <nav className="flex gap-1 overflow-x-auto">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
+        <nav className="flex h-10 items-end gap-1 overflow-x-auto md:gap-3">
           {TABS.map(({ id, label, Icon }) => {
             const active = activeTab === id
             return (
@@ -179,11 +180,11 @@ export function Header({
                 href={href(id === "components" ? REGISTRY[0]!.slug : id)}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-[13.5px]",
+                  "flex shrink-0 items-center gap-2 border-b-2 px-1 pb-2 pt-1.5 text-[13.5px]",
                   "transition-colors duration-150",
                   "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
                   active
-                    ? "border-foreground font-medium text-foreground"
+                    ? "border-accent font-medium text-accent"
                     : "border-transparent text-foreground-muted hover:text-foreground",
                 )}
                 style={{ transitionTimingFunction: EASE }}

@@ -25,24 +25,20 @@ function NavList({ slug, onNavigate }: { slug: string; onNavigate?: () => void }
                 aria-current={active ? "page" : undefined}
                 aria-disabled={planned || undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg py-1.5 text-[13.5px]",
-                  "transition-colors duration-150",
+                  // Active is a raised pill: the surface colour plus the
+                  // surface shadow, so the current item reads as lifted off
+                  // the rail rather than merely tinted.
+                  "flex items-center justify-between gap-2 rounded-field p-2 text-[14px]",
                   "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
                   planned && "cursor-not-allowed opacity-45",
                   active
-                    ? "font-medium text-accent dark:text-foreground"
-                    : !planned && "text-foreground-muted hover:text-foreground",
+                    ? "bg-surface font-medium text-foreground shadow-[var(--surface-shadow)]"
+                    : !planned &&
+                        "text-muted hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.04]",
                 )}
                 style={{ transitionTimingFunction: EASE }}
               >
-                <span
-                  aria-hidden
-                  className={cn(
-                    "size-1 shrink-0 rounded-full transition-colors duration-150",
-                    active ? "bg-accent dark:bg-foreground" : "bg-background-tertiary",
-                  )}
-                />
-                <span className="flex-1">{block.name}</span>
+                <span>{block.name}</span>
                 {planned && (
                   <span className="rounded-md bg-default px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted">
                     Soon
@@ -59,7 +55,7 @@ function NavList({ slug, onNavigate }: { slug: string; onNavigate?: () => void }
 
 export function Sidebar({ slug }: { slug: string }) {
   return (
-    <aside className="sticky top-[104px] h-[calc(100vh-104px)] overflow-y-auto py-10 pr-4">
+    <aside className="sticky top-[104px] h-[calc(100vh-104px)] w-[220px] overflow-y-auto pt-4 pr-4 pl-3">
       <NavList slug={slug} />
     </aside>
   )

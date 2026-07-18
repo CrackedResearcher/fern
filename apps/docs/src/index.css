@@ -90,7 +90,11 @@ body {
   /* Must reference an authored variable, not a @theme one. `@theme inline`
      inlines its values at build time instead of emitting runtime custom
      properties, so a var() pointing at a --color-* name resolves to nothing. */
-  background: var(--surface-secondary) !important;
+  background: rgb(0 0 0 / 0.04) !important;
+}
+
+.dark .fern-code pre {
+  background: rgb(40 40 40 / 0.4) !important;
 }
 
 .fern-code code {

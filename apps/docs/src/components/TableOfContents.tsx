@@ -41,18 +41,18 @@ export function TableOfContents({ entries }: { entries: TocEntry[] }) {
 
   return (
     <aside
-      className="sticky top-[104px] h-[calc(100vh-104px)] max-w-48 overflow-y-auto py-10"
+      className="sticky top-[104px] h-[calc(100vh-104px)] w-[240px] overflow-y-auto pt-6 pr-4 pl-4"
       style={{
         // Fades the list where it meets the viewport edges so entries don't
         // appear guillotined mid-scroll. The top fade only engages once there
         // is something scrolled past to hide.
         WebkitMaskImage:
-          "linear-gradient(to top, transparent 0%, #000 60px, #000 92%, transparent 100%)",
+          "linear-gradient(to bottom, transparent, #000 16px, #000 calc(100% - 16px), transparent)",
         maskImage:
-          "linear-gradient(to top, transparent 0%, #000 60px, #000 92%, transparent 100%)",
+          "linear-gradient(to bottom, transparent, #000 16px, #000 calc(100% - 16px), transparent)",
       }}
     >
-      <p className="mb-3 text-[13px] font-medium">On this page</p>
+      <p className="mb-3 text-[14px] text-muted">On this page</p>
       <ul className="flex flex-col gap-2">
         {entries.map((entry) => (
           <li key={entry.id}>
@@ -69,8 +69,8 @@ export function TableOfContents({ entries }: { entries: TocEntry[] }) {
                 setActiveId(entry.id)
               }}
               className={cn(
-                "relative flex items-center text-[12px] transition-colors duration-150",
-                entry.depth === 2 ? "pl-3" : "pl-0",
+                "relative flex items-center py-1.5 text-[13px] transition-colors duration-150",
+                entry.depth === 2 ? "ps-6" : "ps-3",
                 entry.id === activeId ? "text-foreground" : "text-foreground-muted hover:text-foreground",
               )}
             >
