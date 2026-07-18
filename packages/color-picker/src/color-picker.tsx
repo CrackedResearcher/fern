@@ -60,7 +60,7 @@ const RECESSED =
  * surfaces without darkening the thumb on dark ones.
  */
 const RAISED =
-  "0 0 0 2px #fff, 0 0 0 3px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.3), 0 3px 8px -2px rgba(0,0,0,0.22)"
+  "0 0 0 3px #fff, 0 0 0 4px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.3), 0 3px 8px -2px rgba(0,0,0,0.22)"
 
 const DEFAULT_SWATCHES = [
   "#ef4444",
@@ -593,9 +593,14 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           )}
           style={{
             backgroundColor: `hsl(${state.hsv.h} 100% 50%)`,
+            // The dot pattern sits above the two gradients and below the thumb.
+            // It is not decoration: over a smooth 2D ramp there is nothing for
+            // the eye to register movement against, and the dots give the drag
+            // a fixed grid to read position from.
             backgroundImage:
-              "linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent)",
-            boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.1)",
+              "radial-gradient(circle, rgb(255 255 255 / 0.2) 1px, transparent 1px), linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent)",
+            backgroundSize: "8px 8px, auto, auto",
+            boxShadow: "inset 0 0 1px 0 rgb(0 0 0 / 0.3)",
           }}
         >
           <Thumb
@@ -898,11 +903,11 @@ function LabelledSlider({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between px-0.5">
-        <span className="text-[11px] font-medium text-[var(--muted,#71717a)]">
+        <span className="text-[12px] text-[var(--muted,#71717a)]">
           {label}
         </span>
         {/* Tabular figures so the readout doesn't jitter while dragging. */}
-        <span className="font-mono text-[11px] tabular-nums text-[var(--muted,#71717a)]">
+        <span className="font-mono text-[12px] tabular-nums text-[var(--muted,#71717a)]">
           {readout}
         </span>
       </div>
