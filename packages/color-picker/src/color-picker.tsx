@@ -7,6 +7,7 @@ import {
   luminance,
   parseHex,
   rgbToHsv,
+  hsvToRgb,
   toColor,
   type Color,
   type ColorFormat,
@@ -27,8 +28,19 @@ const cn = (...classes: (string | false | undefined | null)[]) =>
 const CHECKERBOARD =
   "repeating-conic-gradient(rgba(140,140,140,0.55) 0% 25%, rgba(255,255,255,0.9) 0% 50%) 50% / 9px 9px"
 
-const HUE_GRADIENT =
-  "linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)"
+/**
+ * Hue ramp drawn at the *current* saturation and brightness rather than at
+ * full chroma. A permanently vivid rainbow lies about the outcome: at 20%
+ * saturation, dragging it produces muted colours, and the control should
+ * preview that rather than promise neon.
+ */
+function hueGradient(s: number, v: number) {
+  const stops = [0, 60, 120, 180, 240, 300, 360].map((h) => {
+    const { r, g, b } = hsvToRgb({ h: h % 360, s, v })
+    return `rgb(${r} ${g} ${b}) ${Math.round((h / 360) * 100)}%`
+  })
+  return `linear-gradient(to right, ${stops.join(", ")})`
+}
 
 // ease-in is never used here — starting slow reads as lag at exactly the
 // moment the user is watching hardest.
@@ -591,7 +603,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 valueNow={Math.round(state.hsv.h)}
                 valueMax={360}
                 valueText={`${Math.round(state.hsv.h)} degrees`}
-                background={HUE_GRADIENT}
+                background={hueGradient(state.hsv.s, state.hsv.v)}
                 thumb={{
                   left: `${(state.hsv.h / 360) * 100}%`,
                   background: `hsl(${state.hsv.h} 100% 50%)`,
@@ -671,6 +683,22 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 className="h-4 w-px shrink-0 bg-black/10 dark:bg-white/10"
               />
 
+              {/* Current colour, inline with its own value — the swatch and the
+                  text it describes should not be in different places. */}
+              <span
+                aria-hidden
+                className="ml-2.5 size-4 shrink-0 rounded-full"
+                style={{
+                  background: CHECKERBOARD,
+                  boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.15)",
+                }}
+              >
+                <span
+                  className="block size-full rounded-full"
+                  style={{ backgroundColor: output }}
+                />
+              </span>
+
               <input
                 id={inputId}
                 value={draft ?? output}
@@ -689,7 +717,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   if (event.key === "Escape") setDraft(null)
                 }}
                 className={cn(
-                  "h-full w-full min-w-0 bg-transparent px-2.5",
+                  "h-full w-full min-w-0 bg-transparent px-2",
                   "font-mono text-[13px] tracking-tight tabular-nums lowercase",
                   "text-neutral-900 outline-hidden dark:text-neutral-100",
                 )}
@@ -888,9 +916,11 @@ function LabelledSlider({
               style={{ background: overlay, boxShadow: RECESSED }}
             />
           )}
+          {/* A circle larger than its rail, so it reads as sitting on top of
+              the track rather than embedded in it. */}
           <Thumb
-            width={14}
-            height={14}
+            width={20}
+            height={20}
             dragging={drag.dragging}
             reducedMotion={reducedMotion}
             style={{

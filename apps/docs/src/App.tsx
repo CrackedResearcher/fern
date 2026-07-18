@@ -38,7 +38,14 @@ export function App() {
   )
   const dark = theme === "system" ? systemDark : theme === "dark"
 
-  const block = REGISTRY.find((entry) => entry.slug === route) ?? REGISTRY[0]!
+  // A route that isn't a block is a real page, not a fallback. Silently
+  // showing REGISTRY[0] made the tab bar lie about where you were.
+  // The empty route is the landing page and lands on the first block; any
+  // other unknown route renders a real page instead.
+  const block =
+    REGISTRY.find((entry) => entry.slug === route) ??
+    (route === "" ? REGISTRY[0] : undefined)
+  const isBlockRoute = Boolean(block)
 
   useEffect(() => {
     window.localStorage.setItem(THEME_KEY, theme)
@@ -94,23 +101,57 @@ export function App() {
             the TOC only claims space once there is room for it (xl). */}
         <div className="mx-auto grid max-w-[1440px] grid-cols-12 px-6">
           <div className="hidden lg:col-span-2 lg:block">
-            <Sidebar slug={block.slug} />
+            <Sidebar slug={block?.slug ?? ""} />
           </div>
           <main className="col-span-12 min-w-0 py-10 lg:col-span-10 lg:px-12 xl:col-span-8">
-            <BlockPage block={block} dark={dark} />
+            {block ? (
+              <BlockPage block={block} dark={dark} />
+            ) : (
+              <StubPage route={route} />
+            )}
           </main>
           <div className="hidden xl:col-span-2 xl:block">
-            <TableOfContents entries={tocFor(block)} />
+            {isBlockRoute && block && (
+              <TableOfContents entries={tocFor(block)} />
+            )}
           </div>
         </div>
 
         <MobileNav
-          slug={block.slug}
+          slug={block?.slug ?? ""}
           open={navOpen}
           onClose={() => setNavOpen(false)}
         />
         <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
       </div>
     </div>
+  )
+}
+
+const STUBS: Record<string, { title: string; body: string }> = {
+  "getting-started": {
+    title: "Getting Started",
+    body: "Installation and setup guides land here. Until then, each block page carries its own install command and usage example.",
+  },
+  changelog: {
+    title: "Changelog",
+    body: "Release notes land here once the first version is published to npm.",
+  },
+}
+
+/** Real page for a route that exists in the nav but has no content yet.
+ *  Better than silently rendering the first block, which made the tab bar
+ *  claim you were somewhere you weren't. */
+function StubPage({ route }: { route: string }) {
+  const stub = STUBS[route]
+  return (
+    <article className="mx-auto max-w-3xl">
+      <h1 className="text-[34px] font-semibold tracking-[-0.02em] text-balance">
+        {stub?.title ?? "Not found"}
+      </h1>
+      <p className="mt-3 text-[15px] leading-relaxed text-pretty text-foreground-muted">
+        {stub?.body ?? "That page does not exist."}
+      </p>
+    </article>
   )
 }
