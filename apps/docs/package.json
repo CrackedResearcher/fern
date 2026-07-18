@@ -1,9 +1,9 @@
 {
-  "name": "demo",
+  "name": "docs",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5200",
     "build": "vite build",
     "typecheck": "tsc --noEmit"
   },
