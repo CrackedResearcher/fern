@@ -131,7 +131,7 @@ export function App() {
             viewport widths while a percentage grid's drifts. 1400px outer and
             268px rails are their --fd-layout-width / --fd-sidebar-width /
             --fd-toc-width. */}
-        <div className="mx-auto grid max-w-[1400px] grid-cols-1 lg:grid-cols-[268px_minmax(0,1fr)] xl:grid-cols-[268px_minmax(0,1fr)_268px]">
+        <div className="mx-auto grid max-w-[1552px] grid-cols-1 lg:grid-cols-[268px_minmax(0,1fr)] xl:grid-cols-[268px_minmax(0,1fr)_268px]">
           <div className="hidden lg:block">
             <Sidebar slug={block?.slug ?? ""} />
           </div>

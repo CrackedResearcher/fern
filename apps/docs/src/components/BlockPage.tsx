@@ -48,19 +48,13 @@ function CopyableCommand({ command }: { command: string }) {
     }
   }
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-separator bg-default py-1 pl-4 pr-1">
+    <div className="flex items-center gap-2 rounded-xl border border-separator bg-surface-secondary py-1 pr-1 pl-4">
       <code className="flex-1 font-mono text-[13px] text-foreground">{command}</code>
       <button
         type="button"
         onClick={copy}
         aria-label={copied ? "Copied" : "Copy install command"}
-        className={cn(
-          "grid size-8 shrink-0 place-items-center rounded-lg text-foreground-muted",
-          "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
-          "hover:bg-default-hover hover:text-foreground",
-          "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
-        )}
-        style={{ transitionTimingFunction: EASE }}
+        className="button button--ghost button--icon-only button--sm text-muted"
       >
         {copied ? <CheckIcon /> : <CopyIcon />}
       </button>
@@ -108,24 +102,27 @@ export function BlockPage({ block, dark }: { block: BlockDoc; dark: boolean }) {
 
           {/* Tabs only earn their space when there is more than one demo. */}
           {block.demos.length > 1 && (
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              {block.demos.map((entry, index) => (
-                <button
-                  key={entry.name}
-                  type="button"
-                  onClick={() => setDemoIndex(index)}
-                  className={cn(
-                    "rounded-lg px-3 py-1.5 text-[13px] transition-colors duration-150",
-                    "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
-                    index === demoIndex
-                      ? "bg-foreground font-medium text-background"
-                      : "text-foreground-muted hover:bg-default",
-                  )}
-                  style={{ transitionTimingFunction: EASE }}
-                >
-                  {entry.name}
-                </button>
-              ))}
+            <div
+              role="tablist"
+              className="tabs__list-container mt-4 w-fit"
+              aria-label="Demos"
+            >
+              <div className="tabs__list" data-orientation="horizontal">
+                {block.demos.map((entry, index) => (
+                  <button
+                    key={entry.name}
+                    type="button"
+                    role="tab"
+                    aria-selected={index === demoIndex}
+                    data-selected={index === demoIndex || undefined}
+                    onClick={() => setDemoIndex(index)}
+                    className="tabs__tab w-auto px-3 text-[13px]"
+                  >
+                    {index === demoIndex && <span className="tabs__indicator" />}
+                    {entry.name}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -176,10 +173,10 @@ export function BlockPage({ block, dark }: { block: BlockDoc; dark: boolean }) {
           {previous ? (
             <a
               href={href(previous.slug)}
-              className="flex flex-1 flex-col gap-1 rounded-xl border border-separator p-4 transition-colors duration-150 hover:bg-default"
+              className="flex flex-1 flex-col gap-1 rounded-xl border border-separator p-4 transition-colors duration-150 hover:bg-default/50"
               style={{ transitionTimingFunction: EASE }}
             >
-              <span className="text-[12px] text-foreground-muted">Previous</span>
+              <span className="text-[12px] text-muted">Previous</span>
               <span className="text-[14px] font-medium">{previous.name}</span>
             </a>
           ) : (
@@ -188,10 +185,10 @@ export function BlockPage({ block, dark }: { block: BlockDoc; dark: boolean }) {
           {next ? (
             <a
               href={href(next.slug)}
-              className="flex flex-1 flex-col items-end gap-1 rounded-xl border border-separator p-4 transition-colors duration-150 hover:bg-default"
+              className="flex flex-1 flex-col items-end gap-1 rounded-xl border border-separator p-4 transition-colors duration-150 hover:bg-default/50"
               style={{ transitionTimingFunction: EASE }}
             >
-              <span className="text-[12px] text-foreground-muted">Next</span>
+              <span className="text-[12px] text-muted">Next</span>
               <span className="text-[14px] font-medium">{next.name}</span>
             </a>
           ) : (
