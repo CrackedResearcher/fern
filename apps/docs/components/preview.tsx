@@ -47,7 +47,16 @@ export function PreviewDemo({ children }: { children: ReactNode }) {
 /** Height the code is clamped to before it is worth offering to expand. */
 const COLLAPSED_MAX = 150
 
-export function PreviewCode({ children }: { children: ReactNode }) {
+export function PreviewCode({
+  children,
+  /** Standalone blocks round all four corners; fused ones only the bottom. */
+  standalone = false,
+  label,
+}: {
+  children: ReactNode
+  standalone?: boolean
+  label?: string
+}) {
   const [expanded, setExpanded] = useState(false)
   const [overflows, setOverflows] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -77,7 +86,18 @@ export function PreviewCode({ children }: { children: ReactNode }) {
   const clamped = overflows && !expanded
 
   return (
-    <div className="code-section relative rounded-b-xl border border-separator bg-transparent">
+    <div
+      className={
+        standalone
+          ? "code-section relative my-4 overflow-hidden rounded-xl border border-separator bg-transparent"
+          : "code-section relative rounded-b-xl border border-separator bg-transparent"
+      }
+    >
+      {label && (
+        <div className="flex items-center justify-between border-b border-separator bg-surface-secondary px-4 py-2">
+          <span className="font-mono text-xs text-foreground">{label}</span>
+        </div>
+      )}
       <div
         ref={contentRef}
         className={
@@ -85,7 +105,11 @@ export function PreviewCode({ children }: { children: ReactNode }) {
             ? // Opaque for the first 20%, then fading out, so the cut reads as
               // "there is more" rather than as a crop.
               "docs-code-block-wrapper relative max-h-[150px] overflow-hidden [mask-image:linear-gradient(#000_0%_20%,transparent_100%)]"
-            : "docs-code-block-wrapper relative"
+            : standalone
+              // A whole source file expands to tens of thousands of pixels,
+              // which loses the page. Scroll it inside the block instead.
+              ? "docs-code-block-wrapper relative max-h-[70vh] overflow-auto"
+              : "docs-code-block-wrapper relative"
         }
       >
         {children}
