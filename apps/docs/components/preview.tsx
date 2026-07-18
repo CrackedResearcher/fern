@@ -122,7 +122,7 @@ export function PreviewCode({
             ? // Opaque for the first 20%, then fading out, so the cut reads as
               // "there is more" rather than as a crop.
               cn(
-                "docs-code-block-wrapper relative max-h-[150px] overflow-hidden [mask-image:linear-gradient(#000_0%_20%,transparent_100%)]",
+                "docs-code-block-wrapper relative max-h-[150px] overflow-hidden [mask-image:linear-gradient(#000_0%_60%,transparent_100%)]",
                 standalone && "rounded-lg bg-surface",
               )
             : standalone
