@@ -416,8 +416,14 @@ figure.shiki:not(.docs-code-block-wrapper figure) {
 figure.shiki:not(.docs-code-block-wrapper figure) > .fd-scroll-container {
   /* !important for the same reason the rule above needs it — Fumadocs sets
      this background with one of its own. */
+  /* --surface in light puts white on grey; in dark it lands within a few
+     points of the shell and reads as one grey slab, so the code surface drops
+     to --background there. */
   background-color: var(--surface) !important;
   border-radius: 8px;
+}
+.dark figure.shiki:not(.docs-code-block-wrapper figure) > .fd-scroll-container {
+  background-color: var(--background) !important;
 }
 
 /* The copy button belongs to the section, not the inner figure. */

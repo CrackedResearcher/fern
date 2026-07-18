@@ -69,6 +69,18 @@ import { PreviewCode } from "@/components/preview"
 - Blocks taller than 150px collapse behind an **Expand code** button. Shorter
   ones render whole, with no button.
 
+## Install commands
+
+`InstallTabs` renders one command per package manager in the same shell, with
+the tab row in place of the filename bar. Commands are highlighted server-side,
+so they match every other block.
+
+<InstallTabs pkg="@fern-ui/color-picker" />
+
+```tsx
+<InstallTabs pkg="@fern-ui/color-picker" />
+```
+
 ## Rendering a source file
 
 `ComponentSource` reads a file from a package and pipes it through the same
@@ -80,6 +92,8 @@ viewer, so a copy-paste component can show exactly what you would copy.
 
 ## Props
 
+### PreviewCode
+
 <PropsTable
   rows={[
     { name: "children", type: "ReactNode", description: "The code. A fenced block in MDX, or highlighted output." },
@@ -87,5 +101,22 @@ viewer, so a copy-paste component can show exactly what you would copy.
     { name: "lang", type: "string", description: "Language shown when there is no filename." },
     { name: "standalone", type: "boolean", default: "false", description: "Round all four corners, for a block with no preview above it." },
     { name: "lineNumbers", type: "boolean", default: "false", description: "Show the line-number gutter." },
+  ]}
+/>
+
+### InstallTabs
+
+<PropsTable
+  rows={[
+    { name: "pkg", type: "string", description: "Package name. Expands to bun add, npm install, pnpm add and yarn add." },
+  ]}
+/>
+
+### ComponentSource
+
+<PropsTable
+  rows={[
+    { name: "pkg", type: "string", description: "Package directory under packages/." },
+    { name: "file", type: "string", description: "File to read from that package's src/." },
   ]}
 />
