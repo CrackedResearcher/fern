@@ -23,10 +23,20 @@ priority. If it makes a block more usable, it is.
 
 ```
 packages/color-picker   @fern-ui/color-picker — the published block
+packages/country-picker @fern-ui/country-picker — searchable country select
 apps/docs               Next.js 16 + Fumadocs documentation site and playground
 MIGRATION_PROMPT.md     completed brief for adopting @heroui/styles — historical
 packages/color-picker/REDESIGN.md   agreed spec for the next picker pass
 ```
+
+Next up is `@fern-ui/cmdk`, a command menu. It is a good fit — a command menu
+is almost entirely behaviour, and the ranked matcher, portal positioning,
+keyboard model and long-list handling already exist in the country picker. The
+thing to settle before starting is what it beats `cmdk` on, because "beautiful
+and performant" does not: that library is both. The honest angles are zero
+runtime dependencies (it pulls Radix), a real copy-paste path, and the
+interaction details. If performance is the claim it needs a number —
+`content-visibility` is proven here at 198 rows, not at 10,000.
 
 The docs site is also the test harness. There is deliberately no separate demo
 app — components get exercised and documented in the same place.
@@ -127,7 +137,42 @@ synchronisation: subscriptions, timers, `matchMedia`, `IntersectionObserver`.
 **Motion:** strong custom ease-out, never `ease-in` (it reads as lag at exactly
 the moment the user is watching). Press feedback at `scale(0.97)`, ~150ms.
 Exits are faster than enters. Never `transition: all`. Never animate from
-`scale(0)`.
+`scale(0)` — start at `0.96`-`0.97` with opacity.
+
+Panels animate from the trigger, not their own centre: set `transform-origin`
+to the edge they open from. An exit needs the element kept mounted while it
+plays, and the enter needs a committed start style — do that from a ref
+callback with a forced reflow, not `requestAnimationFrame`, which can be
+cancelled by an effect re-run and leave the panel stuck invisible.
+
+**Anything that scrolls fades at its boundaries.** A row sliced by a sticky
+header or by the end of a panel reads as a rendering fault. Fade to the
+surface colour underneath, and only on the edge that has content beyond it —
+a fade with nothing to scroll to is a wash over the first row, not a hint. A
+gradient overlay, not `mask-image`: a mask fades the element's own background
+too, so the surface thins out and lets what is behind it through.
+
+**A cursor and a selection are different states.** Where a list has both, the
+keyboard/pointer cursor is a neutral wash and the current selection is tinted
+— otherwise "where I am" and "what I chose" are indistinguishable. Open a list
+with the cursor on the selection, scrolled to it.
+
+**Nested surfaces are concentric:** inner radius = outer radius − the gap
+between them, and the gap has to be equal on every edge for one radius to
+satisfy it. Asymmetric padding is why a corner reads wrong. Remember the
+border: a 12px child inside a 12px parent with a 1px border leaves a 1px flat
+spot; let `overflow-hidden` clip it instead of hardcoding the inner value.
+
+**Popovers are portalled.** An absolutely-positioned panel is clipped by any
+ancestor with `overflow: hidden` — a card, a preview box, a modal — and no
+z-index fixes it, because clipping happens before stacking. Position against
+the trigger in viewport coordinates, observe the trigger for resize, and flip
+when the space below cannot hold the panel.
+
+**Empty states say what to try next.** "No results" alone is a dead end; name
+the things that would match. The illustration is drawn, not shipped as an
+image — a raster asset cannot follow the theme and the packages ship no
+assets — and it stays quiet enough not to compete with the message.
 
 ## Traps that have already cost time
 
