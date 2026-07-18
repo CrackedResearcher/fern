@@ -833,32 +833,17 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
               </RoundButton>
             )}
 
-            {copyable && (
-              <RoundButton
-                onClick={copy}
-                disabled={disabled}
-                label={copied ? "Copied" : "Copy color value"}
-                focusRing={focusRing}
-              >
-                {/* Both icons stay mounted and cross-fade. Toggling visibility
-                    would pop; blur bridges the two states so the eye reads one
-                    object changing rather than two swapping. */}
-                <IconSwap showSecond={copied} reducedMotion={reducedMotion}>
-                  <CopyIcon />
-                  <CheckIcon />
-                </IconSwap>
-              </RoundButton>
-            )}
           </div>
           )}
 
           {/* ----------------------------- Channel row ---------------------------- */}
           {showValueField && (
+          <div className="flex items-center gap-2">
           <div
             id={channelGroupId}
             role="group"
             aria-label="Color channels"
-            className="flex h-11 items-center gap-1 rounded-2xl bg-[var(--default,#ebebec)] p-1.5"
+            className="flex h-11 min-w-0 flex-1 items-center gap-1 rounded-2xl bg-[var(--default,#ebebec)] p-1.5"
           >
             {format === "hex" ? (
               <>
@@ -911,6 +896,28 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   onCancel={() => setChannelDraft(null)}
                 />
               ))
+            )}
+          </div>
+
+            {/* Copy sits after the row it copies, so what lands on the
+                clipboard is what the row displays — `#747839` in HEX,
+                `rgb(116 120 57)` in RGBA. A copy button that always emits hex
+                regardless of the selected model is a trap. */}
+            {copyable && (
+              <RoundButton
+                onClick={copy}
+                disabled={disabled}
+                label={copied ? "Copied" : `Copy ${output}`}
+                focusRing={focusRing}
+              >
+                {/* Both icons stay mounted and cross-fade. Toggling visibility
+                    would pop; blur bridges the two states so the eye reads one
+                    object changing rather than two swapping. */}
+                <IconSwap showSecond={copied} reducedMotion={reducedMotion}>
+                  <CopyIcon />
+                  <CheckIcon />
+                </IconSwap>
+              </RoundButton>
             )}
           </div>
           )}
