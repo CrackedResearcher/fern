@@ -1,0 +1,6 @@
+{
+  "title": "Components",
+  "icon": "Blocks",
+  "root": true,
+  "pages": ["---Inputs---", "color-picker", "country-picker"]
+}

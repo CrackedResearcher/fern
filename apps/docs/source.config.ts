@@ -1,7 +1,26 @@
-import { defineConfig, defineDocs } from "fumadocs-mdx/config"
+import { defineConfig, defineDocs, frontmatterSchema } from "fumadocs-mdx/config"
+import { z } from "zod"
 
 export const docs = defineDocs({
   dir: "content/docs",
+  docs: {
+    /**
+     * `links` drives the resource chip row under a page description — their
+     * Figma / Storybook / Source row. Theirs extracts it from the raw MDX with
+     * a regex; declaring it in the frontmatter schema instead means a typo is a
+     * build error rather than a silently missing row.
+     */
+    schema: frontmatterSchema.extend({
+      links: z
+        .array(
+          z.object({
+            label: z.string(),
+            href: z.string(),
+          }),
+        )
+        .optional(),
+    }),
+  },
 })
 
 export default defineConfig({
