@@ -360,6 +360,34 @@
   padding-left: 0 !important;
 }
 
+/*
+ * Dual-theme Shiki output from a direct highlight() call, which emits both
+ * themes as variables rather than post-processing like the MDX pipeline does.
+ */
+.docs-code-block-wrapper .shiki-themes,
+.docs-code-block-wrapper .shiki-themes span {
+  color: var(--shiki-light);
+  background-color: transparent;
+}
+/*
+ * The prose layer styles bare <code> as inline code — a dark chip with a 5px
+ * radius. Inline, that paints one chip per line fragment, so a source file
+ * renders as a stack of little boxes instead of a code block.
+ */
+.docs-code-block-wrapper .shiki-themes code {
+  display: block;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.dark .docs-code-block-wrapper .shiki-themes,
+.dark .docs-code-block-wrapper .shiki-themes span {
+  color: var(--shiki-dark);
+}
+
 /* Line numbers, counter-driven so they survive horizontal scrolling. */
 .docs-code-block-wrapper code {
   counter-reset: step;

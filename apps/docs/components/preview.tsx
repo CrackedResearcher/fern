@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@heroui/react"
+import { CodeActions } from "@/components/code-actions"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 
 /**
@@ -52,10 +53,13 @@ export function PreviewCode({
   /** Standalone blocks round all four corners; fused ones only the bottom. */
   standalone = false,
   label,
+  lang,
 }: {
   children: ReactNode
   standalone?: boolean
+  /** Filename for the bar. Falls back to `lang` when not given. */
   label?: string
+  lang?: string
 }) {
   const [expanded, setExpanded] = useState(false)
   const [overflows, setOverflows] = useState(false)
@@ -93,9 +97,12 @@ export function PreviewCode({
           : "code-section relative rounded-b-xl border border-separator bg-transparent"
       }
     >
-      {label && (
-        <div className="flex items-center justify-between border-b border-separator bg-surface-secondary px-4 py-2">
-          <span className="font-mono text-xs text-foreground">{label}</span>
+      {(label ?? lang) && (
+        <div className="flex items-center justify-between gap-3 rounded-t-xl border-b border-separator bg-surface-secondary py-1 pr-1 pl-4">
+          <span className="font-mono text-xs text-foreground">
+            {label ?? lang}
+          </span>
+          <CodeActions />
         </div>
       )}
       <div
