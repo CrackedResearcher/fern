@@ -1,5 +1,5 @@
 {
-  "name": "@fern/color-picker",
+  "name": "@fern-ui/color-picker",
   "version": "0.1.0",
   "description": "An accessible, dependency-free color picker for React.",
   "license": "MIT",

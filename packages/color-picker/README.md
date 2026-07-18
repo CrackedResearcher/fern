@@ -1,15 +1,15 @@
-# @fern/color-picker
+# @fern-ui/color-picker
 
 An accessible color picker for React. No runtime dependencies beyond React itself.
 
 ```bash
-bun add @fern/color-picker
+bun add @fern-ui/color-picker
 ```
 
 ## Usage
 
 ```tsx
-import { ColorPicker } from "@fern/color-picker"
+import { ColorPicker } from "@fern-ui/color-picker"
 
 function Example() {
   const [color, setColor] = useState("#3b82f6")
@@ -69,7 +69,7 @@ The conversion helpers are exported from a separate entry point, so importing
 them never pulls the React component into your bundle:
 
 ```ts
-import { parseHex, rgbToHex, hsvToRgb } from "@fern/color-picker/color"
+import { parseHex, rgbToHex, hsvToRgb } from "@fern-ui/color-picker/color"
 ```
 
 ## Accessibility

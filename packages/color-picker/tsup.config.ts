@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup"
 
 export default defineConfig({
-  // Separate entries rather than one bundle, so importing `@fern/color-picker/color`
+  // Separate entries rather than one bundle, so importing `@fern-ui/color-picker/color`
   // never drags the React component into a consumer's graph.
   entry: {
     index: "src/index.ts",

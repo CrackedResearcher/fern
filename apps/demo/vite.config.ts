@@ -8,7 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // Point at source so the demo hot-reloads without a build step.
-      "@fern/color-picker": fileURLToPath(
+      "@fern-ui/color-picker": fileURLToPath(
         new URL("../../packages/color-picker/src/index.ts", import.meta.url),
       ),
     },

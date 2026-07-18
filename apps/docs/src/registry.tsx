@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react"
-import { ColorPicker } from "@fern/color-picker"
+import { ColorPicker } from "@fern-ui/color-picker"
 
 /**
  * Every block is a data entry here. Adding a block to the docs means appending
@@ -54,11 +54,11 @@ export const REGISTRY: BlockDoc[] = [
     status: "ready",
     description:
       "A saturation field, hue and opacity sliders, and a text input — with full keyboard support and no runtime dependencies beyond React.",
-    install: "bun add @fern/color-picker",
+    install: "bun add @fern-ui/color-picker",
     demos: [
       {
         name: "Default",
-        code: `import { ColorPicker } from "@fern/color-picker"
+        code: `import { ColorPicker } from "@fern-ui/color-picker"
 
 // Everything is on by default — alpha, swatches,
 // eyedropper, copy, and the comparison well.
