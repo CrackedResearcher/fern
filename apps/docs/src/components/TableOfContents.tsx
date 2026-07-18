@@ -41,7 +41,7 @@ export function TableOfContents({ entries }: { entries: TocEntry[] }) {
 
   return (
     <aside
-      className="sticky top-[104px] h-[calc(100vh-104px)] w-[240px] overflow-y-auto pt-6 pr-4 pl-4"
+      className="sticky top-[104px] flex h-[calc(100vh-104px)] flex-col overflow-y-auto pe-4 pt-12 pb-2"
       style={{
         // Fades the list where it meets the viewport edges so entries don't
         // appear guillotined mid-scroll. The top fade only engages once there
@@ -52,8 +52,26 @@ export function TableOfContents({ entries }: { entries: TocEntry[] }) {
           "linear-gradient(to bottom, transparent, #000 16px, #000 calc(100% - 16px), transparent)",
       }}
     >
-      <p className="mb-3 text-[14px] text-muted">On this page</p>
-      <ul className="flex flex-col gap-2">
+      {/* Their heading pairs the label with a list glyph rather than standing
+          alone, which is what keeps the rail from reading as stray links. */}
+      <h3 className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted">
+        <svg
+          aria-hidden
+          className="size-4"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path d="M15 18H3" />
+          <path d="M17 6H3" />
+          <path d="M21 12H3" />
+        </svg>
+        On this page
+      </h3>
+      <ul className="flex flex-col">
         {entries.map((entry) => (
           <li key={entry.id}>
             <a
@@ -69,20 +87,15 @@ export function TableOfContents({ entries }: { entries: TocEntry[] }) {
                 setActiveId(entry.id)
               }}
               className={cn(
-                "relative flex items-center py-1.5 text-[13px] transition-colors duration-150",
+                // Their TOC states the current entry with accent *text* and no
+                // marker dot — the colour alone carries it at this size.
+                "relative flex scroll-m-4 items-center py-1.5 text-sm wrap-anywhere transition-colors first:pt-0 last:pb-0",
                 entry.depth === 2 ? "ps-6" : "ps-3",
-                entry.id === activeId ? "text-foreground" : "text-foreground-muted hover:text-foreground",
+                entry.id === activeId
+                  ? "text-accent"
+                  : "text-muted hover:text-foreground",
               )}
             >
-              {/* Marker fades in rather than appearing, so scrolling between
-                  entries reads as a move instead of a flicker. */}
-              <span
-                aria-hidden
-                className={cn(
-                  "absolute -ml-3 size-1 rounded-full bg-foreground-muted transition-opacity duration-150",
-                  entry.id === activeId ? "opacity-100" : "opacity-0",
-                )}
-              />
               {entry.label}
             </a>
           </li>

@@ -125,21 +125,26 @@ export function App() {
           onSetVibrant={setVibrant}
         />
 
-        {/* 12-column grid rather than fixed widths: the content column then
-            scales with the viewport instead of the rails eating into it, and
-            the TOC only claims space once there is room for it (xl). */}
-        <div className="mx-auto grid max-w-[1400px] grid-cols-12 px-6">
-          <div className="hidden lg:col-span-2 lg:block">
+        {/* Fixed rails, not a proportional 12-column grid. Their docs layout
+            pins the sidebar and TOC at 268px each and lets only the content
+            column flex, which is why their measure stays constant across
+            viewport widths while a percentage grid's drifts. 1400px outer and
+            268px rails are their --fd-layout-width / --fd-sidebar-width /
+            --fd-toc-width. */}
+        <div className="mx-auto grid max-w-[1400px] grid-cols-1 lg:grid-cols-[268px_minmax(0,1fr)] xl:grid-cols-[268px_minmax(0,1fr)_268px]">
+          <div className="hidden lg:block">
             <Sidebar slug={block?.slug ?? ""} />
           </div>
-          <main className="col-span-12 flex min-w-0 flex-col gap-4 pt-4 pb-10 lg:col-span-10 md:pt-0 xl:col-span-8 xl:px-12 xl:pt-8">
+          {/* Their content column: 900px measure, and padding that steps up
+              rather than staying flat. */}
+          <main className="flex min-w-0 flex-col gap-4 px-4 pt-6 pb-20 md:px-6 md:pt-8 xl:px-8 xl:pt-14">
             {block ? (
               <BlockPage block={block} dark={dark} />
             ) : (
               <StubPage route={route} />
             )}
           </main>
-          <div className="hidden xl:col-span-2 xl:block">
+          <div className="hidden xl:block">
             {isBlockRoute && block && (
               <TableOfContents entries={tocFor(block)} />
             )}

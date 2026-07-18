@@ -24,23 +24,25 @@ function NavList({ slug, onNavigate }: { slug: string; onNavigate?: () => void }
                 onClick={planned ? undefined : onNavigate}
                 aria-current={active ? "page" : undefined}
                 aria-disabled={planned || undefined}
+                data-active={active || undefined}
                 className={cn(
-                  // Active is a raised pill: the surface colour plus the
-                  // surface shadow, so the current item reads as lifted off
-                  // the rail rather than merely tinted.
-                  "flex items-center justify-between gap-2 rounded-field p-2 text-[14px]",
+                  // Active is an accent *tint*, not a raised white pill. Their
+                  // rail states the current page with bg-accent/10 and accent
+                  // text; a lifted surface chip reads heavier than the content
+                  // it indexes and made the rail compete with the page.
+                  "relative flex flex-row items-center justify-between gap-2 rounded-lg p-2 text-sm text-start",
+                  "transition-colors hover:transition-none",
                   "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
                   planned && "cursor-not-allowed opacity-45",
                   active
-                    ? "bg-surface font-medium text-foreground shadow-[var(--surface-shadow)]"
-                    : !planned &&
-                        "text-muted hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.04]",
+                    ? "bg-accent/10 font-medium text-accent"
+                    : !planned && "text-muted hover:bg-default/50 hover:text-foreground/80",
                 )}
                 style={{ transitionTimingFunction: EASE }}
               >
                 <span>{block.name}</span>
                 {planned && (
-                  <span className="rounded-md bg-default px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted">
+                  <span className="chip chip--default chip--primary h-5 rounded-full px-1.5 text-[10px] text-muted/90">
                     Soon
                   </span>
                 )}
@@ -55,7 +57,7 @@ function NavList({ slug, onNavigate }: { slug: string; onNavigate?: () => void }
 
 export function Sidebar({ slug }: { slug: string }) {
   return (
-    <aside className="sticky top-[104px] h-[calc(100vh-104px)] w-[220px] overflow-y-auto pt-4 pr-4 pl-3">
+    <aside className="sticky top-[104px] h-[calc(100vh-104px)] overflow-y-auto ps-4 pe-4 pt-6">
       <NavList slug={slug} />
     </aside>
   )
