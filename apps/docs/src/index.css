@@ -62,8 +62,14 @@
 
   --radius-field: var(--field-radius);
 
+  /* Both stacks copied from their docs site's compiled CSS, not guessed.
+     Theirs is Inter for sans and the *system* mono stack — no webfont. fern
+     was loading Fira Code, which is why code set never matched theirs however
+     close the colours got. */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
 }
 
 /**

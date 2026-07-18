@@ -55,4 +55,4 @@ export const OPACITY = {
  * appears — only its colour changes.
  */
 export const FOCUS_RING =
-  "outline-2 outline-offset-2 outline-transparent focus-visible:outline-[#0485f7]"
+  "outline-2 outline-offset-2 outline-transparent focus-visible:outline-[var(--focus,#0485f7)]"

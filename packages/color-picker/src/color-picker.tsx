@@ -448,7 +448,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       luminance(color.rgb) > 0.55 ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.98)"
 
     const focusRing =
-      "outline-none focus-visible:ring-[3px] focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-neutral-900"
+      "outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface,#ffffff)]"
 
     const swatchList = swatches === false ? [] : swatches
     // Presets page rather than wrap. A wrapping grid changes the card's height
@@ -487,17 +487,24 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         data-disabled={disabled || undefined}
         className={cn(
           "flex w-60 select-none flex-col gap-2 pt-4 pr-2 pb-3 pl-2 antialiased",
-          "rounded-[20px] bg-white dark:bg-neutral-900",
-          // Three layers, and the middle one carries a *negative* y offset — a
-          // faint upward bloom that keeps the top edge from looking pasted onto
-          // the page. Without it the card reads as sitting in a hole.
-          "shadow-[0_14px_28px_0_rgb(0_0_0/0.08),0_-6px_12px_0_rgb(0_0_0/0.03),0_2px_8px_0_rgb(0_0_0/0.06),0_0_0_1px_rgb(0_0_0/0.04)]",
-          "dark:shadow-[0_14px_28px_0_rgb(0_0_0/0.5),0_-6px_12px_0_rgb(0_0_0/0.2),0_2px_8px_0_rgb(0_0_0/0.4),inset_0_0_0_1px_rgb(255_255_255/0.08)]",
+          "rounded-[20px] bg-[var(--surface,#ffffff)]",
           disabled && "pointer-events-none opacity-50 saturate-50",
           className,
         )}
-        // Mobile Safari paints a grey box over anything tappable otherwise.
-        style={{ WebkitTapHighlightColor: "transparent" }}
+        style={{
+          // Three layers, and the middle one carries a *negative* y offset — a
+          // faint upward bloom that keeps the top edge from looking pasted onto
+          // the page. Without it the card reads as sitting in a hole.
+          //
+          // The literal is the light-theme value. Where a host defines
+          // --overlay-shadow the card picks up that host's elevation, including
+          // its dark-theme treatment, which is why there is no dark: variant
+          // here any more — one variable covers both.
+          boxShadow:
+            "var(--overlay-shadow, 0 14px 28px 0 rgb(0 0 0 / 0.08), 0 -6px 12px 0 rgb(0 0 0 / 0.03), 0 2px 8px 0 rgb(0 0 0 / 0.06), 0 0 0 1px rgb(0 0 0 / 0.04))",
+          // Mobile Safari paints a grey box over anything tappable otherwise.
+          WebkitTapHighlightColor: "transparent",
+        }}
         {...props}
       >
         {/* ------------------------------ Swatches ------------------------------ */}
@@ -567,7 +574,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           className={cn(
             "relative aspect-square w-full touch-none rounded-2xl",
             !disabled && "cursor-crosshair",
-            "outline-hidden focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-[#0485f7]/70",
+            "outline-hidden focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-[var(--focus,#0485f7)]/70",
           )}
           style={{
             backgroundColor: `hsl(${state.hsv.h} 100% 50%)`,
@@ -658,7 +665,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             <label htmlFor={inputId} className="sr-only">
               Color value
             </label>
-            <div className="flex h-9 min-w-0 flex-1 items-center rounded-xl bg-[#ebebec] dark:bg-neutral-800">
+            <div className="flex h-9 min-w-0 flex-1 items-center rounded-xl bg-[var(--default,#ebebec)]">
               <button
                 type="button"
                 onClick={cycleFormat}
@@ -667,9 +674,9 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 className={cn(
                   "flex h-full shrink-0 items-center gap-1 rounded-l-xl pr-1.5 pl-3",
                   "text-[10px] font-semibold tracking-wide uppercase",
-                  "text-neutral-500 dark:text-neutral-400",
+                  "text-[var(--muted,#71717a)]",
                   formatToggle &&
-                    "transition-colors duration-150 hover:text-neutral-900 dark:hover:text-neutral-100",
+                    "transition-colors duration-150 hover:text-[var(--foreground,#18181b)]",
                   focusRing,
                 )}
                 style={{ transitionTimingFunction: EASE_OUT }}
@@ -680,7 +687,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
 
               <span
                 aria-hidden
-                className="h-4 w-px shrink-0 bg-black/10 dark:bg-white/10"
+                className="h-4 w-px shrink-0 bg-[var(--separator,rgb(0_0_0/0.1))]"
               />
 
               {/* Current colour, inline with its own value — the swatch and the
@@ -719,7 +726,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 className={cn(
                   "h-full w-full min-w-0 bg-transparent px-2",
                   "font-mono text-[13px] tracking-tight tabular-nums lowercase",
-                  "text-neutral-900 outline-hidden dark:text-neutral-100",
+                  "text-[var(--foreground,#18181b)] outline-hidden",
                 )}
               />
 
@@ -876,11 +883,11 @@ function LabelledSlider({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between px-0.5">
-        <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+        <span className="text-[11px] font-medium text-[var(--muted,#71717a)]">
           {label}
         </span>
         {/* Tabular figures so the readout doesn't jitter while dragging. */}
-        <span className="font-mono text-[11px] tabular-nums text-neutral-500 dark:text-neutral-400">
+        <span className="font-mono text-[11px] tabular-nums text-[var(--muted,#71717a)]">
           {readout}
         </span>
       </div>
@@ -902,7 +909,7 @@ function LabelledSlider({
           // while the pointer target clears a comfortable touch size.
           "relative flex h-8 touch-none items-center rounded-xl",
           !disabled && "cursor-pointer",
-          "outline-hidden focus-visible:ring-[3px] focus-visible:ring-[#0485f7]/50",
+          "outline-hidden focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50",
         )}
       >
         <div
@@ -959,9 +966,9 @@ function SquareButton({
       title={label}
       className={cn(
         "grid size-8 shrink-0 place-items-center rounded-2xl",
-        "bg-[#ebebec] text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300",
+        "bg-[var(--default,#ebebec)] text-[var(--muted,#52525b)]",
         "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
-        "hover:bg-[#e0e0e2] hover:text-neutral-900 dark:hover:bg-neutral-700 dark:hover:text-neutral-100",
+        "hover:bg-[var(--default-hover,#e0e0e2)] hover:text-[var(--foreground,#18181b)]",
         focusRing,
       )}
       style={{ transitionTimingFunction: EASE_OUT }}
@@ -990,10 +997,10 @@ function PagerButton({
       aria-label={`${direction === "previous" ? "Previous" : "Next"} presets`}
       className={cn(
         "grid size-4 shrink-0 place-items-center rounded-full",
-        "text-neutral-400 dark:text-neutral-500",
+        "text-[var(--muted,#a1a1aa)]",
         "transition-[color,opacity] duration-150",
-        "hover:text-neutral-900 disabled:opacity-30 dark:hover:text-neutral-100",
-        "outline-hidden focus-visible:ring-2 focus-visible:ring-[#0485f7]/50",
+        "hover:text-[var(--foreground,#18181b)] disabled:opacity-30",
+        "outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--focus,#0485f7)]/50",
       )}
       style={{ transitionTimingFunction: EASE_OUT }}
     >
@@ -1132,9 +1139,9 @@ function IconButton({
       aria-label={label}
       className={cn(
         "grid size-9 shrink-0 place-items-center rounded-xl",
-        "text-neutral-500 dark:text-neutral-400",
+        "text-[var(--muted,#71717a)]",
         "transition-[scale,background-color,color] duration-150 active:scale-[0.97]",
-        "hover:bg-black/5 hover:text-neutral-800 dark:hover:bg-white/10 dark:hover:text-neutral-100",
+        "hover:bg-[var(--default,#ebebec)] hover:text-[var(--foreground,#18181b)]",
         focusRing,
       )}
       style={{ transitionTimingFunction: EASE_OUT }}
