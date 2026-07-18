@@ -13,7 +13,9 @@ export function Button({ children }: { children: React.ReactNode }) {
 
 </PreviewCode>
 
-## The bar
+## Examples
+
+### The bar
 
 Pass `label` for a filename, or `lang` for a language. A filename shows as
 written; a bare language is uppercased, so the two never read alike.
@@ -48,8 +50,6 @@ export const clamp = (n: number, min: number, max: number) =>
 
 </PreviewCode>
 
-## Usage
-
 ```tsx
 import { PreviewCode } from "@/components/preview"
 
@@ -58,7 +58,7 @@ import { PreviewCode } from "@/components/preview"
 </PreviewCode>
 ```
 
-## When to use what
+### When to use what
 
 - **`label`** names the file. Falls back to `lang` when omitted, so the bar
   always says what you are looking at.
@@ -69,7 +69,7 @@ import { PreviewCode } from "@/components/preview"
 - Blocks taller than 150px collapse behind an **Expand code** button. Shorter
   ones render whole, with no button.
 
-## Install commands
+### Install commands
 
 `InstallTabs` renders one command per package manager in the same shell, with
 the tab row in place of the filename bar. Commands are highlighted server-side,
@@ -81,7 +81,7 @@ so they match every other block.
 <InstallTabs pkg="@fern-ui/color-picker" />
 ```
 
-## Rendering a source file
+### Rendering a source file
 
 `ComponentSource` reads a file from a package and pipes it through the same
 viewer, so a copy-paste component can show exactly what you would copy.
@@ -89,6 +89,15 @@ viewer, so a copy-paste component can show exactly what you would copy.
 ```tsx
 <ComponentSource pkg="color-picker" file="color-picker.tsx" />
 ```
+
+## Installation
+
+Copy these into your project. `PreviewCode` is the viewer; `ComponentSource`
+reads a file and pipes it through it; `InstallTabs` renders the command row.
+
+<ComponentSource path="apps/docs/components/preview.tsx" />
+<ComponentSource path="apps/docs/components/component-source.tsx" />
+<ComponentSource path="apps/docs/components/install-tabs-client.tsx" />
 
 ## Props
 

@@ -11,11 +11,18 @@ import { PreviewCode } from "@/components/preview"
 export async function ComponentSource({
   pkg,
   file,
+  path: repoPath,
 }: {
-  pkg: string
-  file: string
+  pkg?: string
+  file?: string
+  /** Repo-relative path, for components that are not published packages. */
+  path?: string
 }) {
-  const source = path.join(process.cwd(), "..", "..", "packages", pkg, "src", file)
+  const root = path.join(process.cwd(), "..", "..")
+  const source = repoPath
+    ? path.join(root, repoPath)
+    : path.join(root, "packages", pkg!, "src", file!)
+  const name = repoPath ? path.basename(repoPath) : file!
 
   let code: string
   try {
@@ -26,7 +33,7 @@ export async function ComponentSource({
 
   // defaultColor:false emits both themes as CSS variables instead of baking
   // one into an inline style, which no stylesheet can then override.
-  const lang = file.endsWith(".ts") ? "typescript" : "tsx"
+  const lang = name.endsWith(".ts") ? "typescript" : "tsx"
 
   const rendered = await highlight(code, {
     lang,
@@ -35,7 +42,7 @@ export async function ComponentSource({
   })
 
   return (
-    <PreviewCode standalone label={file} lang={lang}>
+    <PreviewCode standalone label={name} lang={lang}>
       {rendered}
     </PreviewCode>
   )
