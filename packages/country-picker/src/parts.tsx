@@ -29,7 +29,9 @@ export function ScrollFade({ side }: { side: "top" | "bottom" }) {
       aria-hidden
       data-slot="scroll-fade"
       className={cn(
-        "pointer-events-none absolute inset-x-1 z-20 h-6",
+        // inset-x-0: the panel's own padding already insets this wrapper, so
+        // a second inset left the row edges poking out past the fade.
+        "pointer-events-none absolute inset-x-0 z-20 h-6",
         side === "top" ? "top-0" : "bottom-0",
       )}
       style={{
@@ -311,10 +313,11 @@ export const SearchField = React.forwardRef<
     placeholder: string
     value: string
     onChange: (value: string) => void
+    onClear: () => void
     focusRing: string
   }
 >(function SearchField(
-  { listId, activeId, placeholder, value, onChange, focusRing },
+  { listId, activeId, placeholder, value, onChange, onClear, focusRing },
   ref,
 ) {
   return (
@@ -341,12 +344,26 @@ export const SearchField = React.forwardRef<
         autoComplete="off"
         onChange={(event) => onChange(event.target.value)}
         className={cn(
-          "h-10 w-full rounded-xl bg-[var(--default,#ebebec)] pr-3 pl-9",
+          "h-10 w-full rounded-xl bg-[var(--default,#ebebec)] pr-9 pl-9",
           "text-[15px] text-[var(--foreground,#18181b)] outline-hidden",
           "placeholder:text-[var(--muted,#71717a)]",
           focusRing,
         )}
       />
+      {value && (
+        <button
+          type="button"
+          onClick={onClear}
+          aria-label="Clear search"
+          className={cn(
+            "absolute right-3.5 grid size-5 place-items-center rounded-full",
+            "text-[var(--muted,#71717a)] transition-colors duration-150",
+            "hover:bg-[var(--default-hover,#e0e0e2)] hover:text-[var(--foreground,#18181b)]",
+          )}
+        >
+          <CloseIcon />
+        </button>
+      )}
     </div>
   )
 })

@@ -306,6 +306,10 @@ export const CountryPicker = React.forwardRef<
             placeholder={searchPlaceholder}
             value={query}
             onChange={setQuery}
+            onClear={() => {
+              setQuery("")
+              inputRef.current?.focus()
+            }}
             focusRing={focusRing}
           />
 
@@ -321,10 +325,7 @@ export const CountryPicker = React.forwardRef<
             style={{ maxHeight: position.maxHeight - 64 }}
             className={cn(
               "overflow-y-auto overscroll-contain",
-              "[scrollbar-width:thin] [scrollbar-color:color-mix(in_oklab,var(--foreground,#18181b)_20%,transparent)_transparent]",
-              "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent",
-              "[&::-webkit-scrollbar-thumb]:rounded-full",
-              "[&::-webkit-scrollbar-thumb]:bg-[color-mix(in_oklab,var(--foreground,#18181b)_20%,transparent)]",
+              "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
             )}
           >
             {results.length === 0 ? (
