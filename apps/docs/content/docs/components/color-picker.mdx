@@ -1,0 +1,175 @@
+---
+title: Color Picker
+description: A color picker with editable hex, RGBA and HSL inputs, and a screen eyedropper.
+links:
+  - label: Source
+    href: https://github.com/CrackedResearcher/fern/tree/main/packages/color-picker/src/color-picker.tsx
+  - label: npm
+    href: https://www.npmjs.com/package/@fern-ui/color-picker
+---
+
+<Preview>
+  <PreviewDemo>
+    <ColorPickerDemo />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+import { ColorPicker } from "@fern-ui/color-picker"
+
+const [color, setColor] = useState("#3b82f6")
+
+<ColorPicker value={color} onChange={setColor} />
+```
+
+  </PreviewCode>
+</Preview>
+
+- **`onChange`** fires every frame of a drag — use it for anything you are
+  painting live.
+- **`onChangeComplete`** fires once on settle — use it for saves, undo entries,
+  and anything expensive.
+- **`format`** picks the model the picker opens in, and the format your
+  callbacks receive.
+- Turn things **off** to get a smaller picker; everything is on by default.
+
+## Examples
+
+### Live value vs settled value
+
+The left swatch tracks every frame. The counter only moves when you let go.
+
+<Preview>
+  <PreviewDemo>
+    <ColorPickerCommit />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<ColorPicker
+  value={color}
+  onChange={setColor}
+  onChangeComplete={(next) => save(next)}
+/>
+```
+
+  </PreviewCode>
+</Preview>
+
+### Opening in another model
+
+`HEX` is one field, `RGBA` is four, `HSL` is three. Switching never loses the
+color.
+
+<Preview>
+  <PreviewDemo>
+    <ColorPickerModel />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<ColorPicker format="rgb" value={color} onChange={setColor} />
+```
+
+  </PreviewCode>
+</Preview>
+
+### Compact
+
+<Preview>
+  <PreviewDemo>
+    <ColorPickerMinimal />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<ColorPicker
+  value={color}
+  onChange={setColor}
+  sliderLabels={false}
+  alpha={false}
+/>
+```
+
+  </PreviewCode>
+</Preview>
+
+### Theming
+
+The picker reads CSS custom properties, each with a literal fallback, so it
+picks up your theme where you define these and still renders correctly where
+you do not. Set them anywhere in scope — `:root`, a wrapper, or the picker
+itself.
+
+```css
+:root {
+  --surface: #ffffff;        /* card and channel inputs */
+  --default: #ebebec;        /* select, tray, action buttons */
+  --default-hover: #e0e0e2;  /* those buttons on hover     */
+  --foreground: #18181b;     /* values and labels          */
+  --muted: #71717a;          /* slider names and icons     */
+  --focus: #0485f7;          /* focus ring                 */
+  --overlay-shadow: …;       /* card elevation             */
+}
+```
+
+Every part carries a `data-slot`, so you can restyle the internals from your own
+stylesheet without forking the component.
+
+```css
+[data-slot="track"]        { border-radius: 4px; }
+[data-slot="channels"]     { background: #3b1d5e; }
+[data-slot="slider"][data-channel="opacity"] { display: none; }
+```
+
+`color-picker` · `field` · `slider` (with `data-channel="hue" | "opacity"`) ·
+`track` · `thumb` · `model-select` · `preview` · `action` · `channels` ·
+`hex-input` · `channel-input`
+
+<Callout type="info">
+  `className` on the root is appended, not merged — passing a utility that
+  conflicts with one the component already sets will not reliably win. Use the
+  variables and slots above, or copy the component in and edit it directly.
+</Callout>
+
+### Keyboard
+
+Arrow keys step 1, Shift+arrows step 10, Home/End jump — on the field and both
+sliders. Channel inputs are spinbuttons that commit on blur or Enter; invalid
+input reverts instead of clamping.
+
+## Installation
+
+<InstallTabs pkg="@fern-ui/color-picker" />
+
+Or copy these two files into your project. No runtime dependencies beyond
+React; `color.ts` is pure math and is imported by the component.
+
+<ComponentSource pkg="color-picker" file="color-picker.tsx" />
+<ComponentSource pkg="color-picker" file="color.ts" />
+
+## Props
+
+<PropsTable
+  rows={[
+    { name: "value", type: "string", description: "Controlled value. Accepts hex, rgb() or hsl(), with or without alpha." },
+    { name: "defaultValue", type: "string", default: '"#3b82f6"', description: "Initial value when uncontrolled." },
+    { name: "onChange", type: "(value, color) => void", description: "Fires on every change, including each frame of a drag." },
+    { name: "onChangeComplete", type: "(value, color) => void", description: "Fires once when an interaction settles." },
+    { name: "format", type: '"hex" | "rgb" | "hsl"', default: '"hex"', description: "Color model to open in, and the format passed to callbacks." },
+    { name: "formatToggle", type: "boolean", default: "true", description: "Let the user change the model." },
+    { name: "alpha", type: "boolean", default: "true", description: "Show the opacity slider and include alpha in the output." },
+    { name: "sliderLabels", type: "boolean", default: "true", description: "Show the name and readout above each slider." },
+    { name: "eyedropper", type: "boolean", default: "true", description: "Offer the native screen eyedropper where supported." },
+    { name: "copyable", type: "boolean", default: "true", description: "Show the copy-to-clipboard button." },
+    { name: "disabled", type: "boolean", default: "false", description: "Block interaction and dim the control." },
+    { name: "label", type: "string", default: '"Color picker"', description: "Accessible name for the group." },
+  ]}
+/>
+
+Both callbacks receive the full color as a second argument — `hex`, `rgb`,
+`hsl`, `hsv` and `alpha`. The conversion helpers are importable on their own:
+
+```tsx
+import { formatColor, parseHex, rgbToHsv } from "@fern-ui/color-picker/color"
+```

@@ -27,6 +27,46 @@ The Apache-2.0 licence text as distributed is available at:
 
 ────────────────────────────────────────────────────────────────────────────
 
+HeroUI documentation site
+https://github.com/heroui-inc/heroui/tree/v3/apps/docs
+Copyright (c) HeroUI <support@heroui.com>
+Licensed under the Apache License, Version 2.0.
+
+fern's documentation site contains source code ported from HeroUI's
+documentation site, under apps/docs/components/fumadocs/. HeroUI vendored
+and modified Fumadocs' Notebook layout; fern renders the same shell, so it
+consumes their fork rather than re-deriving it.
+
+Files ported, each carrying an attribution header:
+
+  components/fumadocs/layouts/notebook/index.tsx
+  components/fumadocs/layouts/notebook/client.tsx
+  components/fumadocs/layouts/notebook/sidebar.tsx
+  components/fumadocs/layouts/notebook/page/index.tsx
+  components/fumadocs/layouts/notebook/page/client.tsx
+  components/fumadocs/layouts/notebook/page/toc-items.tsx
+  components/fumadocs/ui/icons.tsx
+  components/fumadocs/ui/link-item.tsx
+  components/fumadocs/ui/search-toggle.tsx
+  components/fumadocs/ui/theme-toggle.tsx
+  components/fumadocs/utils/merge-refs.ts
+  components/fumadocs/utils/urls.ts
+
+MODIFICATIONS made by fern, as required by Apache-2.0 section 4(b):
+
+  - Import paths repointed from HeroUI's tree to fern's.
+  - Internationalisation removed. fern's docs are single-locale, so
+    `useI18n()` lookups were replaced with literal English strings, the
+    `<I18nLabel>` component was replaced with its text, and
+    ui/language-toggle.tsx was dropped along with the two `{!!i18n && …}`
+    blocks that rendered it.
+
+Upstream Fumadocs, which HeroUI forked, is by Fuma Nama and is MIT licensed:
+https://github.com/fuma-nama/fumadocs
+
+────────────────────────────────────────────────────────────────────────────
+
 The published fern packages under packages/ do not depend on
-@heroui/styles. They read CSS custom properties with literal fallbacks and
-carry no runtime dependencies beyond React.
+@heroui/styles, on Fumadocs, or on any code ported here. They read CSS
+custom properties with literal fallbacks and carry no runtime dependencies
+beyond React.

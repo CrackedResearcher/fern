@@ -1,0 +1,12 @@
+{
+  "title": "Components",
+  "icon": "Components",
+  "root": true,
+  "pages": [
+    "---Inputs---",
+    "color-picker",
+    "country-picker",
+    "---Display---",
+    "code-block"
+  ]
+}

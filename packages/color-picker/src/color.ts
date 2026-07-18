@@ -100,10 +100,57 @@ export interface HSL {
   l: number
 }
 
+/** Pulls the numbers out of `rgb(…)` / `hsl(…)`, separator-agnostic. */
+function numbersIn(input: string): number[] {
+  return (input.match(/-?[\d.]+/g) ?? []).map(Number)
+}
+
+/**
+ * Parses every string this component can emit — hex, rgb() and hsl(). It has to
+ * accept all three because a controlled picker round-trips its own output:
+ * emitting a format you cannot read silently loses the colour.
+ */
+export function parseColor(input: string): { rgb: RGB; a: number } | null {
+  const text = input.trim()
+
+  if (text.startsWith("rgb")) {
+    const [r, g, b, a] = numbersIn(text)
+    if (r === undefined || g === undefined || b === undefined) return null
+    return {
+      rgb: { r: clamp(r, 0, 255), g: clamp(g, 0, 255), b: clamp(b, 0, 255) },
+      // `rgb(0 0 0 / 50%)` yields 50 here, not 0.5.
+      a: a === undefined ? 1 : clamp(a > 1 ? a / 100 : a, 0, 1),
+    }
+  }
+
+  if (text.startsWith("hsl")) {
+    const [h, s, l, a] = numbersIn(text)
+    if (h === undefined || s === undefined || l === undefined) return null
+    return {
+      rgb: hsvToRgb(
+        hslToHsv({ h: h % 360, s: clamp(s / 100, 0, 1), l: clamp(l / 100, 0, 1) }),
+      ),
+      a: a === undefined ? 1 : clamp(a > 1 ? a / 100 : a, 0, 1),
+    }
+  }
+
+  return parseHex(text)
+}
+
 export function hsvToHsl({ h, s, v }: HSV): HSL {
   const l = v * (1 - s / 2)
   const denom = Math.min(l, 1 - l)
   return { h, s: denom === 0 ? 0 : (v - l) / denom, l }
+}
+
+/**
+ * Inverse of `hsvToHsl`. Needed because the HSL channel fields are authored in
+ * HSL but the picker's state is HSV — without this, typing into the S or L
+ * field would have no way back into the model the field and sliders read from.
+ */
+export function hslToHsv({ h, s, l }: HSL): HSV {
+  const v = l + s * Math.min(l, 1 - l)
+  return { h, s: v === 0 ? 0 : 2 * (1 - l / v), v }
 }
 
 export type ColorFormat = "hex" | "rgb" | "hsl"

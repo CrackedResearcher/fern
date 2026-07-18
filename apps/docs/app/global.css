@@ -1,0 +1,415 @@
+/**
+ * Layer order, declared once. Fumadocs owns the shell; @heroui/styles owns the
+ * design foundation. Both are imported rather than one replacing the other.
+ */
+@layer theme, base, components, utilities;
+
+@import "tailwindcss";
+
+/**
+ * @heroui/styles is unpacked here rather than imported via its `@heroui/styles/css`
+ * barrel.
+ *
+ * tw-animate-css is aliased to its real file in next.config.mjs — it ships only
+ * a `style` export condition, which Turbopack will not resolve. It cannot be
+ * dropped: their component layer `@apply`s its utilities, so a missing import
+ * is a build error, not just a missing animation.
+ */
+@import "tw-animate-css";
+@import "@heroui/styles/base/base.css" layer(base);
+@import "@heroui/styles/base/scrollbar.css" layer(base);
+@import "@heroui/styles/components/index.css" layer(components);
+@import "@heroui/styles/themes/default" layer(theme);
+@import "@heroui/styles/utilities";
+@import "@heroui/styles/variants";
+
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+@source "../../../packages/color-picker/src";
+@source "../../../packages/country-picker/src";
+@source "../content";
+
+/**
+ * Their `dark` variant falls back to prefers-color-scheme when no .dark
+ * ancestor is present, which would render explicit light mode dark on a
+ * dark-preferenced machine. Fumadocs toggles an explicit .dark class, so the
+ * variant only ever needs to read it. Declared last so it wins.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/**
+ * ────────────────────────────────────────────────────────────────────────────
+ * THE INDIRECTION LAYER
+ *
+ * Still the only file in the repo permitted to name a @heroui/styles variable.
+ * Everything else uses fern's semantic utility names. A token rename upstream
+ * is this block's diff and nothing else.
+ * ────────────────────────────────────────────────────────────────────────────
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-surface: var(--surface);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-overlay: var(--overlay);
+  --color-default: var(--default);
+  --color-default-hover: var(--default-hover);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-danger: var(--danger);
+  --color-separator: var(--separator);
+  --color-border: var(--border);
+  --color-focus: var(--focus);
+  --radius-field: var(--field-radius);
+
+  /* Their docs site sets code in the *system* mono stack, not a webfont. */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+}
+
+/**
+ * Fumadocs styles its shell from --color-fd-*; re-pointing those at the HeroUI
+ * tokens is what makes one palette drive both. Without it the shell keeps
+ * Fumadocs' stock neutrals no matter what the components do.
+ */
+:root,
+.dark {
+  --color-fd-background: var(--background);
+  --color-fd-foreground: var(--foreground);
+  --color-fd-border: var(--border);
+  --color-fd-ring: var(--focus);
+}
+
+/* Their literal #737373, not HeroUI's --muted. The two are close, but --muted
+   carries a little blue that reads as a cooler cast across the whole rail. */
+:root {
+  --color-fd-muted-foreground: #737373;
+}
+
+.dark {
+  --color-fd-muted-foreground: #999;
+}
+
+:root {
+  --color-fd-primary: #090909;
+  --color-fd-card: #f9f9f9;
+  --color-fd-secondary: #f9f9f9;
+  --color-fd-accent: #f9f9f9;
+  --color-fd-popover: #fff;
+  --color-fd-muted: #f5f5f5;
+}
+
+.dark {
+  --color-fd-primary: #fcfcfc;
+  --color-fd-card: rgb(40 40 40 / 0.4);
+  --color-fd-secondary: #18181b;
+  --color-fd-accent: #2c2c2c;
+  --color-fd-popover: #383435;
+  --color-fd-muted: #141414;
+}
+
+/**
+ * Preset accents.
+ *
+ * Deliberately unlayered: their variables live in @layer base, and unlayered
+ * CSS beats layered CSS regardless of specificity, so these win with no
+ * !important and no specificity war.
+ */
+[data-preset="sky"] {
+  --accent: oklch(0.72 0.132 220.5);
+}
+[data-preset="lavender"] {
+  --accent: oklch(0.665 0.185 301.2);
+}
+[data-preset="mint"] {
+  --accent: oklch(0.755 0.132 165.4);
+}
+[data-preset="rose"] {
+  --accent: oklch(0.63 0.219 15.8);
+}
+[data-preset="amber"] {
+  --accent: oklch(0.755 0.158 62.5);
+}
+[data-preset="slate"] {
+  --accent: oklch(0.44 0.021 285.9);
+}
+
+
+/**
+ * ────────────────────────────────────────────────────────────────────────────
+ * HEROUI'S OWN OVERRIDES OF THE FUMADOCS SHELL
+ *
+ * Copied from the resolved rules in their compiled CSS, not from the utility
+ * classes on their markup — those are overridden and reading them produces the
+ * wrong result. Each rule notes what it replaces.
+ * ────────────────────────────────────────────────────────────────────────────
+ */
+
+/**
+ * Antialiased type.
+ *
+ * fern set this before the Fumadocs move and the migration dropped it. macOS
+ * defaults to subpixel antialiasing, which renders noticeably heavier — the
+ * headings and description read bolder than theirs at identical font-size and
+ * weight, which sends you looking for a CSS difference that is not there.
+ */
+:root {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* `font-synthesis: none` is the one that is easy to miss. Without it the
+     browser fakes any weight the font does not supply by smearing the glyphs,
+     which renders heavier and slightly blurrier than a real weight — so type
+     reads bolder than theirs even at an identical font-weight. */
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+/* Nav tab underline is the accent, 2px. */
+#nd-subnav [data-header-tabs] .border-fd-primary {
+  border-color: var(--accent);
+}
+
+/* Sidebar: 12px radius, and an active state that is a raised --surface pill
+   rather than the bg-fd-primary/10 tint the class list advertises. */
+#nd-sidebar a {
+  border-radius: var(--field-radius, calc(var(--radius) * 1.5));
+  transition: none;
+}
+#nd-sidebar a:hover {
+  background: rgb(0 0 0 / 0.04);
+}
+.dark #nd-sidebar a:hover {
+  background: rgb(255 255 255 / 0.04);
+}
+#nd-sidebar a[data-active="true"] {
+  background-color: var(--surface);
+  box-shadow: var(--surface-shadow);
+}
+.dark #nd-sidebar a[data-active="true"] {
+  background: rgb(255 255 255 / 0.08);
+}
+
+/* Search trigger takes the field treatment: no border, field shadow, 12px. */
+#nd-subnav [data-search-full] {
+  border-radius: var(--field-radius, calc(var(--radius) * 1.5));
+  background-color: var(--field-background, var(--default));
+  box-shadow: var(--field-shadow);
+  border-style: none;
+}
+#nd-subnav [data-search-full] kbd {
+  background-color: var(--default);
+  border-style: none;
+}
+
+/* Their widths. `max-w-sm` on the element is 384px; these override it to 300
+   then 400, and shift it 48px left of centre at lg. Without them the trigger
+   sits at 384px and dead-centre, which is close enough to look right and wrong
+   enough to notice beside theirs. */
+@media (min-width: 40rem) {
+  #nd-subnav [data-search-full] {
+    max-width: 300px;
+  }
+}
+@media (min-width: 48rem) {
+  #nd-subnav [data-search-full] {
+    max-width: 400px;
+  }
+}
+@media (min-width: 64rem) {
+  #nd-subnav [data-search-full] {
+    margin-right: 48px;
+  }
+}
+
+/* Both header rows drop their own border. The single hairline under the whole
+   header comes from #nd-subnav::after below — with `border-b` left on each row
+   you get a line above the tab row as well as under it, which is the doubled
+   rule their header does not have. Heights and tab spacing are their resolved
+   values too. */
+#nd-subnav [data-header-body],
+#nd-subnav [data-header-tabs] {
+  border-style: none;
+}
+#nd-subnav [data-header-body] {
+  height: 52px;
+}
+#nd-subnav [data-header-tabs] {
+  gap: 4px;
+  padding-inline: 16px;
+}
+#nd-subnav [data-header-tabs] a {
+  padding-inline: 4px;
+  padding-bottom: 8px;
+}
+@media (min-width: 48rem) {
+  #nd-subnav [data-header-body] {
+    height: 56px;
+  }
+  #nd-subnav [data-header-tabs] {
+    gap: 12px;
+    padding-inline: 24px;
+  }
+}
+
+/* Header: solid background and a full-viewport-width hairline. */
+#nd-subnav {
+  background-color: var(--background);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+#nd-subnav::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  height: 1px;
+  background: var(--separator);
+  z-index: 1;
+}
+
+/* Code blocks: the figure's background, border and shadow are cancelled and
+   the fill moves to the inner scroll container. */
+.prose .shiki {
+  background: transparent;
+  border-style: none;
+  box-shadow: none;
+}
+.prose .shiki .fd-scroll-container {
+  background: rgb(0 0 0 / 0.04);
+  border-style: none;
+  max-height: fit-content;
+}
+.dark .prose .shiki .fd-scroll-container {
+  background: rgb(40 40 40 / 0.4);
+}
+
+/* Sidebar group headings are plain <p> elements in their tree. Their app CSS
+   gives them weight 500 in the full foreground — noticeably heavier than the
+   muted items beneath — plus 16px of separation between groups. Without this
+   the headings read at the same weight as their own items and the rail loses
+   its structure. */
+#nd-sidebar [data-radix-scroll-area-viewport] p {
+  font-weight: 500;
+  color: var(--foreground);
+}
+#nd-sidebar [data-radix-scroll-area-viewport] p:not(:first-child) {
+  margin-top: 16px;
+}
+
+/**
+ * Code fused to a preview.
+ *
+ * Inside `.component-preview-container` the block is not a standalone panel —
+ * it is the lower half of the preview box, so it drops its own margin, radius,
+ * border and fill and lets the section around it supply all four. Their rules
+ * verbatim (.docs-code-block in their compiled CSS), plus the line-number
+ * gutter at their exact #738a9466.
+ */
+.docs-code-block-wrapper .shiki {
+  margin: 0;
+  padding-top: 16px;
+  /* Their rule sets only padding-top, leaving the last line flush. Padding
+     rather than blank lines in the MDX, which would land in the clipboard. */
+  padding-bottom: 16px;
+  /* 16px: with the gutter off, 8px puts the first character on the border. */
+  padding-inline: 16px;
+  border-style: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.docs-code-block-wrapper .fd-scroll-container {
+  padding: 0;
+  border-style: none;
+  border-radius: 0;
+  background-color: transparent !important;
+  max-height: 75vh;
+}
+.docs-code-block-wrapper .line {
+  padding-left: 0 !important;
+}
+
+/*
+ * Dual-theme Shiki output from a direct highlight() call, which emits both
+ * themes as variables rather than post-processing like the MDX pipeline does.
+ */
+.docs-code-block-wrapper .shiki-themes,
+.docs-code-block-wrapper .shiki-themes span {
+  color: var(--shiki-light);
+  background-color: transparent;
+}
+/*
+ * The prose layer styles bare <code> as inline code — a dark chip with a 5px
+ * radius. Inline, that paints one chip per line fragment, so a source file
+ * renders as a stack of little boxes instead of a code block.
+ */
+.docs-code-block-wrapper .shiki-themes code {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.dark .docs-code-block-wrapper .shiki-themes,
+.dark .docs-code-block-wrapper .shiki-themes span {
+  color: var(--shiki-dark);
+}
+
+/* Line numbers, counter-driven so they survive horizontal scrolling. */
+.docs-code-block-wrapper code {
+  counter-reset: step;
+  counter-increment: step 0;
+}
+/* Opt-in: blocks pass lineNumbers to get the gutter. */
+.docs-code-block-wrapper[data-line-numbers] code .line::before {
+  content: counter(step);
+  counter-increment: step;
+  display: inline-block;
+  width: 1rem;
+  margin-right: 1.5rem;
+  text-align: right;
+  color: #738a9466;
+}
+
+/* A fenced block inside a labelled PreviewCode brings its own copy button from
+   the MDX pre override, duplicating the one in the filename bar. */
+.code-section[data-has-bar] figure .absolute {
+  display: none;
+}
+
+/*
+ * Plain MDX fences get the same shell as PreviewCode: grey outer, code inset
+ * as a darker panel. Scoped to fences outside a PreviewCode, which supplies
+ * its own shell and would otherwise nest two.
+ */
+figure.shiki:not(.docs-code-block-wrapper figure) {
+  background-color: var(--surface-secondary);
+  padding: 4px;
+}
+figure.shiki:not(.docs-code-block-wrapper figure) > .fd-scroll-container {
+  /* !important for the same reason the rule above needs it — Fumadocs sets
+     this background with one of its own. */
+  /* --surface in light puts white on grey; in dark it lands within a few
+     points of the shell and reads as one grey slab, so the code surface drops
+     to --background there. */
+  background-color: var(--surface) !important;
+  border-radius: 8px;
+}
+.dark figure.shiki:not(.docs-code-block-wrapper figure) > .fd-scroll-container {
+  background-color: var(--background) !important;
+}
+
+/* The copy button belongs to the section, not the inner figure. */
+.docs-code-block-wrapper .shiki > div:first-of-type {
+  top: 0.5rem;
+  right: 0.5rem;
+}

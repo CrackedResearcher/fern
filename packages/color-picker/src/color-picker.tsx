@@ -1,46 +1,109 @@
 "use client"
 
+/**
+ * The complete color picker, in one file — this package is meant to be copied
+ * as well as installed. Only `./color` stays separate: it is a published entry
+ * point and is usable without React.
+ */
+
 import * as React from "react"
 import {
   clamp,
   formatColor,
-  luminance,
-  parseHex,
-  rgbToHsv,
+  hslToHsv,
   hsvToRgb,
+  luminance,
+  parseColor,
+  rgbToHex,
+  rgbToHsv,
   toColor,
   type Color,
   type ColorFormat,
   type HSV,
+  type RGB,
 } from "./color"
-import { DURATION, EASING } from "./motion"
+
 
 const cn = (...classes: (string | false | undefined | null)[]) =>
   classes.filter(Boolean).join(" ")
 
+/* -------------------------------------------------------------------------- */
+/*                                  Motion                                  */
+/* -------------------------------------------------------------------------- */
+
+/** Motion tokens. Plain cubic-beziers, so springy motion costs nothing. */
+
+const EASING = {
+  /**
+   * Strong ease-out. Moves immediately, which is what makes a control feel
+   * like it heard you. Default for anything entering or responding to input.
+   */
+  out: "cubic-bezier(0.23, 1, 0.32, 1)",
+
+  /** Natural acceleration and deceleration, for things moving on screen. */
+  inOut: "cubic-bezier(0.4, 0, 0.2, 1)",
+
+  /**
+   * A spring without a physics engine. The y-values exceed 1, so the curve
+   * overshoots its target and settles back — the same overshoot a real spring
+   * produces. Use for tactile feedback like a thumb grabbing under the cursor.
+   */
+  spring: "cubic-bezier(0.155, 1.105, 0.295, 1.12)",
+
+  /** Same idea, gentler overshoot. For larger or heavier elements. */
+  softSpring: "cubic-bezier(0.16, 1.11, 0.3, 1.02)",
+
+  /**
+   * A slightly slower, more elegant general-purpose curve. Reaches for a
+   * softer landing than `out` — good for colour and background changes where
+   * urgency would feel twitchy.
+   */
+  soft: "cubic-bezier(0.36, 0.66, 0.4, 1)",
+} as const
+
+/** Milliseconds. Exits are faster than enters; nothing exceeds 300ms. */
+const DURATION = {
+  /** Press feedback. Must be near-instant to register as a response. */
+  press: 120,
+  /** Something appearing or growing. */
+  enter: 200,
+  /** Something leaving. Half the enter, by design. */
+  exit: 100,
+  /** Larger surfaces that would feel abrupt at enter speed. */
+  slow: 300,
+} as const
+
+/* -------------------------------------------------------------------------- */
+/*                                Constants                                 */
+/* -------------------------------------------------------------------------- */
+
+/** Presentation constants shared by the picker shell and its parts. */
+
+
 /**
- * Alpha checkerboard, inlined so the component ships without an asset.
- *
- * Mid-grey rather than black: a black-on-transparent checker is invisible
- * against a dark card, which is exactly where the opacity track needs to read.
- * A neutral grey holds contrast on both light and dark surfaces.
+ * Alpha checkerboard, inlined so the component ships without an asset. Mid-grey
+ * rather than black — black on transparent vanishes against a dark card.
  */
 const CHECKERBOARD =
   "repeating-conic-gradient(rgba(140,140,140,0.55) 0% 25%, rgba(255,255,255,0.9) 0% 50%) 50% / 9px 9px"
 
 /**
- * Hue ramp drawn at the *current* saturation and brightness rather than at
- * full chroma. A permanently vivid rainbow lies about the outcome: at 20%
- * saturation, dragging it produces muted colours, and the control should
- * preview that rather than promise neon.
+ * Full chroma always — it is a selector, not a preview. Drawn at the current
+ * saturation and brightness it goes solid black at v=0, where you can no longer
+ * tell two hues apart.
  */
-function hueGradient(s: number, v: number) {
-  const stops = [0, 60, 120, 180, 240, 300, 360].map((h) => {
-    const { r, g, b } = hsvToRgb({ h: h % 360, s, v })
+const HUE_GRADIENT = `linear-gradient(to right, ${[0, 60, 120, 180, 240, 300, 360]
+  .map((h) => {
+    const { r, g, b } = hsvToRgb({ h: h % 360, s: 1, v: 1 })
     return `rgb(${r} ${g} ${b}) ${Math.round((h / 360) * 100)}%`
   })
-  return `linear-gradient(to right, ${stops.join(", ")})`
-}
+  .join(", ")})`
+
+/** Half the slider thumb's width. Insets both its travel and the drag maths. */
+const THUMB_RADIUS = 10
+
+/** Half the field thumb's width. Insets its travel on both axes. */
+const FIELD_THUMB_RADIUS = 8
 
 // ease-in is never used here — starting slow reads as lag at exactly the
 // moment the user is watching hardest.
@@ -60,86 +123,35 @@ const RECESSED =
  * surfaces without darkening the thumb on dark ones.
  */
 const RAISED =
-  "0 0 0 2px #fff, 0 0 0 3px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.3), 0 3px 8px -2px rgba(0,0,0,0.22)"
+  "0 0 0 3px #fff, 0 0 0 4px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.3), 0 3px 8px -2px rgba(0,0,0,0.22)"
 
-const DEFAULT_SWATCHES = [
-  "#ef4444",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#14b8a6",
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
+/**
+ * The colour models offered by the select. `rgb` is labelled RGBA because the
+ * row it produces includes an alpha field — naming it RGB would promise three
+ * fields and deliver four.
+ */
+const MODELS: { value: ColorFormat; label: string }[] = [
+  { value: "hex", label: "HEX" },
+  { value: "rgb", label: "RGBA" },
+  { value: "hsl", label: "HSL" },
 ]
 
-const FORMAT_CYCLE: ColorFormat[] = ["hex", "rgb", "hsl"]
-
-/** Presets shown per page before the pager kicks in. */
-const SWATCHES_PER_PAGE = 10
-
-/* -------------------------------------------------------------------------- */
-/*                                   Props                                    */
-/* -------------------------------------------------------------------------- */
-
-export interface ColorPickerProps
-  extends Omit<
-    React.ComponentPropsWithoutRef<"div">,
-    "onChange" | "defaultValue" | "color"
-  > {
-  /** Controlled value. Accepts `#rgb`, `#rgba`, `#rrggbb`, or `#rrggbbaa`. */
-  value?: string
-  /** Initial value when uncontrolled. Defaults to `#3b82f6`. */
-  defaultValue?: string
-  /**
-   * Fires on every change, including each frame of a drag. The second argument
-   * carries every representation so you never have to convert by hand.
-   */
-  onChange?: (value: string, color: Color) => void
-  /**
-   * Fires once when an interaction settles — pointer release, key press, or a
-   * committed text entry. Use this for network writes and undo history.
-   */
-  onChangeComplete?: (value: string, color: Color) => void
-  /**
-   * Starting output format. The user can cycle this at runtime with the format
-   * button unless `formatToggle` is false; changing it affects both the
-   * displayed text and the string passed to callbacks.
-   */
-  format?: ColorFormat
-  /** Let the user cycle hex → rgb → hsl by pressing the format label. */
-  formatToggle?: boolean
-  /** Show the opacity slider and include alpha in the output. */
-  alpha?: boolean
-  /**
-   * Preset colors. Pass `false` to hide the row, or an array to replace the
-   * default palette.
-   */
-  swatches?: string[] | false
-  /** Offer the native screen eyedropper where the browser supports it. */
-  eyedropper?: boolean
-  /** Show the copy-to-clipboard button. */
-  copyable?: boolean
-  /** Show a randomise button that jumps to an arbitrary colour. */
-  shuffle?: boolean
-  /**
-   * Show the starting color beside the current one. Pressing it reverts —
-   * picking is comparative, so the value you began with should stay reachable.
-   */
-  comparison?: boolean
-  /** Block all interaction and dim the control. */
-  disabled?: boolean
-  /** Accessible name for the whole picker. Defaults to `"Color picker"`. */
-  label?: string
-}
-
-interface State {
-  hsv: HSV
-  alpha: number
+/**
+ * One editable channel. `min`/`max` are real bounds, not display hints: input
+ * outside them reverts rather than clamping, so a typo reads as "nothing
+ * happened" instead of silently becoming a different colour.
+ */
+interface ChannelSpec {
+  key: string
+  short: string
+  name: string
+  value: number
+  min: number
+  max: number
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                   Hooks                                    */
+/*                                  Hooks                                   */
 /* -------------------------------------------------------------------------- */
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)"
@@ -168,6 +180,14 @@ function useTrackDrag(
   onPosition: (x: number, y: number) => void,
   onEnd: () => void,
   disabled: boolean,
+  /**
+   * Inset of the usable range at each end, in px — the thumb's radius. A thumb
+   * centred on its value hangs half off the rail at 0% and 100%. Applied to the
+   * pointer maths too, so the thumb stays under the cursor.
+   */
+  inset = 0,
+  /** Vertical equivalent, for the 2D field. Sliders leave it at 0. */
+  insetY = 0,
 ) {
   const trackRef = React.useRef<HTMLDivElement>(null)
   const pointerId = React.useRef<number | null>(null)
@@ -177,9 +197,11 @@ function useTrackDrag(
     const element = trackRef.current
     if (!element) return
     const rect = element.getBoundingClientRect()
+    const usableX = rect.width - inset * 2
+    const usableY = rect.height - insetY * 2
     onPosition(
-      rect.width ? clamp((event.clientX - rect.left) / rect.width, 0, 1) : 0,
-      rect.height ? clamp((event.clientY - rect.top) / rect.height, 0, 1) : 0,
+      usableX > 0 ? clamp((event.clientX - rect.left - inset) / usableX, 0, 1) : 0,
+      usableY > 0 ? clamp((event.clientY - rect.top - insetY) / usableY, 0, 1) : 0,
     )
   }
 
@@ -220,13 +242,86 @@ function useTrackDrag(
   }
 }
 
+/**
+ * Carries hue and saturation through the points where they are undefined —
+ * grey has no hue, black has neither. Without it, typing `0 0 0` into the RGB
+ * fields snaps the hue slider back to red.
+ */
+function hsvFromRgbPreserving(rgb: RGB, previous: HSV): HSV {
+  const next = rgbToHsv(rgb)
+  return {
+    h: next.s === 0 || next.v === 0 ? previous.h : next.h,
+    s: next.v === 0 ? previous.s : next.s,
+    v: next.v,
+  }
+}
+
 /* -------------------------------------------------------------------------- */
+/*                                   Props                                    */
+/* -------------------------------------------------------------------------- */
+
+export interface ColorPickerProps
+  extends Omit<
+    React.ComponentPropsWithoutRef<"div">,
+    "onChange" | "defaultValue" | "color"
+  > {
+  /** Controlled value. Accepts `#rgb`, `#rgba`, `#rrggbb`, or `#rrggbbaa`. */
+  value?: string
+  /** Initial value when uncontrolled. Defaults to `#3b82f6`. */
+  defaultValue?: string
+  /**
+   * Fires on every change, including each frame of a drag. The second argument
+   * carries every representation so you never have to convert by hand.
+   */
+  onChange?: (value: string, color: Color) => void
+  /**
+   * Fires once when an interaction settles — pointer release, key press, or a
+   * committed text entry. Use this for network writes and undo history.
+   */
+  onChangeComplete?: (value: string, color: Color) => void
+  /**
+   * Starting output format. The user can cycle this at runtime with the format
+   * button unless `formatToggle` is false; changing it affects both the
+   * displayed text and the string passed to callbacks.
+   */
+  format?: ColorFormat
+  /** Let the user cycle hex → rgb → hsl by pressing the format label. */
+  formatToggle?: boolean
+  /** Show the opacity slider and include alpha in the output. */
+  alpha?: boolean
+  /**
+   * Show the name and live readout above each slider. On by default: in HEX and
+   * RGBA the readout is the only place the hue appears at all.
+   */
+  sliderLabels?: boolean
+  /** Offer the native screen eyedropper where the browser supports it. */
+  eyedropper?: boolean
+  /** Show the copy-to-clipboard button. */
+  copyable?: boolean
+  /** Block all interaction and dim the control. */
+  disabled?: boolean
+  /** Accessible name for the whole picker. Defaults to `"Color picker"`. */
+  label?: string
+}
+
+interface State {
+  hsv: HSV
+  alpha: number
+}
+
 /*                                   State                                    */
 /* -------------------------------------------------------------------------- */
 
-function stateFromString(input: string, previous?: HSV): State {
-  const parsed = parseHex(input)
-  if (!parsed) return { hsv: previous ?? { h: 0, s: 0, v: 0 }, alpha: 1 }
+function stateFromString(
+  input: string,
+  previous?: HSV,
+  previousAlpha = 1,
+): State {
+  const parsed = parseColor(input)
+  // Unparseable input must not invent a colour. Carrying the previous alpha
+  // through matters as much as the previous hue: resetting it to 1 turned any
+  // string the parser did not understand into a silent "opacity back to 100%".
+  if (!parsed) return { hsv: previous ?? { h: 0, s: 0, v: 0 }, alpha: previousAlpha }
 
   const hsv = rgbToHsv(parsed.rgb)
   // Hue is undefined for greys and saturation is undefined for black. Carrying
@@ -257,12 +352,10 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       formatToggle = true,
       // Defaults ship the complete picker. Good defaults matter more than
       // options — most people never customise, so the box should be full.
-      alpha = true,
-      swatches = DEFAULT_SWATCHES,
+      alpha: alphaProp,
+      sliderLabels = true,
       eyedropper = true,
       copyable = true,
-      shuffle = true,
-      comparison = true,
       disabled = false,
       label = "Color picker",
       className,
@@ -275,15 +368,24 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     )
     const [format, setFormat] = React.useState(initialFormat)
     const [draft, setDraft] = React.useState<string | null>(null)
-    const [alphaDraft, setAlphaDraft] = React.useState<string | null>(null)
+    // One draft at a time: only the focused field can be mid-edit, and keying
+    // it means switching fields cannot leave a stale value behind in another.
+    const [channelDraft, setChannelDraft] = React.useState<{
+      key: string
+      text: string
+    } | null>(null)
     const [announcement, setAnnouncement] = React.useState("")
     const [copied, setCopied] = React.useState(false)
-    const [swatchPage, setSwatchPage] = React.useState(0)
+
+    const copyTimer = React.useRef<number | undefined>(undefined)
+    // Genuine outside-React cleanup, not derived state — the timer has to be
+    // cancelled if the picker unmounts mid-confirmation.
+    React.useEffect(() => () => window.clearTimeout(copyTimer.current), [])
+
     const reducedMotion = usePrefersReducedMotion()
     const inputId = React.useId()
-
-    // The colour the picker opened with, kept for the comparison well.
-    const [initial] = React.useState(value ?? defaultValue)
+    // The select reshapes the row beneath it, so it needs to point at it.
+    const channelGroupId = React.useId()
 
     // Sync a controlled value without an effect: compare against the last prop
     // we reconciled and adjust during render. React reruns this pass before
@@ -291,12 +393,23 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const [lastValue, setLastValue] = React.useState(value)
     if (value !== undefined && value !== lastValue) {
       setLastValue(value)
-      setState((previous) => stateFromString(value, previous.hsv))
+      setState((previous) =>
+        stateFromString(value, previous.hsv, previous.alpha),
+      )
     }
+
+    const alpha = alphaProp ?? true
 
     const color = toColor(state.hsv, state.alpha, alpha)
     const output = formatColor(color, format)
-    const solid = formatColor({ ...color, alpha: 1 }, "hex")
+    // Built from the channels, not by spreading { alpha: 1 } over the record —
+    // formatColor's hex branch returns the precomputed color.hex and never
+    // reads that field, so the override silently kept the alpha.
+    const solid = rgbToHex(color.rgb, 1)
+
+    // Previews the alpha it sets. Solid reads fully opaque at 15%; alpha alone
+    // vanishes at 0%, hence the checkerboard behind it.
+    const translucentThumb = `linear-gradient(0deg, ${rgbToHex(color.rgb, state.alpha)}, ${rgbToHex(color.rgb, state.alpha)}), ${CHECKERBOARD}`
 
     const commit = (next: State, settled = false) => {
       setState(next)
@@ -322,16 +435,22 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       (x, y) => commit({ ...state, hsv: { ...state.hsv, s: x, v: 1 - y } }),
       settle,
       disabled,
+      FIELD_THUMB_RADIUS,
+      FIELD_THUMB_RADIUS,
     )
     const hue = useTrackDrag(
       (x) => commit({ ...state, hsv: { ...state.hsv, h: x * 360 } }),
       settle,
       disabled,
+      FIELD_THUMB_RADIUS,
+  THUMB_RADIUS,
     )
     const opacity = useTrackDrag(
       (x) => commit({ ...state, alpha: x }),
       settle,
       disabled,
+      FIELD_THUMB_RADIUS,
+  THUMB_RADIUS,
     )
 
     /* --------------------------------- Keys -------------------------------- */
@@ -395,28 +514,134 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
 
     /* ------------------------------- Actions ------------------------------- */
 
+    // Accepts anything the parser understands, not just hex — pasting
+    // `rgb(116 120 57)` into the hex field is a thing people do, and rejecting
+    // a colour the component can read is a worse answer than converting it.
+    // Unparseable text reverts on blur rather than clamping to something near.
     const commitDraft = (text: string) => {
       setDraft(null)
-      if (parseHex(text)) commit(stateFromString(text, state.hsv), true)
+      if (parseColor(text))
+        commit(stateFromString(text, state.hsv, state.alpha), true)
     }
 
-    /** Accepts "40", "40%", or " 40 " — anything a person would actually type. */
-    const commitAlphaDraft = (text: string) => {
-      setAlphaDraft(null)
-      const parsed = Number.parseFloat(text.replace("%", "").trim())
-      if (Number.isNaN(parsed)) return
-      commit({ ...state, alpha: clamp(parsed / 100, 0, 1) }, true)
+    /**
+     * Previews once the digits form a complete colour — 3, 4, 6 or 8 of them.
+     * Length is what makes live safe here: an incomplete hex simply does not
+     * parse. Non-hex paste is left for blur rather than stripped to digits.
+     */
+    const setHexDraft = (text: string) => {
+      if (/^[a-z]/i.test(text.trim())) {
+        setDraft(text)
+        return
+      }
+      const digits = text.replace(/[^0-9a-fA-F]/g, "").slice(0, 8)
+      setDraft(`#${digits}`)
+      if ([3, 4, 6, 8].includes(digits.length))
+        commit(stateFromString(`#${digits}`, state.hsv, state.alpha), false)
     }
 
-    const cycleFormat = () => {
-      const next =
-        FORMAT_CYCLE[(FORMAT_CYCLE.indexOf(format) + 1) % FORMAT_CYCLE.length]!
+    /**
+     * The channels the current model exposes. Switching model reshapes this row
+     * and never touches the colour — the value is held in HSV, and every model
+     * is a view onto it.
+     */
+    const channels: ChannelSpec[] =
+      format === "rgb"
+        ? [
+            { key: "r", short: "R", name: "Red", value: color.rgb.r, min: 0, max: 255 },
+            { key: "g", short: "G", name: "Green", value: color.rgb.g, min: 0, max: 255 },
+            { key: "b", short: "B", name: "Blue", value: color.rgb.b, min: 0, max: 255 },
+            ...(alpha
+              ? [
+                  {
+                    key: "a",
+                    short: "A",
+                    name: "Alpha",
+                    value: Math.round(state.alpha * 100),
+                    min: 0,
+                    max: 100,
+                  },
+                ]
+              : []),
+          ]
+        : format === "hsl"
+          ? [
+              { key: "h", short: "H", name: "Hue", value: Math.round(color.hsl.h), min: 0, max: 360 },
+              { key: "s", short: "S", name: "Saturation", value: Math.round(color.hsl.s * 100), min: 0, max: 100 },
+              { key: "l", short: "L", name: "Lightness", value: Math.round(color.hsl.l * 100), min: 0, max: 100 },
+            ]
+          : []
+
+    /** Writes one channel into the colour. `settled` gates onChangeComplete. */
+    const applyChannel = (
+      spec: ChannelSpec,
+      parsed: number,
+      settled: boolean,
+    ) => {
+      if (spec.key === "a") {
+        commit({ ...state, alpha: parsed / 100 }, settled)
+        return
+      }
+      if (format === "rgb") {
+        const rgb = { ...color.rgb, [spec.key]: Math.round(parsed) }
+        commit({ ...state, hsv: hsvFromRgbPreserving(rgb, state.hsv) }, settled)
+        return
+      }
+      const hsl = {
+        ...color.hsl,
+        [spec.key]: spec.key === "h" ? parsed : parsed / 100,
+      }
+      // Hue is carried from state rather than round-tripped: at s=0 or l=0/1 the
+      // HSL hue is undefined, and reading it back would discard the live one.
+      commit(
+        {
+          ...state,
+          hsv: {
+            ...hslToHsv(hsl),
+            h: spec.key === "h" ? parsed : state.hsv.h,
+          },
+        },
+        settled,
+      )
+    }
+
+    // Only from a complete in-range value. The field is filtered to digits and
+    // capped at its own maximum, so typing 7 toward 77 cannot drive the colour
+    // to 7 first. Out of range previews nothing and waits for blur.
+    const previewChannel = (spec: ChannelSpec, text: string) => {
+      if (text === "") return
+      const parsed = Number(text)
+      if (Number.isNaN(parsed) || parsed < spec.min || parsed > spec.max) return
+      applyChannel(spec, parsed, false)
+    }
+
+    /**
+     * Accepts "77", "77%", "77°" or " 77 ". Out-of-range reverts rather than
+     * clamping — clamping turns a fat-fingered 2555 into 255 and looks correct.
+     */
+    const commitChannel = (spec: ChannelSpec, text: string) => {
+      setChannelDraft(null)
+      const parsed = Number.parseFloat(
+        text.replace("%", "").replace("°", "").trim(),
+      )
+      if (Number.isNaN(parsed) || parsed < spec.min || parsed > spec.max) return
+      applyChannel(spec, parsed, true)
+    }
+
+    const changeModel = (next: ColorFormat) => {
       setFormat(next)
+      setChannelDraft(null)
       setAnnouncement(formatColor(color, next))
     }
 
-    const supportsEyedropper =
-      typeof window !== "undefined" && "EyeDropper" in window
+    // Server snapshot pinned to false so both passes agree — reading `window`
+    // during render is a hydration mismatch that throws away the subtree.
+    // Subscribe is a no-op: the capability cannot change.
+    const supportsEyedropper = React.useSyncExternalStore(
+      () => () => {},
+      () => "EyeDropper" in window,
+      () => false,
+    )
 
     const pickFromScreen = async () => {
       try {
@@ -436,7 +661,10 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       try {
         await navigator.clipboard.writeText(output)
         setCopied(true)
-        window.setTimeout(() => setCopied(false), 1200)
+        // Hold the handle so rapid presses reset one timer rather than stacking
+        // several — otherwise the icon flickers as each stale timeout fires.
+        window.clearTimeout(copyTimer.current)
+        copyTimer.current = window.setTimeout(() => setCopied(false), 1600)
       } catch {
         // Clipboard can be blocked by permissions; failing silently is fine.
       }
@@ -450,44 +678,52 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const focusRing =
       "outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface,#ffffff)]"
 
-    const swatchList = swatches === false ? [] : swatches
-    // Presets page rather than wrap. A wrapping grid changes the card's height
-    // as the palette grows; a pager keeps the layout fixed at any length.
-    const maxSwatchPage = Math.max(
-      0,
-      Math.ceil(swatchList.length / SWATCHES_PER_PAGE) - 1,
+    // Declared once, rendered from one of two rows, so they cannot drift. It
+    // copies what the channel row displays — a button that always emits hex
+    // regardless of the selected model is a trap.
+    const copyButton = (
+      <RoundButton
+        onClick={copy}
+        disabled={disabled}
+        label={copied ? "Copied" : `Copy ${output}`}
+        focusRing={focusRing}
+      >
+        {/* Both icons stay mounted and cross-fade. Toggling visibility would
+            pop; blur bridges the two states so the eye reads one object
+            changing rather than two swapping. */}
+        <IconSwap showSecond={copied} reducedMotion={reducedMotion}>
+          <CopyIcon />
+          <CheckIcon />
+        </IconSwap>
+      </RoundButton>
     )
-    const visibleSwatches = swatchList.slice(
-      swatchPage * SWATCHES_PER_PAGE,
-      swatchPage * SWATCHES_PER_PAGE + SWATCHES_PER_PAGE,
-    )
-
-    const randomize = () => {
-      // Random hue, but saturation and value kept in a usable band — fully
-      // random HSV mostly returns muddy near-black and washed-out pastels.
-      commit(
-        {
-          hsv: {
-            h: Math.floor(Math.random() * 360),
-            s: 0.55 + Math.random() * 0.4,
-            v: 0.6 + Math.random() * 0.35,
-          },
-          alpha: state.alpha,
-        },
-        true,
-      )
-    }
 
     return (
       <div
         ref={forwardedRef}
+        data-slot="color-picker"
         role="group"
         aria-label={label}
         aria-disabled={disabled || undefined}
         data-disabled={disabled || undefined}
         className={cn(
-          "flex w-60 select-none flex-col gap-2 pt-4 pr-2 pb-3 pl-2 antialiased",
-          "rounded-[20px] bg-[var(--surface,#ffffff)]",
+          // 320px. The channel row is what sets this now: four RGBA fields plus
+          // their letters have to hold a three-digit value each without the
+          // number crowding its own box, and 264px left them at ~43px. A picker
+          // that cannot show you what you picked has failed at its only job.
+          // r24 to match HeroUI's .popover, which resolves to
+          // min(32px, --radius-3xl) = 24px. Measured against the live
+          // stylesheet, not inferred — the picker is a popover surface and
+          // should not be the one overlay on the page with its own corner.
+          //
+          // Padding is uniform, and that is load-bearing rather than tidy.
+          // Concentric nesting is outer = inner + padding, so r24 with an 8px
+          // inset wants its children at r16 — but the inset has to be the
+          // *same* on every edge for one radius to satisfy it. At 16px top and
+          // 8px sides the top corners wanted one value and the sides another,
+          // and the field's curve visibly fought the card's.
+          "flex w-80 select-none flex-col gap-4 p-2 antialiased",
+          "rounded-3xl bg-[var(--surface,#ffffff)]",
           disabled && "pointer-events-none opacity-50 saturate-50",
           className,
         )}
@@ -507,60 +743,10 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         }}
         {...props}
       >
-        {/* ------------------------------ Swatches ------------------------------ */}
-        {/* Above the field, not below. Presets are where you *start* — putting
-            them after the fine controls implies they're an afterthought. */}
-        {swatchList.length > 0 && (
-          <div className="flex items-center gap-3 px-2">
-            <PagerButton
-              direction="previous"
-              disabled={disabled || swatchPage === 0}
-              onClick={() => setSwatchPage((page) => Math.max(0, page - 1))}
-            />
-            <div className="flex flex-1 items-center justify-between">
-              {visibleSwatches.map((swatch) => {
-                const selected = swatch.toLowerCase() === color.hex.toLowerCase()
-                return (
-                  <button
-                    key={swatch}
-                    type="button"
-                    aria-label={swatch}
-                    aria-pressed={selected}
-                    disabled={disabled}
-                    onClick={() =>
-                      commit(stateFromString(swatch, state.hsv), true)
-                    }
-                    className={cn(
-                      "size-4 shrink-0 rounded-full",
-                      "transition-[scale] duration-150 hover:scale-115 active:scale-[0.97]",
-                      focusRing,
-                    )}
-                    style={{
-                      backgroundColor: swatch,
-                      transitionTimingFunction: EASE_OUT,
-                      // outline + offset leaves a gap showing the card itself,
-                      // so the ring reads on light and dark without a theme flag.
-                      outline: selected ? `2px solid ${swatch}` : undefined,
-                      outlineOffset: selected ? 2 : undefined,
-                      boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.12)",
-                    }}
-                  />
-                )
-              })}
-            </div>
-            <PagerButton
-              direction="next"
-              disabled={disabled || swatchPage >= maxSwatchPage}
-              onClick={() =>
-                setSwatchPage((page) => Math.min(maxSwatchPage, page + 1))
-              }
-            />
-          </div>
-        )}
-
         {/* ----------------------- Saturation / brightness ---------------------- */}
         <div
           ref={field.trackRef}
+          data-slot="field"
           role="slider"
           tabIndex={disabled ? -1 : 0}
           aria-label="Saturation and brightness"
@@ -572,15 +758,33 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           onKeyDown={handleFieldKeys}
           {...field.handlers}
           className={cn(
-            "relative aspect-square w-full touch-none rounded-2xl",
+            // Wider than tall. A square field is ~304px of height before the
+            // sliders even start, which makes the popover tall enough to clip
+            // against a viewport edge or push its own trigger off screen. 4:3
+            // keeps both axes comfortably draggable while taking ~76px off.
+            //
+            // The cap is a backstop for hosts that widen the card past 320px,
+            // not part of the normal path — at 320 the field is 228px and 4:3
+            // holds. Set it below that and the ratio silently stops applying,
+            // which is what a 200px cap was quietly doing here.
+            //
+            // r16 = card r24 - 8px padding. A nested surface reads as
+            // concentric only when it steps down by the gap between them.
+            // See RADIUS in tokens.ts.
+            "relative aspect-[4/3] max-h-[240px] w-full touch-none rounded-2xl",
             !disabled && "cursor-crosshair",
             "outline-hidden focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-[var(--focus,#0485f7)]/70",
           )}
           style={{
             backgroundColor: `hsl(${state.hsv.h} 100% 50%)`,
+            // The dot pattern sits above the two gradients and below the thumb.
+            // It is not decoration: over a smooth 2D ramp there is nothing for
+            // the eye to register movement against, and the dots give the drag
+            // a fixed grid to read position from.
             backgroundImage:
-              "linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent)",
-            boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.1)",
+              "radial-gradient(circle, rgb(255 255 255 / 0.2) 1px, transparent 1px), linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent)",
+            backgroundSize: "8px 8px, auto, auto",
+            boxShadow: "inset 0 0 1px 0 rgb(0 0 0 / 0.3)",
           }}
         >
           <Thumb
@@ -589,8 +793,11 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             dragging={field.dragging}
             reducedMotion={reducedMotion}
             style={{
-              left: `${state.hsv.s * 100}%`,
-              top: `${(1 - state.hsv.v) * 100}%`,
+              // Same containment rule as the sliders: travel between the
+              // insets, not 0-100%, so the thumb stays inside the field. At
+              // s=0 v=0 it was centred on the corner and cleared the card.
+              left: `calc(${state.hsv.s} * (100% - ${FIELD_THUMB_RADIUS * 2}px) + ${FIELD_THUMB_RADIUS}px)`,
+              top: `calc(${1 - state.hsv.v} * (100% - ${FIELD_THUMB_RADIUS * 2}px) + ${FIELD_THUMB_RADIUS}px)`,
               background: solid,
               boxShadow: `0 0 0 3px ${fieldThumbRing}, 0 1px 4px rgb(0 0 0 / 0.4)`,
             }}
@@ -598,23 +805,31 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         </div>
 
         {/* ------------------------------ Controls ------------------------------ */}
-        <div className="flex flex-col gap-2 px-1">
+        {/* One spacing scale, three steps: 16px between sections, 12px
+            between the two sliders, 6px from a label to the track it names.
+            A single gap everywhere reads as one undifferentiated stack — the
+            model select and the channel row are separate ideas and were
+            sitting as close together as a label sits to its own slider. */}
+        <div className="flex flex-col gap-4">
           <div className="flex items-end gap-2">
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
+            {/* gap-1.5 + the hit area's 10px of invisible padding = the same 16px
+                that separates every other section. -mb-2.5 cancels the
+                trailing padding so the model row below sits 16px away too,
+                rather than 26px. */}
+            <div className="-mb-2.5 flex min-w-0 flex-1 flex-col gap-1.5">
               <LabelledSlider
                 drag={hue}
                 onKeyDown={handleHueKeys}
                 disabled={disabled}
                 label="Hue"
+                showLabel={sliderLabels}
                 readout={`${Math.round(state.hsv.h)}°`}
                 valueNow={Math.round(state.hsv.h)}
                 valueMax={360}
                 valueText={`${Math.round(state.hsv.h)} degrees`}
-                background={hueGradient(state.hsv.s, state.hsv.v)}
-                thumb={{
-                  left: `${(state.hsv.h / 360) * 100}%`,
-                  background: `hsl(${state.hsv.h} 100% 50%)`,
-                }}
+                background={HUE_GRADIENT}
+                fraction={state.hsv.h / 360}
+                thumb={{ background: `hsl(${state.hsv.h} 100% 50%)` }}
                 reducedMotion={reducedMotion}
               />
 
@@ -624,150 +839,192 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   onKeyDown={handleOpacityKeys}
                   disabled={disabled}
                   label="Opacity"
+                  showLabel={sliderLabels}
                   readout={`${Math.round(state.alpha * 100)}%`}
                   valueNow={Math.round(state.alpha * 100)}
                   valueMax={100}
                   valueText={`${Math.round(state.alpha * 100)} percent`}
                   background={CHECKERBOARD}
                   overlay={`linear-gradient(to right, transparent, ${solid})`}
-                  thumb={{ left: `${state.alpha * 100}%`, background: solid }}
+                  fraction={state.alpha}
+                  thumb={{ background: translucentThumb }}
                   reducedMotion={reducedMotion}
                 />
               )}
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
-              {eyedropper && supportsEyedropper && (
-                <SquareButton
-                  onClick={pickFromScreen}
-                  disabled={disabled}
-                  label="Pick a color from the screen"
-                  focusRing={focusRing}
-                >
-                  <EyedropperIcon />
-                </SquareButton>
-              )}
-              {shuffle && (
-                <SquareButton
-                  onClick={randomize}
-                  disabled={disabled}
-                  label="Random color"
-                  focusRing={focusRing}
-                >
-                  <ShuffleIcon />
-                </SquareButton>
-              )}
-            </div>
           </div>
 
-          {/* ----------------------------- Value field ---------------------------- */}
+          {/* --------------------------- Model + actions -------------------------- */}
+          {(
           <div className="flex items-center gap-2">
-            <label htmlFor={inputId} className="sr-only">
-              Color value
-            </label>
-            <div className="flex h-9 min-w-0 flex-1 items-center rounded-xl bg-[var(--default,#ebebec)]">
-              <button
-                type="button"
-                onClick={cycleFormat}
+            {/* A native select, deliberately. A custom listbox is several
+                hundred lines of focus management and typeahead to arrive back
+                where the platform already is — and it would be the only part of
+                this package that needed a portal. */}
+            <div className="relative flex h-10 min-w-0 flex-1 items-center rounded-2xl bg-[var(--default,#ebebec)]">
+              <select
+                data-slot="model-select"
+                value={format}
                 disabled={disabled || !formatToggle}
-                aria-label={`Color format: ${format}. Press to change.`}
+                aria-label="Color model"
+                aria-controls={channelGroupId}
+                onChange={(event) =>
+                  changeModel(event.target.value as ColorFormat)
+                }
                 className={cn(
-                  "flex h-full shrink-0 items-center gap-1 rounded-l-xl pr-1.5 pl-3",
-                  "text-[10px] font-semibold tracking-wide uppercase",
-                  "text-[var(--muted,#71717a)]",
-                  formatToggle &&
-                    "transition-colors duration-150 hover:text-[var(--foreground,#18181b)]",
+                  "h-full w-full appearance-none rounded-2xl bg-transparent pr-9 pl-3.5",
+                  "text-[13px] font-medium text-[var(--foreground,#18181b)] outline-hidden",
+                  !disabled && formatToggle && "cursor-pointer",
                   focusRing,
                 )}
-                style={{ transitionTimingFunction: EASE_OUT }}
               >
-                {format}
-                {formatToggle && <ChevronIcon />}
-              </button>
-
+                {MODELS.map((model) => (
+                  <option key={model.value} value={model.value}>
+                    {model.label}
+                  </option>
+                ))}
+              </select>
               <span
                 aria-hidden
-                className="h-4 w-px shrink-0 bg-[var(--separator,rgb(0_0_0/0.1))]"
-              />
-
-              {/* Current colour, inline with its own value — the swatch and the
-                  text it describes should not be in different places. */}
-              <span
-                aria-hidden
-                className="ml-2.5 size-4 shrink-0 rounded-full"
-                style={{
-                  background: CHECKERBOARD,
-                  boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.15)",
-                }}
+                className="pointer-events-none absolute right-3 flex text-[var(--muted,#71717a)]"
               >
-                <span
-                  className="block size-full rounded-full"
-                  style={{ backgroundColor: output }}
-                />
+                <ChevronIcon />
               </span>
-
-              <input
-                id={inputId}
-                value={draft ?? output}
-                disabled={disabled}
-                spellCheck={false}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                onChange={(event) => setDraft(event.target.value)}
-                onBlur={(event) => commitDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault()
-                    commitDraft(event.currentTarget.value)
-                  }
-                  if (event.key === "Escape") setDraft(null)
-                }}
-                className={cn(
-                  "h-full w-full min-w-0 bg-transparent px-2",
-                  "font-mono text-[13px] tracking-tight tabular-nums lowercase",
-                  "text-[var(--foreground,#18181b)] outline-hidden",
-                )}
-              />
-
-              {copyable && (
-                <IconButton
-                  onClick={copy}
-                  disabled={disabled}
-                  label={copied ? "Copied" : "Copy color value"}
-                  focusRing={focusRing}
-                >
-                  {/* Both icons stay mounted and cross-fade. Toggling
-                      visibility would pop; blur bridges the two states so the
-                      eye reads one object changing rather than two swapping. */}
-                  <IconSwap showSecond={copied} reducedMotion={reducedMotion}>
-                    <CopyIcon />
-                    <CheckIcon />
-                  </IconSwap>
-                </IconButton>
-              )}
             </div>
 
-            {comparison && initial.toLowerCase() !== color.hex.toLowerCase() && (
-              <button
-                type="button"
-                onClick={() => commit(stateFromString(initial, state.hsv), true)}
-                disabled={disabled}
-                aria-label={`Revert to ${initial}`}
-                title={`Revert to ${initial}`}
-                className={cn(
-                  "size-9 shrink-0 rounded-xl",
-                  "transition-[scale] duration-150 active:scale-[0.97]",
-                  focusRing,
-                )}
+            {/* The current colour, at the same 40px as the buttons either side
+                so the row reads as one rank of circles. Checkerboard beneath,
+                because a semi-transparent colour over the card would just look
+                like a lighter colour — the transparency has to be visible or
+                the preview is lying about the value. */}
+            <div
+              data-slot="preview"
+              aria-hidden
+              className="relative size-10 shrink-0 rounded-full"
+              style={{ background: CHECKERBOARD }}
+            >
+              <div
+                className="size-full rounded-full"
+                style={{ backgroundColor: output }}
+              />
+              {/*
+               * One hairline, on its own layer above both fills.
+               *
+               * It was on the checkerboard *and* on the colour disc, which are
+               * coincident circles — two 1px rings antialiasing against the
+               * same edge is what made the rim look brittle on dark colours.
+               *
+               * Black over a light colour, white over a dark one, rather than
+               * one tinted neutral for both: a near-black hairline on a dark
+               * swatch picks up the fill beneath it and reads as grime on the
+               * edge instead of as a defined edge.
+               */}
+              <div
+                className="absolute inset-0 rounded-full"
                 style={{
-                  backgroundColor: initial,
-                  transitionTimingFunction: EASE_OUT,
-                  boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.12)",
+                  boxShadow: `inset 0 0 0 1px ${
+                    luminance(color.rgb) > 0.5
+                      ? "rgb(0 0 0 / 0.12)"
+                      : "rgb(255 255 255 / 0.16)"
+                  }`,
                 }}
               />
+            </div>
+
+            {eyedropper && supportsEyedropper && (
+              <RoundButton
+                onClick={pickFromScreen}
+                disabled={disabled}
+                label="Pick a color from the screen"
+                focusRing={focusRing}
+              >
+                <EyedropperIcon />
+              </RoundButton>
+            )}
+
+            {/* Copy rides with whichever row has the room. HEX is one field
+                with space to spare, so it sits there, next to the value it
+                copies. RGBA is four fields across 232px and every pixel the
+                button takes comes straight out of them — "255" stops fitting
+                long before the row looks full. */}
+            {copyable && format !== "hex" && copyButton}
+          </div>
+          )}
+
+          {/* ----------------------------- Channel row ---------------------------- */}
+          {(
+          <div className="flex items-center gap-2">
+          <div
+            data-slot="channels"
+            id={channelGroupId}
+            role="group"
+            aria-label="Color channels"
+            className="flex h-12 min-w-0 flex-1 items-center gap-2 rounded-2xl bg-[var(--default,#ebebec)] px-2 py-1"
+          >
+            {format === "hex" ? (
+              <>
+                <label htmlFor={inputId} className="sr-only">
+                  Hex color value
+                </label>
+                <input
+                  data-slot="hex-input"
+                  id={inputId}
+                  value={draft ?? output}
+                  disabled={disabled}
+                  spellCheck={false}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  // 9 = "#" + 8 digits, the longest form (#rrggbbaa). Without a
+                  // cap the field accepted unbounded text that could never
+                  // parse.
+                  maxLength={9}
+                  onChange={(event) => setHexDraft(event.target.value)}
+                  onBlur={(event) => commitDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault()
+                      commitDraft(event.currentTarget.value)
+                    }
+                    if (event.key === "Escape") setDraft(null)
+                  }}
+                  className={cn(
+                    "h-full w-full min-w-0 rounded-xl bg-[var(--surface,#ffffff)] px-3",
+                    "font-mono text-[13px] tracking-tight tabular-nums lowercase",
+                    "text-[var(--foreground,#18181b)] outline-hidden",
+                    focusRing,
+                  )}
+                />
+              </>
+            ) : (
+              channels.map((spec) => (
+                <ChannelField
+                  key={spec.key}
+                  spec={spec}
+                  draft={
+                    channelDraft?.key === spec.key ? channelDraft.text : null
+                  }
+                  disabled={disabled}
+                  focusRing={focusRing}
+                  onDraft={(text) => setChannelDraft({ key: spec.key, text })}
+                  onPreview={(text) => previewChannel(spec, text)}
+                  onCommit={(text) => commitChannel(spec, text)}
+                  onStep={(delta) =>
+                    commitChannel(
+                      spec,
+                      String(clamp(spec.value + delta, spec.min, spec.max)),
+                    )
+                  }
+                  onCancel={() => setChannelDraft(null)}
+                />
+              ))
             )}
           </div>
+
+            {copyable && format === "hex" && copyButton}
+          </div>
+          )}
         </div>
 
         {/* Settled values only — narrating every drag frame would flood a reader. */}
@@ -780,69 +1037,12 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
 )
 
 /* -------------------------------------------------------------------------- */
-/*                                   Parts                                    */
+/*                                  Parts                                   */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Starting colour on the left, current on the right. Choosing a colour is a
- * comparative act — you judge against where you began — so the original stays
- * visible and pressing it reverts.
- */
-function ComparisonWell({
-  current,
-  initial,
-  changed,
-  disabled,
-  onRevert,
-  focusRing,
-}: {
-  current: string
-  initial: string
-  changed: boolean
-  disabled: boolean
-  onRevert: () => void
-  focusRing: string
-}) {
-  // Until the colour actually differs, a split well is two identical halves
-  // with a meaningless seam down the middle. Show one solid chip instead and
-  // only divide it once there is something to compare against.
-  if (!changed) {
-    return (
-      <div
-        aria-hidden
-        className="size-9 shrink-0 rounded-full"
-        style={{ background: CHECKERBOARD, boxShadow: RECESSED }}
-      >
-        <div
-          className="size-full rounded-full"
-          style={{ backgroundColor: current }}
-        />
-      </div>
-    )
-  }
+/** The picker's presentational pieces. Kept out of the shell so the component
+ *  file reads as composition rather than as a wall of markup. */
 
-  return (
-    <div
-      className="flex h-9 shrink-0 overflow-hidden rounded-full"
-      style={{ background: CHECKERBOARD, boxShadow: RECESSED }}
-    >
-      <button
-        type="button"
-        onClick={onRevert}
-        disabled={disabled}
-        aria-label={`Revert to ${initial}`}
-        title={`Revert to ${initial}`}
-        className={cn("h-full w-9 cursor-pointer", focusRing)}
-        style={{ backgroundColor: initial }}
-      />
-      <div
-        aria-hidden
-        className="h-full w-9"
-        style={{ backgroundColor: current }}
-      />
-    </div>
-  )
-}
 
 interface LabelledSliderProps {
   drag: ReturnType<typeof useTrackDrag>
@@ -850,21 +1050,22 @@ interface LabelledSliderProps {
   disabled: boolean
   label: string
   readout: string
+  /** Render the name/readout row. The slider keeps its aria-label either way. */
+  showLabel: boolean
   valueNow: number
   valueMax: number
   valueText: string
   background: string
   overlay?: string
-  thumb: { left: string; background: string }
+  /** Value as 0-1. The thumb's own radius is inset from each end. */
+  fraction: number
+  thumb: { background: string }
   reducedMotion: boolean
 }
 
 /**
- * A labelled slider: name on the left, live value on the right, track below.
- *
- * The readout matters more than it looks. Without it the only way to know the
- * hue is to read it back out of the hex field, which is a translation task;
- * showing the number turns the slider into something you can aim with.
+ * Name on the left, live value on the right, track below. The readout is what
+ * makes the slider something you can aim with rather than only nudge.
  */
 function LabelledSlider({
   drag,
@@ -872,27 +1073,46 @@ function LabelledSlider({
   disabled,
   label,
   readout,
+  showLabel,
   valueNow,
   valueMax,
   valueText,
   background,
   overlay,
+  fraction,
   thumb,
   reducedMotion,
 }: LabelledSliderProps) {
+  // No gap on the column, deliberately. The hit area is 40px around a 20px
+  // rail, so it already carries 10px of invisible padding above the track —
+  // a flex gap on top of that stacked to a 16px visual gap, exactly the space
+  // that separates one *section* from the next. A label has to sit closer to
+  // the thing it names than sections sit to each other, or the grouping reads
+  // backwards.
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between px-0.5">
-        <span className="text-[11px] font-medium text-[var(--muted,#71717a)]">
-          {label}
-        </span>
-        {/* Tabular figures so the readout doesn't jitter while dragging. */}
-        <span className="font-mono text-[11px] tabular-nums text-[var(--muted,#71717a)]">
-          {readout}
-        </span>
-      </div>
+    <div className="flex flex-col">
+      {showLabel && (
+        // Pulls the label into the hit area's 10px of internal padding rather
+        // than adding to it. A plain gap could only ever make this bigger —
+        // 10px was already the floor with no gap at all — and the negative
+        // margin is on the label rather than on the track so the 16px between
+        // sections is untouched. leading-none stops the 12px text carrying
+        // another ~3px of leading below its glyphs, which is why this reads
+        // tighter than the number alone suggests.
+        <div className="-mb-0.5 flex items-center justify-between px-0.5 leading-none">
+          <span className="text-[12px] text-[var(--muted,#71717a)]">
+            {label}
+          </span>
+          {/* Tabular figures so the readout doesn't jitter while dragging. */}
+          <span className="font-mono text-[12px] tabular-nums text-[var(--muted,#71717a)]">
+            {readout}
+          </span>
+        </div>
+      )}
 
       <div
+        data-slot="slider"
+        data-channel={label.toLowerCase()}
         role="slider"
         tabIndex={disabled ? -1 : 0}
         aria-label={label}
@@ -905,14 +1125,18 @@ function LabelledSlider({
         onKeyDown={onKeyDown}
         {...drag.handlers}
         className={cn(
-          // 20px visible track inside a 32px hit area — the bar stays slim
-          // while the pointer target clears a comfortable touch size.
-          "relative flex h-8 touch-none items-center rounded-xl",
+          // 20px visible track inside a 40px hit area — the bar stays slim
+          // while the target clears the WCAG 2.5.5 minimum. The two are
+          // separate elements precisely so the hit area can exceed the paint:
+          // `trackRef` marks the 20px rail that defines 0-1, the handlers sit
+          // on this padded parent.
+          "relative flex h-10 touch-none items-center rounded-2xl",
           !disabled && "cursor-pointer",
           "outline-hidden focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50",
         )}
       >
         <div
+          data-slot="track"
           ref={drag.trackRef}
           className="relative h-5 w-full rounded-full"
           style={{ background, boxShadow: RECESSED }}
@@ -931,7 +1155,11 @@ function LabelledSlider({
             dragging={drag.dragging}
             reducedMotion={reducedMotion}
             style={{
-              left: thumb.left,
+              // Travels between the two insets rather than 0-100%, so at either
+              // end the thumb sits flush inside the rail instead of half over
+              // it. `useTrackDrag` is given the same inset, so the thumb stays
+              // under the cursor.
+              left: `calc(${fraction} * (100% - ${THUMB_RADIUS * 2}px) + ${THUMB_RADIUS}px)`,
               top: "50%",
               background: thumb.background,
               boxShadow: RAISED,
@@ -943,8 +1171,102 @@ function LabelledSlider({
   )
 }
 
-/** 32×32 action button sitting beside the sliders. */
-function SquareButton({
+/**
+ * The letter sits on the tray, not in the chip — inside, each chip would need
+ * its own padding for a one-character label and four would not fit.
+ * `spinbutton` carries the range to a screen reader and makes arrows expected.
+ */
+function ChannelField({
+  spec,
+  draft,
+  disabled,
+  focusRing,
+  onDraft,
+  onPreview,
+  onCommit,
+  onStep,
+  onCancel,
+}: {
+  spec: ChannelSpec
+  draft: string | null
+  disabled: boolean
+  focusRing: string
+  onDraft: (text: string) => void
+  onPreview: (text: string) => void
+  onCommit: (text: string) => void
+  onStep: (delta: number) => void
+  onCancel: () => void
+}) {
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-1.5">
+      <span
+        aria-hidden
+        className="shrink-0 text-[11px] text-[var(--muted,#71717a)]"
+      >
+        {spec.short}
+      </span>
+      <input
+        data-slot="channel-input"
+        role="spinbutton"
+        // Named in channel units — "Red, 77", never "77 percent". A screen
+        // reader user editing four fields needs to know which one they are in.
+        aria-label={spec.name}
+        aria-valuenow={spec.value}
+        aria-valuemin={spec.min}
+        aria-valuemax={spec.max}
+        aria-valuetext={`${spec.name}, ${spec.value}`}
+        inputMode="numeric"
+        value={draft ?? String(spec.value)}
+        disabled={disabled}
+        spellCheck={false}
+        autoComplete="off"
+        // Capped at the width of the channel's own maximum, so 255 fits and
+        // 2555 cannot be typed in the first place. Filtering to digits here
+        // rather than validating later means the field never holds text the
+        // channel could not accept.
+        maxLength={String(spec.max).length}
+        onChange={(event) => {
+          const digits = event.target.value
+            .replace(/[^0-9]/g, "")
+            .slice(0, String(spec.max).length)
+          onDraft(digits)
+          onPreview(digits)
+        }}
+        onFocus={(event) => event.currentTarget.select()}
+        onBlur={(event) => onCommit(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault()
+            onCommit(event.currentTarget.value)
+            return
+          }
+          if (event.key === "Escape") {
+            onCancel()
+            return
+          }
+          // Shift multiplies by 10, matching the sliders and native ranges.
+          const step = event.shiftKey ? 10 : 1
+          if (event.key === "ArrowUp") {
+            event.preventDefault()
+            onStep(step)
+          } else if (event.key === "ArrowDown") {
+            event.preventDefault()
+            onStep(-step)
+          }
+        }}
+        className={cn(
+          "h-10 w-full min-w-0 rounded-xl bg-[var(--surface,#ffffff)] px-1 text-center",
+          "text-[12px] tabular-nums",
+          "text-[var(--foreground,#18181b)] outline-hidden",
+          focusRing,
+        )}
+      />
+    </div>
+  )
+}
+
+/** 40×40 circular action button. Clears the WCAG 2.5.5 target minimum. */
+function RoundButton({
   onClick,
   disabled,
   label,
@@ -960,13 +1282,19 @@ function SquareButton({
   return (
     <button
       type="button"
+      data-slot="action"
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
       title={label}
       className={cn(
-        "grid size-8 shrink-0 place-items-center rounded-2xl",
-        "bg-[var(--default,#ebebec)] text-[var(--muted,#52525b)]",
+        "grid size-10 shrink-0 place-items-center rounded-full",
+        // #71717a, matching every other --muted fallback in this file. It read
+        // #52525b, so a themed page rendered the icons and the slider labels
+        // the same colour while an unthemed one rendered the icons darker —
+        // one token resolving to two literals means the fallback does not
+        // preserve the relationship the theme describes.
+        "bg-[var(--default,#ebebec)] text-[var(--muted,#71717a)]",
         "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
         "hover:bg-[var(--default-hover,#e0e0e2)] hover:text-[var(--foreground,#18181b)]",
         focusRing,
@@ -978,51 +1306,7 @@ function SquareButton({
   )
 }
 
-/** Chevron pager for the preset row. Hidden from readers — the swatches
- *  themselves are the content, and the arrows only reposition them. */
-function PagerButton({
-  direction,
-  disabled,
-  onClick,
-}: {
-  direction: "previous" | "next"
-  disabled: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={`${direction === "previous" ? "Previous" : "Next"} presets`}
-      className={cn(
-        "grid size-4 shrink-0 place-items-center rounded-full",
-        "text-[var(--muted,#a1a1aa)]",
-        "transition-[color,opacity] duration-150",
-        "hover:text-[var(--foreground,#18181b)] disabled:opacity-30",
-        "outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--focus,#0485f7)]/50",
-      )}
-      style={{ transitionTimingFunction: EASE_OUT }}
-    >
-      <svg
-        width="10"
-        height="10"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden
-        style={{
-          transform: direction === "next" ? "rotate(180deg)" : undefined,
-        }}
-      >
-        <path d="m15 18-6-6 6-6" />
-      </svg>
-    </button>
-  )
-}
+
 
 function Thumb({
   style,
@@ -1039,6 +1323,7 @@ function Thumb({
 }) {
   return (
     <div
+      data-slot="thumb"
       aria-hidden
       className="pointer-events-none absolute rounded-full"
       style={{
@@ -1118,38 +1403,11 @@ function IconSwap({
   )
 }
 
-function IconButton({
-  onClick,
-  disabled,
-  label,
-  focusRing,
-  children,
-}: {
-  onClick: () => void
-  disabled: boolean
-  label: string
-  focusRing: string
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      className={cn(
-        "grid size-9 shrink-0 place-items-center rounded-xl",
-        "text-[var(--muted,#71717a)]",
-        "transition-[scale,background-color,color] duration-150 active:scale-[0.97]",
-        "hover:bg-[var(--default,#ebebec)] hover:text-[var(--foreground,#18181b)]",
-        focusRing,
-      )}
-      style={{ transitionTimingFunction: EASE_OUT }}
-    >
-      {children}
-    </button>
-  )
-}
+/* -------------------------------------------------------------------------- */
+/*                                  Icons                                   */
+/* -------------------------------------------------------------------------- */
+
+/** Icons, inlined as paths — the package ships no icon dependency. */
 
 const iconProps = {
   width: 15,
@@ -1163,40 +1421,46 @@ const iconProps = {
   "aria-hidden": true,
 }
 
+/**
+ * Filled, to match the copy glyph beside it. currentColor rather than the
+ * #B5B5B5 the export carried, so it follows the theme and the hover state.
+ */
 function EyedropperIcon() {
   return (
-    <svg {...iconProps} width={16} height={16}>
-      <path d="m2 22 1-1h3l9-9" />
-      <path d="M3 21v-3l9-9" />
-      <path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z" />
+    <svg
+      viewBox="9.002 16.003 20.004 20.004"
+      width={16}
+      height={16}
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M28.126 16.883C26.953 15.71 25.075 15.71 23.902 16.883 23.902 16.883 21.79 18.995 21.79 18.995 21.79 18.995 20.969 18.174 20.969 18.174 20.5 17.704 19.795 17.704 19.327 18.174 19.327 18.174 18.388 18.995 18.388 18.995 17.918 19.464 17.918 20.168 18.388 20.638 18.388 20.638 24.254 26.504 24.254 26.504 24.723 26.973 25.427 26.973 25.896 26.504 25.896 26.504 26.717 25.683 26.717 25.683 27.187 25.213 27.187 24.509 26.717 24.04 26.717 24.04 26.014 23.219 26.014 23.219 26.014 23.219 28.126 21.106 28.126 21.106 29.298 19.934 29.298 18.056 28.126 16.883ZM12.404 28.381C9.823 30.962 11.348 32.135 9.002 35.185 9.002 35.185 9.823 36.007 9.823 36.007 12.874 33.66 14.047 35.185 16.628 32.604 16.628 32.604 22.611 26.621 22.611 26.621 22.611 26.621 18.388 22.397 18.388 22.397 18.388 22.397 12.404 28.381 12.404 28.381Z" />
     </svg>
   )
 }
 
+// The docs code blocks' copy glyph, duplicated as a path rather than imported
+// — that button is built on HeroUI's, and this package takes no dependencies.
 function CopyIcon() {
   return (
-    <svg {...iconProps} width={14} height={14}>
-      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    <svg viewBox="0 0 16 16" width={15} height={15} fill="currentColor" aria-hidden>
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M12 2.5H8A1.5 1.5 0 0 0 6.5 4v1H8a3 3 0 0 1 3 3v1.5h1A1.5 1.5 0 0 0 13.5 8V4A1.5 1.5 0 0 0 12 2.5M11 11h1a3 3 0 0 0 3-3V4a3 3 0 0 0-3-3H8a3 3 0 0 0-3 3v1H4a3 3 0 0 0-3 3v4a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3zM4 6.5h4A1.5 1.5 0 0 1 9.5 8v4A1.5 1.5 0 0 1 8 13.5H4A1.5 1.5 0 0 1 2.5 12V8A1.5 1.5 0 0 1 4 6.5"
+      />
     </svg>
   )
 }
 
 function CheckIcon() {
   return (
-    <svg {...iconProps} width={14} height={14}>
+    <svg {...iconProps} width={15} height={15} strokeWidth={2.5}>
       <path d="M20 6 9 17l-5-5" />
     </svg>
   )
 }
 
-function ShuffleIcon() {
-  return (
-    <svg {...iconProps} width={15} height={15}>
-      <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
-    </svg>
-  )
-}
 
 function ChevronIcon() {
   return (

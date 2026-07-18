@@ -1,0 +1,121 @@
+---
+title: Country Picker
+description: A searchable country select with flags, dial codes, and keyboard filtering.
+---
+
+<Preview>
+  <PreviewDemo>
+    <CountryPickerDemo />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+import { CountryPicker } from "@fern-ui/country-picker"
+
+const [country, setCountry] = useState("IN")
+
+<CountryPicker value={country} onChange={setCountry} />
+```
+
+  </PreviewCode>
+</Preview>
+
+Search matches four things at once: the country name, the two-letter code, the
+dial code, and common aliases — so `UK`, `GB`, `+44` and `britain` all find the
+United Kingdom. Diacritics fold, so `cote` finds Côte d'Ivoire.
+
+## Examples
+
+### Pinning common countries
+
+195 countries in alphabetical order buries the handful most of your traffic
+comes from. `priority` lifts them above the list.
+
+<Preview>
+  <PreviewDemo>
+    <CountryPickerPriority />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<CountryPicker
+  value={country}
+  onChange={setCountry}
+  priority={["US", "GB", "IN", "DE", "JP"]}
+/>
+```
+
+  </PreviewCode>
+</Preview>
+
+### Without dial codes
+
+Turning them off also removes them from the search index, so a query of `44`
+matches nothing rather than surprising you with the UK.
+
+<Preview>
+  <PreviewDemo>
+    <CountryPickerPlain />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<CountryPicker value={country} onChange={setCountry} showDialCode={false} />
+```
+
+  </PreviewCode>
+</Preview>
+
+### Flags
+
+Flags are served as static SVGs, resolved from the country code. Copy
+`public/flags` into your own project, or point `flagSrc` wherever you host
+them.
+
+```tsx
+<CountryPicker flagSrc={(code) => `https://cdn.example.com/${code}.svg`} />
+```
+
+Each is a 512×512 circle-cropped SVG averaging 0.6KB, loaded lazily — only the
+rows you scroll to are fetched.
+
+### Keyboard
+
+Arrows move, Home and End jump to the ends, PageUp and PageDown move by ten.
+Enter selects, Escape closes, Tab closes and moves on. The trigger opens on
+Enter, Space or ArrowDown.
+
+## Installation
+
+<InstallTabs pkg="@fern-ui/country-picker" />
+
+Or copy these eight files into your project. No runtime dependencies beyond
+React; every one of them is imported by the component.
+
+<ComponentSource pkg="country-picker" file="country-picker.tsx" />
+<ComponentSource pkg="country-picker" file="parts.tsx" />
+<ComponentSource pkg="country-picker" file="search.ts" />
+<ComponentSource pkg="country-picker" file="keyboard.ts" />
+<ComponentSource pkg="country-picker" file="use-open-state.ts" />
+<ComponentSource pkg="country-picker" file="use-anchored-position.ts" />
+<ComponentSource pkg="country-picker" file="icons.tsx" />
+<ComponentSource pkg="country-picker" file="countries.ts" />
+
+## Props
+
+<PropsTable
+  rows={[
+    { name: "value", type: "string", description: "Controlled selection, as an ISO 3166-1 alpha-2 code." },
+    { name: "defaultValue", type: "string", description: "Initial selection when uncontrolled." },
+    { name: "onChange", type: "(code, country) => void", description: "Fires with the code and the full country record." },
+    { name: "countries", type: "Country[]", default: "195 countries", description: "Replace the list — for a subset, or another locale's names." },
+    { name: "priority", type: "string[]", description: "Codes pinned above the alphabetical list." },
+    { name: "showDialCode", type: "boolean", default: "true", description: "Show the dial code badge and allow searching by it." },
+    { name: "flagSrc", type: "(code) => string", default: "/flags/{code}.svg", description: "Resolves a flag URL from a lowercase country code." },
+    { name: "placeholder", type: "string", default: '"Select a country"', description: "Trigger text with nothing selected." },
+    { name: "searchPlaceholder", type: "string", default: '"Search countries"', description: "Placeholder inside the search field." },
+    { name: "clearable", type: "boolean", default: "true", description: "Let the user clear the selection once one is made." },
+    { name: "disabled", type: "boolean", default: "false", description: "Block interaction and dim the control." },
+    { name: "label", type: "string", default: '"Country"', description: "Accessible name for the trigger." },
+  ]}
+/>

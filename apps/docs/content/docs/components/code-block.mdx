@@ -1,0 +1,131 @@
+---
+title: Code Block
+description: A code viewer with a filename bar, copy button, and collapse for long files.
+---
+
+<PreviewCode standalone label="button.tsx">
+
+```tsx
+export function Button({ children }: { children: React.ReactNode }) {
+  return <button className="rounded-lg px-3 py-2">{children}</button>
+}
+```
+
+</PreviewCode>
+
+## Examples
+
+### The bar
+
+Pass `label` for a filename, or `lang` for a language. A filename shows as
+written; a bare language is uppercased, so the two never read alike.
+
+<PreviewCode standalone lang="bash">
+
+```bash
+bun add @fern-ui/color-picker
+```
+
+</PreviewCode>
+
+<PreviewCode standalone label="globals.css">
+
+```css
+:root {
+  --surface: #ffffff;
+  --accent: #0485f7;
+}
+```
+
+</PreviewCode>
+
+Omit both and the bar does not render at all.
+
+<PreviewCode standalone>
+
+```ts
+export const clamp = (n: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, n))
+```
+
+</PreviewCode>
+
+```tsx
+import { PreviewCode } from "@/components/preview"
+
+<PreviewCode standalone label="button.tsx">
+  {/* a fenced code block, or highlighted output */}
+</PreviewCode>
+```
+
+### When to use what
+
+- **`label`** names the file. Falls back to `lang` when omitted, so the bar
+  always says what you are looking at.
+- **`standalone`** rounds all four corners. Leave it off when the block is
+  fused to a preview above it.
+- **`lineNumbers`** adds the gutter. Off by default — numbers are noise unless
+  you are pointing at a specific line.
+- Blocks taller than 150px collapse behind an **Expand code** button. Shorter
+  ones render whole, with no button.
+
+### Install commands
+
+`InstallTabs` renders one command per package manager in the same shell, with
+the tab row in place of the filename bar. Commands are highlighted server-side,
+so they match every other block.
+
+<InstallTabs pkg="@fern-ui/color-picker" />
+
+```tsx
+<InstallTabs pkg="@fern-ui/color-picker" />
+```
+
+### Rendering a source file
+
+`ComponentSource` reads a file from a package and pipes it through the same
+viewer, so a copy-paste component can show exactly what you would copy.
+
+```tsx
+<ComponentSource pkg="color-picker" file="color-picker.tsx" />
+```
+
+## Installation
+
+Copy these into your project. `PreviewCode` is the viewer; `ComponentSource`
+reads a file and pipes it through it; `InstallTabs` renders the command row.
+
+<ComponentSource path="apps/docs/components/preview.tsx" />
+<ComponentSource path="apps/docs/components/component-source.tsx" />
+<ComponentSource path="apps/docs/components/install-tabs-client.tsx" />
+
+## Props
+
+### PreviewCode
+
+<PropsTable
+  rows={[
+    { name: "children", type: "ReactNode", description: "The code. A fenced block in MDX, or highlighted output." },
+    { name: "label", type: "string", description: "Filename shown in the bar. Falls back to lang." },
+    { name: "lang", type: "string", description: "Language shown when there is no filename." },
+    { name: "standalone", type: "boolean", default: "false", description: "Round all four corners, for a block with no preview above it." },
+    { name: "lineNumbers", type: "boolean", default: "false", description: "Show the line-number gutter." },
+  ]}
+/>
+
+### InstallTabs
+
+<PropsTable
+  rows={[
+    { name: "pkg", type: "string", description: "Package name. Expands to bun add, npm install, pnpm add and yarn add." },
+  ]}
+/>
+
+### ComponentSource
+
+<PropsTable
+  rows={[
+    { name: "pkg", type: "string", description: "Package directory under packages/." },
+    { name: "file", type: "string", description: "File to read from that package's src/." },
+  ]}
+/>
