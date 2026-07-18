@@ -12,24 +12,27 @@ import {
   type ColorFormat,
   type HSV,
 } from "./color"
+import { DURATION, EASING } from "./motion"
 
 const cn = (...classes: (string | false | undefined | null)[]) =>
   classes.filter(Boolean).join(" ")
 
-/** Alpha checkerboard, inlined so the component ships without an asset. */
+/**
+ * Alpha checkerboard, inlined so the component ships without an asset.
+ *
+ * Mid-grey rather than black: a black-on-transparent checker is invisible
+ * against a dark card, which is exactly where the opacity track needs to read.
+ * A neutral grey holds contrast on both light and dark surfaces.
+ */
 const CHECKERBOARD =
-  "repeating-conic-gradient(rgba(0,0,0,0.13) 0% 25%, transparent 0% 50%) 50% / 8px 8px"
+  "repeating-conic-gradient(rgba(140,140,140,0.55) 0% 25%, rgba(255,255,255,0.9) 0% 50%) 50% / 9px 9px"
 
 const HUE_GRADIENT =
   "linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)"
 
-/**
- * The built-in CSS easings are too weak to read as intentional. This is a
- * strong ease-out: it moves immediately, which is what makes an interface feel
- * like it heard you. ease-in is never used here — starting slow reads as lag at
- * exactly the moment the user is watching hardest.
- */
-const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)"
+// ease-in is never used here — starting slow reads as lag at exactly the
+// moment the user is watching hardest.
+const EASE_OUT = EASING.out
 
 /**
  * Depth comes from one consistent rule: tracks and wells are *recessed* with an
@@ -39,8 +42,13 @@ const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)"
  */
 const RECESSED =
   "inset 0 1px 2px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(0,0,0,0.09)"
+/**
+ * The white ring alone vanishes against a white card, leaving the thumb looking
+ * like a floating dot. The hairline outside it re-establishes the edge on light
+ * surfaces without darkening the thumb on dark ones.
+ */
 const RAISED =
-  "0 0 0 2.5px #fff, 0 1px 3px rgba(0,0,0,0.32), 0 3px 8px -2px rgba(0,0,0,0.28)"
+  "0 0 0 2px #fff, 0 0 0 3px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.3), 0 3px 8px -2px rgba(0,0,0,0.22)"
 
 const DEFAULT_SWATCHES = [
   "#ef4444",
@@ -249,6 +257,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     )
     const [format, setFormat] = React.useState(initialFormat)
     const [draft, setDraft] = React.useState<string | null>(null)
+    const [alphaDraft, setAlphaDraft] = React.useState<string | null>(null)
     const [announcement, setAnnouncement] = React.useState("")
     const [copied, setCopied] = React.useState(false)
     const reducedMotion = usePrefersReducedMotion()
@@ -372,6 +381,14 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       if (parseHex(text)) commit(stateFromString(text, state.hsv), true)
     }
 
+    /** Accepts "40", "40%", or " 40 " — anything a person would actually type. */
+    const commitAlphaDraft = (text: string) => {
+      setAlphaDraft(null)
+      const parsed = Number.parseFloat(text.replace("%", "").trim())
+      if (Number.isNaN(parsed)) return
+      commit({ ...state, alpha: clamp(parsed / 100, 0, 1) }, true)
+    }
+
     const cycleFormat = () => {
       const next =
         FORMAT_CYCLE[(FORMAT_CYCLE.indexOf(format) + 1) % FORMAT_CYCLE.length]!
@@ -424,11 +441,14 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         aria-disabled={disabled || undefined}
         data-disabled={disabled || undefined}
         className={cn(
-          "w-[280px] select-none p-3 antialiased",
-          // Concentric radii: 28px outer = 16px inner + 12px padding.
+          "w-[304px] select-none p-4 antialiased",
+          // Concentric radii: 28px outer = 12px inner + 16px padding.
           "rounded-[28px] bg-white dark:bg-neutral-900",
-          "shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_16px_-6px_rgba(0,0,0,0.1),0_28px_56px_-16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.9),0_0_0_1px_rgba(0,0,0,0.05)]",
-          "dark:shadow-[0_8px_16px_-6px_rgba(0,0,0,0.5),0_28px_56px_-16px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.07),0_0_0_1px_rgba(255,255,255,0.08)]",
+          // A wide diffuse haze reads as nothing on a white page. Definition
+          // comes from a hairline plus a tight contact shadow; the ambient
+          // layer only adds lift once the edge already exists.
+          "shadow-[0_0_0_1px_rgba(0,0,0,0.09),0_1px_2px_rgba(0,0,0,0.05),0_4px_8px_-2px_rgba(0,0,0,0.06),0_16px_32px_-12px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.9)]",
+          "dark:shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_10px_20px_-8px_rgba(0,0,0,0.55),0_32px_64px_-20px_rgba(0,0,0,0.75),inset_0_1px_0_rgba(255,255,255,0.07)]",
           disabled && "pointer-events-none opacity-55 saturate-50",
           className,
         )}
@@ -436,6 +456,55 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         style={{ WebkitTapHighlightColor: "transparent" }}
         {...props}
       >
+        {/* -------------------------------- Top bar ----------------------------- */}
+        {(comparison || copyable || (eyedropper && supportsEyedropper)) && (
+          <div className="mb-3 flex items-center justify-between">
+            {comparison ? (
+              <ComparisonWell
+                current={output}
+                initial={initial}
+                changed={initial.toLowerCase() !== color.hex.toLowerCase()}
+                disabled={disabled}
+                onRevert={() =>
+                  commit(stateFromString(initial, state.hsv), true)
+                }
+                focusRing={focusRing}
+              />
+            ) : (
+              <span />
+            )}
+
+            <div className="flex items-center gap-0.5">
+              {copyable && (
+                <IconButton
+                  onClick={copy}
+                  disabled={disabled}
+                  label={copied ? "Copied" : "Copy color value"}
+                  focusRing={focusRing}
+                >
+                  {/* Both icons stay mounted and cross-fade. Toggling
+                      visibility would pop; blur bridges the two states so the
+                      eye reads one object changing rather than two swapping. */}
+                  <IconSwap showSecond={copied} reducedMotion={reducedMotion}>
+                    <CopyIcon />
+                    <CheckIcon />
+                  </IconSwap>
+                </IconButton>
+              )}
+              {eyedropper && supportsEyedropper && (
+                <IconButton
+                  onClick={pickFromScreen}
+                  disabled={disabled}
+                  label="Pick a color from the screen"
+                  focusRing={focusRing}
+                >
+                  <EyedropperIcon />
+                </IconButton>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ----------------------- Saturation / brightness ---------------------- */}
         <div
           ref={field.trackRef}
@@ -450,7 +519,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           onKeyDown={handleFieldKeys}
           {...field.handlers}
           className={cn(
-            "relative aspect-[5/4] w-full touch-none rounded-2xl",
+            "relative aspect-square w-full touch-none rounded-xl",
             !disabled && "cursor-crosshair",
             "outline-none focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-blue-500/70",
           )}
@@ -458,12 +527,12 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             backgroundColor: `hsl(${state.hsv.h} 100% 50%)`,
             backgroundImage:
               "linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent)",
-            boxShadow:
-              "inset 0 0 0 1px rgba(0,0,0,0.12), inset 0 1px 3px rgba(0,0,0,0.15)",
+            boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.12)",
           }}
         >
           <Thumb
-            size={18}
+            width={18}
+            height={18}
             dragging={field.dragging}
             reducedMotion={reducedMotion}
             style={{
@@ -475,90 +544,52 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           />
         </div>
 
-        {/* ------------------------- Comparison + sliders ----------------------- */}
-        <div className="mt-3 flex items-center gap-3">
-          {comparison ? (
-            <ComparisonWell
-              current={output}
-              initial={initial}
-              disabled={disabled}
-              onRevert={() => commit(stateFromString(initial, state.hsv), true)}
-              focusRing={focusRing}
-            />
-          ) : (
-            <div
-              aria-hidden
-              className="size-11 shrink-0 rounded-full"
-              style={{ background: CHECKERBOARD, boxShadow: RECESSED }}
-            >
-              <div
-                className="size-full rounded-full"
-                style={{ backgroundColor: output }}
-              />
-            </div>
-          )}
+        {/* ------------------------------- Sliders ------------------------------ */}
+        {/* Full width. Nothing shares this row — these are primary controls and
+            a preview well beside them only steals travel distance. */}
+        <div className="mt-4 flex flex-col gap-1">
+          <SliderTrack
+            drag={hue}
+            onKeyDown={handleHueKeys}
+            disabled={disabled}
+            ariaLabel="Hue"
+            valueNow={Math.round(state.hsv.h)}
+            valueMax={360}
+            valueText={`${Math.round(state.hsv.h)} degrees`}
+            background={HUE_GRADIENT}
+            thumb={{
+              left: `${(state.hsv.h / 360) * 100}%`,
+              background: `hsl(${state.hsv.h} 100% 50%)`,
+            }}
+            reducedMotion={reducedMotion}
+          />
 
-          <div className="flex min-w-0 flex-1 flex-col justify-center">
+          {alpha && (
             <SliderTrack
-              drag={hue}
-              onKeyDown={handleHueKeys}
+              drag={opacity}
+              onKeyDown={handleOpacityKeys}
               disabled={disabled}
-              ariaLabel="Hue"
-              valueNow={Math.round(state.hsv.h)}
-              valueMax={360}
-              valueText={`${Math.round(state.hsv.h)} degrees`}
-              background={HUE_GRADIENT}
-              thumb={{
-                left: `${(state.hsv.h / 360) * 100}%`,
-                background: `hsl(${state.hsv.h} 100% 50%)`,
-              }}
+              ariaLabel="Opacity"
+              valueNow={Math.round(state.alpha * 100)}
+              valueMax={100}
+              valueText={`${Math.round(state.alpha * 100)} percent`}
+              background={CHECKERBOARD}
+              overlay={`linear-gradient(to right, transparent, ${solid})`}
+              thumb={{ left: `${state.alpha * 100}%`, background: solid }}
               reducedMotion={reducedMotion}
             />
-
-            {alpha && (
-              <SliderTrack
-                drag={opacity}
-                onKeyDown={handleOpacityKeys}
-                disabled={disabled}
-                ariaLabel="Opacity"
-                valueNow={Math.round(state.alpha * 100)}
-                valueMax={100}
-                valueText={`${Math.round(state.alpha * 100)} percent`}
-                background={CHECKERBOARD}
-                overlay={`linear-gradient(to right, transparent, ${solid})`}
-                thumb={{ left: `${state.alpha * 100}%`, background: solid }}
-                reducedMotion={reducedMotion}
-              />
-            )}
-          </div>
+          )}
         </div>
 
         {/* ------------------------------ Value row ----------------------------- */}
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-4 flex items-center gap-2">
           <label htmlFor={inputId} className="sr-only">
             Color value
           </label>
           <div
-            className="flex h-11 min-w-0 flex-1 items-center rounded-2xl bg-neutral-100 pl-1 pr-1 dark:bg-neutral-800/80"
+            className="flex h-10 min-w-0 flex-1 items-center rounded-xl bg-neutral-100 dark:bg-neutral-800/80"
             style={{ boxShadow: RECESSED }}
           >
-            <button
-              type="button"
-              onClick={cycleFormat}
-              disabled={disabled || !formatToggle}
-              aria-label={`Color format: ${format}. Press to change.`}
-              className={cn(
-                "mr-1 h-9 shrink-0 rounded-xl px-2",
-                "text-[10px] font-semibold uppercase tracking-wider",
-                "text-neutral-400 dark:text-neutral-500",
-                formatToggle &&
-                  "transition-[background-color,color,scale] duration-150 active:scale-[0.97] hover:bg-black/5 hover:text-neutral-600 dark:hover:bg-white/10 dark:hover:text-neutral-300",
-                focusRing,
-              )}
-              style={{ transitionTimingFunction: EASE_OUT }}
-            >
-              {format}
-            </button>
             <input
               id={inputId}
               value={draft ?? output}
@@ -577,54 +608,67 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 if (event.key === "Escape") setDraft(null)
               }}
               className={cn(
-                "h-full w-full min-w-0 bg-transparent",
+                "h-full w-full min-w-0 bg-transparent px-3",
                 "font-mono text-[13px] lowercase tabular-nums tracking-tight",
                 "text-neutral-900 outline-none dark:text-neutral-100",
               )}
             />
-            {copyable && (
-              <IconButton
-                onClick={copy}
-                disabled={disabled}
-                label={copied ? "Copied" : "Copy color value"}
-                focusRing={focusRing}
-              >
-                {/* Both icons stay mounted and cross-fade. Toggling visibility
-                    would pop; blur bridges the two states so the eye reads one
-                    object changing rather than two swapping. */}
-                <IconSwap showSecond={copied} reducedMotion={reducedMotion}>
-                  <CopyIcon />
-                  <CheckIcon />
-                </IconSwap>
-              </IconButton>
+            {alpha && (
+              <>
+                <span
+                  aria-hidden
+                  className="h-5 w-px shrink-0 bg-black/10 dark:bg-white/12"
+                />
+                <input
+                  aria-label="Opacity percentage"
+                  value={
+                    alphaDraft ?? `${Math.round(state.alpha * 100)}%`
+                  }
+                  disabled={disabled}
+                  spellCheck={false}
+                  onChange={(event) => setAlphaDraft(event.target.value)}
+                  onBlur={(event) => commitAlphaDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault()
+                      commitAlphaDraft(event.currentTarget.value)
+                    }
+                    if (event.key === "Escape") setAlphaDraft(null)
+                  }}
+                  className={cn(
+                    "h-full w-[52px] shrink-0 bg-transparent px-2 text-center",
+                    "font-mono text-[13px] tabular-nums tracking-tight",
+                    "text-neutral-600 outline-none dark:text-neutral-400",
+                  )}
+                />
+              </>
             )}
           </div>
 
-          {eyedropper && supportsEyedropper && (
-            <button
-              type="button"
-              onClick={pickFromScreen}
-              disabled={disabled}
-              aria-label="Pick a color from the screen"
-              className={cn(
-                "grid size-11 shrink-0 place-items-center rounded-2xl",
-                "bg-white text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300",
-                "shadow-[0_1px_2px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.07),inset_0_1px_0_rgba(255,255,255,0.9)]",
-                "dark:shadow-[0_1px_2px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.06)]",
-                "transition-[scale,background-color] duration-150 active:scale-[0.97]",
-                "hover:bg-neutral-50 dark:hover:bg-neutral-700",
-                focusRing,
-              )}
-              style={{ transitionTimingFunction: EASE_OUT }}
-            >
-              <EyedropperIcon />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={cycleFormat}
+            disabled={disabled || !formatToggle}
+            aria-label={`Color format: ${format}. Press to change.`}
+            className={cn(
+              "flex h-10 shrink-0 items-center gap-1 rounded-xl px-2.5",
+              "bg-neutral-100 dark:bg-neutral-800/80",
+              "text-[11px] font-semibold uppercase tracking-wide",
+              "text-neutral-500 dark:text-neutral-400",
+              formatToggle &&
+                "transition-[background-color,color,scale] duration-150 active:scale-[0.97] hover:text-neutral-800 dark:hover:text-neutral-100",
+              focusRing,
+            )}
+            style={{ boxShadow: RECESSED, transitionTimingFunction: EASE_OUT }}
+          >
+            {format}
+            {formatToggle && <ChevronIcon />}
+          </button>
         </div>
 
         {/* ------------------------------ Swatches ------------------------------ */}
         {swatchList.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2 border-t border-black/[0.07] pt-3 dark:border-white/[0.08]">
+          <div className="mt-4 flex items-center justify-between border-t border-black/[0.07] pt-4 dark:border-white/[0.08]">
             {swatchList.map((swatch) => {
               const selected = swatch.toLowerCase() === color.hex.toLowerCase()
               return (
@@ -638,7 +682,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                   className={cn(
                     "size-6 rounded-full",
                     // Tailwind v4 already gates `hover:` behind a hover-capable
-                    // pointer, so this never fires as a stuck state on touch.
+                    // pointer, so this never sticks as a stuck state on touch.
                     "transition-[scale] duration-150 hover:scale-110 active:scale-[0.97]",
                     focusRing,
                   )}
@@ -676,36 +720,55 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
 function ComparisonWell({
   current,
   initial,
+  changed,
   disabled,
   onRevert,
   focusRing,
 }: {
   current: string
   initial: string
+  changed: boolean
   disabled: boolean
   onRevert: () => void
   focusRing: string
 }) {
-  return (
-    <div
-      className="size-11 shrink-0 overflow-hidden rounded-full"
-      style={{ background: CHECKERBOARD, boxShadow: RECESSED }}
-    >
-      <div className="flex size-full">
-        <button
-          type="button"
-          onClick={onRevert}
-          disabled={disabled}
-          aria-label={`Revert to ${initial}`}
-          className={cn("h-full w-1/2 cursor-pointer", focusRing)}
-          style={{ backgroundColor: initial }}
-        />
+  // Until the colour actually differs, a split well is two identical halves
+  // with a meaningless seam down the middle. Show one solid chip instead and
+  // only divide it once there is something to compare against.
+  if (!changed) {
+    return (
+      <div
+        aria-hidden
+        className="size-9 shrink-0 rounded-full"
+        style={{ background: CHECKERBOARD, boxShadow: RECESSED }}
+      >
         <div
-          aria-hidden
-          className="h-full w-1/2"
+          className="size-full rounded-full"
           style={{ backgroundColor: current }}
         />
       </div>
+    )
+  }
+
+  return (
+    <div
+      className="flex h-9 shrink-0 overflow-hidden rounded-full"
+      style={{ background: CHECKERBOARD, boxShadow: RECESSED }}
+    >
+      <button
+        type="button"
+        onClick={onRevert}
+        disabled={disabled}
+        aria-label={`Revert to ${initial}`}
+        title={`Revert to ${initial}`}
+        className={cn("h-full w-9 cursor-pointer", focusRing)}
+        style={{ backgroundColor: initial }}
+      />
+      <div
+        aria-hidden
+        className="h-full w-9"
+        style={{ backgroundColor: current }}
+      />
     </div>
   )
 }
@@ -762,7 +825,7 @@ function SliderTrack({
     >
       <div
         ref={drag.trackRef}
-        className="relative h-2.5 w-full rounded-full"
+        className="relative h-6 w-full rounded-full"
         style={{ background, boxShadow: RECESSED }}
       >
         {overlay && (
@@ -771,8 +834,11 @@ function SliderTrack({
             style={{ background: overlay, boxShadow: RECESSED }}
           />
         )}
+        {/* A capsule taller than its track. Overhanging the rail reads as a
+            grabbable handle; a dot sitting inside it reads as decoration. */}
         <Thumb
-          size={16}
+          width={16}
+          height={32}
           dragging={drag.dragging}
           reducedMotion={reducedMotion}
           style={{
@@ -790,12 +856,14 @@ function SliderTrack({
 function Thumb({
   style,
   dragging,
-  size,
+  width,
+  height,
   reducedMotion,
 }: {
   style: React.CSSProperties
   dragging: boolean
-  size: number
+  width: number
+  height: number
   reducedMotion: boolean
 }) {
   return (
@@ -804,14 +872,16 @@ function Thumb({
       className="pointer-events-none absolute rounded-full"
       style={{
         ...style,
-        width: size,
-        height: size,
+        width,
+        height,
         // Position is deliberately never transitioned. Easing it leaves the
         // thumb trailing the cursor and the whole control reads as laggy.
         transform: `translate(-50%, -50%) scale(${dragging && !reducedMotion ? 1.18 : 1})`,
         transitionProperty: reducedMotion ? "none" : "transform",
-        transitionDuration: "150ms",
-        transitionTimingFunction: EASE_OUT,
+        // Grabbing springs past its target and settles; releasing just eases
+        // back. The overshoot on grab is what makes the thumb feel physical.
+        transitionDuration: `${dragging ? DURATION.enter : DURATION.press}ms`,
+        transitionTimingFunction: dragging ? EASING.spring : EASING.out,
       }}
     />
   )
@@ -830,20 +900,26 @@ function IconSwap({
 }) {
   const [first, second] = children
   const base = "absolute inset-0 grid place-items-center"
-  const timing = reducedMotion
-    ? { transitionProperty: "opacity", transitionDuration: "100ms" }
-    : {
-        transitionProperty: "opacity, transform, filter",
-        transitionDuration: "160ms",
-        transitionTimingFunction: EASE_OUT,
-      }
+  // Asymmetric by design: the arriving icon takes the enter duration, the
+  // leaving one exits in half that. A slow exit reads as reluctance.
+  const timing = (entering: boolean) =>
+    reducedMotion
+      ? {
+          transitionProperty: "opacity",
+          transitionDuration: `${DURATION.exit}ms`,
+        }
+      : {
+          transitionProperty: "opacity, transform, filter",
+          transitionDuration: `${entering ? DURATION.enter : DURATION.exit}ms`,
+          transitionTimingFunction: EASING.out,
+        }
 
   return (
     <span className="relative grid size-4 place-items-center">
       <span
         className={base}
         style={{
-          ...timing,
+          ...timing(!showSecond),
           opacity: showSecond ? 0 : 1,
           transform: reducedMotion
             ? undefined
@@ -856,7 +932,7 @@ function IconSwap({
       <span
         className={base}
         style={{
-          ...timing,
+          ...timing(showSecond),
           opacity: showSecond ? 1 : 0,
           transform: reducedMotion
             ? undefined
@@ -938,6 +1014,14 @@ function CheckIcon() {
   return (
     <svg {...iconProps} width={14} height={14}>
       <path d="M20 6 9 17l-5-5" />
+    </svg>
+  )
+}
+
+function ChevronIcon() {
+  return (
+    <svg {...iconProps} width={11} height={11} strokeWidth={2.5}>
+      <path d="m6 9 6 6 6-6" />
     </svg>
   )
 }

@@ -6,7 +6,7 @@
   "scripts": {
     "build": "bun run --filter '*' build",
     "typecheck": "bun run --filter '*' typecheck",
-    "dev": "bun run --filter demo dev"
+    "dev": "bun run --filter docs dev"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

@@ -27,19 +27,19 @@ The npm package is a convenience, not a lock-in.
 
 ```bash
 bun install
-bun run dev        # demo app at localhost:5173
+bun run dev        # docs at localhost:5200
 bun run typecheck
 bun run build
 ```
 
-The demo app aliases packages to their source, so changes hot-reload without a
+The docs app aliases packages to their source, so changes hot-reload without a
 build step.
 
 ## Layout
 
 ```
 packages/          one folder per block
-apps/demo          local playground
+apps/docs          docs site and live playground
 ```
 
 ## License
