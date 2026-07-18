@@ -17,7 +17,7 @@ export function App() {
 
   return (
     <div className={dark ? "dark" : ""}>
-      <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+      <div className="min-h-screen bg-bg text-fg">
         <Header dark={dark} onToggleTheme={() => setDark((value) => !value)} />
         <div className="mx-auto flex max-w-[1400px]">
           <Sidebar slug={slug} onSelect={setSlug} />
@@ -40,13 +40,13 @@ function Header({
   onToggleTheme: () => void
 }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-black/[0.07] bg-white/80 backdrop-blur-xl dark:border-white/[0.08] dark:bg-neutral-950/80">
+    <header className="sticky top-0 z-20 border-b border-divider bg-bg/80 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-4 px-6">
         <a href="/" className="flex items-center gap-2">
           <FernMark />
           <span className="text-[15px] font-semibold tracking-tight">fern</span>
         </a>
-        <span className="rounded-full bg-neutral-100 px-2 py-0.5 font-mono text-[11px] text-neutral-500 dark:bg-neutral-800/80 dark:text-neutral-400">
+        <span className="rounded-full bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-fg-muted">
           0.1.0
         </span>
 
@@ -57,7 +57,7 @@ function Header({
             aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
             className={cn(
               "grid size-9 place-items-center rounded-xl",
-              "text-neutral-500 dark:text-neutral-400",
+              "text-fg-muted",
               "transition-[background-color,scale] duration-150 active:scale-[0.96]",
               "hover:bg-black/5 dark:hover:bg-white/10",
               "outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60",
@@ -73,7 +73,7 @@ function Header({
             aria-label="GitHub repository"
             className={cn(
               "grid size-9 place-items-center rounded-xl",
-              "text-neutral-500 dark:text-neutral-400",
+              "text-fg-muted",
               "transition-[background-color,scale] duration-150 active:scale-[0.96]",
               "hover:bg-black/5 dark:hover:bg-white/10",
               "outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60",
@@ -122,9 +122,8 @@ function Sidebar({
                       "outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60",
                       planned && "cursor-not-allowed opacity-45",
                       active
-                        ? "bg-neutral-100 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-neutral-50"
-                        : !planned &&
-                            "text-neutral-600 hover:bg-black/[0.04] hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-white/[0.06] dark:hover:text-neutral-100",
+                        ? "bg-surface-2 font-medium text-fg"
+                        : !planned && "text-fg-muted hover:bg-surface-2/60 hover:text-fg",
                     )}
                     style={{ transitionTimingFunction: EASE }}
                   >
@@ -156,7 +155,7 @@ function BlockPage({ block }: { block: BlockDoc }) {
       <h1 className="text-[34px] font-semibold tracking-[-0.02em] text-balance">
         {block.name}
       </h1>
-      <p className="mt-3 text-[15px] leading-relaxed text-pretty text-neutral-600 dark:text-neutral-400">
+      <p className="mt-3 text-[15px] leading-relaxed text-pretty text-fg-muted">
         {block.description}
       </p>
 
@@ -245,7 +244,7 @@ function CopyableCommand({ command }: { command: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-neutral-100 py-1 pl-4 pr-1 dark:bg-neutral-900">
+    <div className="flex items-center gap-2 rounded-xl bg-surface-2 py-1 pl-4 pr-1">
       <code className="flex-1 font-mono text-[13px] text-neutral-700 dark:text-neutral-300">
         {command}
       </code>
@@ -255,7 +254,7 @@ function CopyableCommand({ command }: { command: string }) {
         aria-label={copied ? "Copied" : "Copy install command"}
         className={cn(
           "grid size-8 shrink-0 place-items-center rounded-lg",
-          "text-neutral-500 dark:text-neutral-400",
+          "text-fg-muted",
           "transition-[background-color,scale] duration-150 active:scale-[0.96]",
           "hover:bg-black/[0.06] dark:hover:bg-white/[0.08]",
           "outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60",
@@ -311,14 +310,14 @@ function CodeBlock({ code }: { code: string }) {
 
 function PropsTable({ props }: { props: PropDoc[] }) {
   return (
-    <div className="mt-4 overflow-x-auto rounded-2xl border border-black/[0.07] dark:border-white/[0.08]">
+    <div className="mt-4 overflow-x-auto rounded-2xl border border-divider">
       <table className="w-full min-w-[640px] border-collapse text-left">
         <thead>
-          <tr className="border-b border-black/[0.07] bg-neutral-50 dark:border-white/[0.08] dark:bg-white/[0.02]">
+          <tr className="border-b border-divider bg-surface-2/50">
             {["Prop", "Type", "Default", "Description"].map((heading) => (
               <th
                 key={heading}
-                className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+                className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-fg-muted"
               >
                 {heading}
               </th>
@@ -337,10 +336,10 @@ function PropsTable({ props }: { props: PropDoc[] }) {
               <td className="whitespace-nowrap px-4 py-3 font-mono text-[12.5px] text-blue-600 dark:text-blue-400">
                 {prop.type}
               </td>
-              <td className="whitespace-nowrap px-4 py-3 font-mono text-[12.5px] text-neutral-500 dark:text-neutral-400">
+              <td className="whitespace-nowrap px-4 py-3 font-mono text-[12.5px] text-fg-muted">
                 {prop.defaultValue ?? "—"}
               </td>
-              <td className="px-4 py-3 text-[13px] text-pretty text-neutral-600 dark:text-neutral-400">
+              <td className="px-4 py-3 text-[13px] text-pretty text-fg-muted">
                 {prop.description}
               </td>
             </tr>
