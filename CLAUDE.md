@@ -23,8 +23,9 @@ priority. If it makes a block more usable, it is.
 
 ```
 packages/color-picker   @fern-ui/color-picker — the published block
-apps/docs               Vite + React + Tailwind v4 docs site and playground
-MIGRATION_PROMPT.md     standing brief for adopting @heroui/styles
+apps/docs               Next.js 16 + Fumadocs documentation site and playground
+MIGRATION_PROMPT.md     completed brief for adopting @heroui/styles — historical
+packages/color-picker/REDESIGN.md   agreed spec for the next picker pass
 ```
 
 The docs site is also the test harness. There is deliberately no separate demo
@@ -80,7 +81,8 @@ For any visual change, screenshot and actually look:
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
   --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
   --virtual-time-budget=8000 --screenshot=/tmp/shot.png \
-  --window-size=1400,1100 "http://localhost:5200/?theme=dark#/color-picker"
+  --window-size=1400,1100 \
+  "http://localhost:5200/docs/components/color-picker?theme=dark"
 ```
 
 The docs site reads `?theme=light|dark` from the URL specifically so headless
@@ -135,13 +137,42 @@ with `The service was stopped: write EPIPE`. `bunfig.toml` sets
 `bun add`, that file is the fix; do not re-run `bun install --force` and call
 it solved, because the next install re-breaks it.
 
+**Tailwind v4 under Next needs `@tailwindcss/postcss`.** Without
+`postcss.config.mjs` the stylesheet is passed through untransformed — `@import`
+and `@theme` survive into the output, no utilities are generated, and the page
+renders with *no styles at all*. No error, no warning. Same class of silent
+failure as the `@source` trap above.
+
+**`tw-animate-css` cannot be resolved by Turbopack.** It publishes only a
+`style` export condition and blocks deep paths. It also cannot be dropped —
+`@heroui/styles`' component layer `@apply`s its utilities, which is a build
+error, not a missing animation. `next.config.mjs` locates the file and aliases
+the bare specifier to it.
+
+**Static properties do not survive the RSC boundary.** `Foo.Bar = Bar` on a
+client component is undefined by the time a server component resolves it, so
+`<Foo.Bar>` in MDX throws at render. Export the slots as separate components.
+
+**Type that reads bolder than it should is usually rendering, not CSS.**
+`:root` carries `-webkit-font-smoothing: antialiased`, `font-synthesis: none`
+and `text-rendering: optimizeLegibility`. Dropping `font-synthesis` in
+particular makes the browser fake missing weights by smearing glyphs — heavier
+and blurrier at an identical `font-weight`. Check these before hunting for a
+class difference.
+
+**The docs shell is ported code, not ours.** `apps/docs/components/fumadocs/`
+is HeroUI's fork of Fumadocs' Notebook layout, ported under Apache-2.0. Every
+file carries an attribution header and `NOTICE` records the modifications.
+Changes there are edits to someone else's code — keep the headers.
+
 **Translucent surfaces collapse on dark backgrounds.** `rgba(40,40,40,0.4)`
 over a near-black page lands within a couple of percent of the page. Use solid
 surface steps in dark, not translucency.
 
 **Clipboard confirmations need their timer cleared.** Calling `setTimeout`
 without holding the handle means rapid clicks stack timers and the icon
-flickers. See `apps/docs/src/lib/useCopy.ts`.
+flickers. See `apps/docs/components/code-actions.tsx` and
+`apps/docs/components/page-actions.tsx`.
 
 ## Publishing
 
