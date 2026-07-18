@@ -13,6 +13,7 @@
     "shiki": "^4.3.1"
   },
   "devDependencies": {
+    "@heroui/styles": "3.2.2",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^26.1.1",
     "@types/react": "^19.0.8",
