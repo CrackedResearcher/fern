@@ -169,7 +169,13 @@ function BlockPage({ block }: { block: BlockDoc }) {
         <section className="mt-12">
           <SectionHeading>Usage</SectionHeading>
 
-          <div className="mt-4 flex flex-wrap gap-1.5">
+          {/* Tabs only earn their space when there is more than one demo. */}
+          <div
+            className={cn(
+              "mt-4 flex-wrap gap-1.5",
+              block.demos.length > 1 ? "flex" : "hidden",
+            )}
+          >
             {block.demos.map((entry, index) => (
               <button
                 key={entry.name}

@@ -60,59 +60,13 @@ export const REGISTRY: BlockDoc[] = [
         name: "Default",
         code: `import { ColorPicker } from "@fern-ui/color-picker"
 
-// Everything is on by default — alpha, swatches,
-// eyedropper, copy, and the comparison well.
-<ColorPicker defaultValue="#3b82f6" />`,
-        render: () => <ColorPicker defaultValue="#3b82f6" />,
-      },
-      {
-        name: "Controlled",
-        code: `const [color, setColor] = useState("#8b5cf6")
+const [color, setColor] = useState("#3b82f6")
 
+// One picker, everything included. Every capability is
+// reachable without configuration — subtract with props
+// only if you need less.
 <ColorPicker value={color} onChange={setColor} />`,
         render: () => <ControlledPicker />,
-      },
-      {
-        name: "Minimal",
-        code: `// Subtract what you don't need.
-<ColorPicker
-  defaultValue="#22c55e"
-  alpha={false}
-  swatches={false}
-  eyedropper={false}
-  copyable={false}
-  comparison={false}
-/>`,
-        render: () => (
-          <ColorPicker
-            defaultValue="#22c55e"
-            alpha={false}
-            swatches={false}
-            eyedropper={false}
-            copyable={false}
-            comparison={false}
-          />
-        ),
-      },
-      {
-        name: "Custom swatches",
-        code: `<ColorPicker
-  defaultValue="#14b8a6"
-  format="hsl"
-  swatches={["#ef4444", "#f97316", "#eab308", "#22c55e"]}
-/>`,
-        render: () => (
-          <ColorPicker
-            defaultValue="#14b8a6"
-            format="hsl"
-            swatches={SWATCHES.slice(0, 4)}
-          />
-        ),
-      },
-      {
-        name: "Disabled",
-        code: `<ColorPicker defaultValue="#f97316" disabled />`,
-        render: () => <ColorPicker defaultValue="#f97316" disabled />,
       },
     ],
     props: [
