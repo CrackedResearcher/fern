@@ -50,6 +50,20 @@ installed. Docs-app dependencies (Shiki, the theme package) are unconstrained â€
 consumers never download them. Check `packages/*/package.json` before adding
 anything.
 
+**Every block ships two ways, and the file layout serves both.** `bun add
+@fern-ui/<block>` and copy-paste are equal paths, so:
+
+- **No file exceeds 400 lines.** Past that it stops being readable, and a
+  reviewer stops reading it.
+- **The UI layer stays in one file.** Behaviour, data, glyphs and presentational
+  leaves split into their own â€” `search.ts`, `countries.ts`, `icons.tsx`,
+  `parts.tsx`. Each is copy-paste friendly on its own.
+- **Anything a consumer can import separately is its own entry** in
+  `tsup.config.ts` and in `exports`, so importing the data never drags React
+  into their graph.
+- Static assets a block needs (flags, for instance) live in `apps/docs/public`
+  and are resolved through a prop with a sensible default, never bundled.
+
 **Blocks read CSS custom properties with literal fallbacks**, never import a
 theme:
 
