@@ -31,18 +31,24 @@ const CHECKERBOARD =
   "repeating-conic-gradient(rgba(140,140,140,0.55) 0% 25%, rgba(255,255,255,0.9) 0% 50%) 50% / 9px 9px"
 
 /**
- * Hue ramp drawn at the *current* saturation and brightness rather than at
- * full chroma. A permanently vivid rainbow lies about the outcome: at 20%
- * saturation, dragging it produces muted colours, and the control should
- * preview that rather than promise neon.
+ * Hue ramp at full chroma, always — it is a *selector*, not a preview.
+ *
+ * An earlier pass drew it at the current saturation and brightness, reasoning
+ * that a vivid rainbow over-promises the outcome. It does, but the cost is far
+ * worse than the benefit: at brightness 0 every stop evaluates to rgb(0,0,0)
+ * and the rail becomes a solid black bar you cannot pick a hue from. That is
+ * precisely where this picker makes a point of *preserving* hue, so the one
+ * place the behaviour matters most is the place the control stopped showing it.
+ *
+ * A hue rail's job is to let you find a hue. Anything that makes two hues
+ * indistinguishable has broken it, however honest the preview.
  */
-function hueGradient(s: number, v: number) {
-  const stops = [0, 60, 120, 180, 240, 300, 360].map((h) => {
-    const { r, g, b } = hsvToRgb({ h: h % 360, s, v })
+const HUE_GRADIENT = `linear-gradient(to right, ${[0, 60, 120, 180, 240, 300, 360]
+  .map((h) => {
+    const { r, g, b } = hsvToRgb({ h: h % 360, s: 1, v: 1 })
     return `rgb(${r} ${g} ${b}) ${Math.round((h / 360) * 100)}%`
   })
-  return `linear-gradient(to right, ${stops.join(", ")})`
-}
+  .join(", ")})`
 
 // ease-in is never used here — starting slow reads as lag at exactly the
 // moment the user is watching hardest.
@@ -63,18 +69,6 @@ const RECESSED =
  */
 const RAISED =
   "0 0 0 3px #fff, 0 0 0 4px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.3), 0 3px 8px -2px rgba(0,0,0,0.22)"
-
-/** Palette read off the Figma kit's ColorSwatchPicker, in its order. */
-const DEFAULT_SWATCHES = [
-  "#f43f5e",
-  "#d946ef",
-  "#8b5cf6",
-  "#10b981",
-  "#06b6d4",
-  "#84cc16",
-  "#f59e0b",
-  "#f97316",
-]
 
 /**
  * The colour models offered by the select. `rgb` is labelled RGBA because the
@@ -152,11 +146,6 @@ export interface ColorPickerProps
   formatToggle?: boolean
   /** Show the opacity slider and include alpha in the output. */
   alpha?: boolean
-  /**
-   * Preset colors. Pass `false` to hide the row, or an array to replace the
-   * default palette.
-   */
-  swatches?: string[] | false
   /** Offer the native screen eyedropper where the browser supports it. */
   eyedropper?: boolean
   /** Show the copy-to-clipboard button. */
@@ -307,7 +296,6 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       // Defaults ship the complete picker. Good defaults matter more than
       // options — most people never customise, so the box should be full.
       alpha: alphaProp,
-      swatches = DEFAULT_SWATCHES,
       variant = "default",
       eyedropper = true,
       copyable = true,
@@ -596,62 +584,6 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const focusRing =
       "outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface,#ffffff)]"
 
-    const swatchList = swatches === false ? [] : swatches
-    // Presets page rather than wrap. A wrapping grid changes the card's height
-    // as the palette grows; a pager keeps the layout fixed at any length.
-
-
-    const swatchRow = (
-
-        /**
-         * Scrolls rather than paging.
-         *
-         * Chevrons cost two tap targets inside a 240px card and sit there even
-         * when there is nothing to page to. Scrolling has no idle cost, and
-         * because each preset is a real button, Tab already scrolls the focused
-         * one into view — the keyboard path comes free where a pager needs its
-         * own handling.
-         *
-         * The scrollbar is hidden because a 3px horizontal bar under a 16px row
-         * reads as damage, not affordance. `scroll-px` keeps a focused preset
-         * off the clipped edge.
-         */
-        <div
-          className="flex items-center gap-2 overflow-x-auto px-2 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{ scrollPaddingInline: 8 }}
-        >
-            {swatchList.map((swatch) => {
-              const selected = swatch.toLowerCase() === color.hex.toLowerCase()
-              return (
-                <button
-                  key={swatch}
-                  type="button"
-                  aria-label={swatch}
-                  aria-pressed={selected}
-                  disabled={disabled}
-                  onClick={() =>
-                    commit(stateFromString(swatch, state.hsv), true)
-                  }
-                  className={cn(
-                    "size-4 shrink-0 rounded-full",
-                    "transition-[scale] duration-150 hover:scale-115 active:scale-[0.97]",
-                    focusRing,
-                  )}
-                  style={{
-                    backgroundColor: swatch,
-                    transitionTimingFunction: EASE_OUT,
-                    // outline + offset leaves a gap showing the card itself,
-                    // so the ring reads on light and dark without a theme flag.
-                    outline: selected ? `2px solid ${swatch}` : undefined,
-                    outlineOffset: selected ? 2 : undefined,
-                    boxShadow: "inset 0 0 0 1px rgb(0 0 0 / 0.12)",
-                  }}
-                />
-              )
-            })}
-        </div>
-    )
-
     return (
       <div
         ref={forwardedRef}
@@ -685,14 +617,6 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
         }}
         {...props}
       >
-        {/* ------------------------------ Swatches ------------------------------ */}
-        {/* Placement is the whole difference between the two variants. Default
-            puts presets above the field — they are where you *start*, and
-            putting them after the fine controls implies they are an
-            afterthought. The `swatches` variant inverts that, leading with the
-            field and closing on the palette. */}
-        {swatchList.length > 0 && variant === "default" && swatchRow}
-
         {/* ----------------------- Saturation / brightness ---------------------- */}
         <div
           ref={field.trackRef}
@@ -755,7 +679,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 valueNow={Math.round(state.hsv.h)}
                 valueMax={360}
                 valueText={`${Math.round(state.hsv.h)} degrees`}
-                background={hueGradient(state.hsv.s, state.hsv.v)}
+                background={HUE_GRADIENT}
                 thumb={{
                   left: `${(state.hsv.h / 360) * 100}%`,
                   background: `hsl(${state.hsv.h} 100% 50%)`,
@@ -782,8 +706,6 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             </div>
 
           </div>
-
-          {swatchList.length > 0 && variant === "swatches" && swatchRow}
 
           {/* --------------------------- Model + actions -------------------------- */}
           {showValueField && (
