@@ -29,12 +29,14 @@ const THEMES: { id: ThemeMode; label: string; Icon: typeof SunIcon }[] = [
   { id: "system", label: "System theme", Icon: MonitorIcon },
 ]
 
-const iconButton = cn(
-  "grid size-9 place-items-center rounded-xl text-foreground-muted",
-  "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
-  "hover:bg-default hover:text-foreground",
-  "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
-)
+/**
+ * Their button classes, not a hand-rolled equivalent. `.button` already
+ * carries the press scale, the hover timing, the focus ring, the reduced-motion
+ * opt-out and the tap-highlight suppression — restating any of that here is how
+ * the two drift apart. The modifiers are exactly the ones their own docs site
+ * uses for header controls.
+ */
+const iconButton = "button button--ghost button--icon-only button--sm text-muted"
 
 export function Header({
   theme,
@@ -85,28 +87,26 @@ export function Header({
           <FernMark />
           <span className="text-[15px] font-semibold tracking-tight">fern</span>
         </a>
-        <span className="hidden shrink-0 rounded-full bg-default px-2 py-0.5 font-mono text-[11px] text-foreground-muted sm:block">
+        <span className="chip chip--default chip--primary hidden h-5 shrink-0 rounded-full px-1.5 font-mono text-[10px] text-muted/90 sm:inline-flex">
           0.1.0
         </span>
 
         {/* A button rather than a real input: it opens a palette, and a text
-            field that refuses typing is a worse lie than a button. */}
+            field that refuses typing is a worse lie than a button. It still
+            borrows the search field's shell so it is indistinguishable from
+            the real control it stands in for. */}
         <button
           type="button"
           onClick={onOpenSearch}
-          className={cn(
-            "mx-auto hidden h-9 w-full max-w-md items-center gap-2.5 rounded-xl px-3 md:flex",
-            "border border-separator bg-background-secondary text-[13px] text-foreground-muted",
-            "transition-colors duration-150 hover:bg-default",
-            "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
-          )}
-          style={{ transitionTimingFunction: EASE }}
+          className="search-field__group mx-auto hidden w-full max-w-md cursor-pointer md:inline-flex"
         >
-          <SearchIcon />
-          <span>Search documentation…</span>
-          <kbd className="ml-auto rounded-md bg-default-hover px-1.5 py-0.5 font-mono text-[10px]">
-            ⌘K
-          </kbd>
+          <span className="search-field__search-icon">
+            <SearchIcon />
+          </span>
+          <span className="search-field__input text-left text-field-placeholder">
+            Search documentation…
+          </span>
+          <kbd className="kbd mr-2 h-5 px-1.5 font-mono text-[10px]">⌘K</kbd>
         </button>
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5 md:ml-0">
@@ -128,40 +128,40 @@ export function Header({
           />
 
           {/* Three-way rather than a toggle: "follow the OS" is a distinct
-              choice, and a binary switch silently discards it. */}
-          <div className="hidden items-center gap-0.5 rounded-full border border-separator p-0.5 sm:flex">
-            {THEMES.map(({ id, label, Icon }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => onSetTheme(id)}
-                aria-label={label}
-                aria-pressed={theme === id}
-                className={cn(
-                  "grid size-7 place-items-center rounded-full transition-colors duration-150",
-                  "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
-                  theme === id
-                    ? "bg-default text-foreground"
-                    : "text-foreground-muted hover:text-foreground",
-                )}
-                style={{ transitionTimingFunction: EASE }}
-              >
-                <Icon size={14} />
-              </button>
-            ))}
+              choice, and a binary switch silently discards it. Structured as
+              their tab list so the selected segment gets the same lifted
+              `--segment` chip their segmented controls use. */}
+          <div
+            role="group"
+            aria-label="Theme"
+            className="tabs__list-container hidden sm:block"
+          >
+            <div className="tabs__list" data-orientation="horizontal">
+              {THEMES.map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => onSetTheme(id)}
+                  aria-label={label}
+                  aria-pressed={theme === id}
+                  data-selected={theme === id || undefined}
+                  className="tabs__tab size-7 !w-7 !px-0"
+                >
+                  {/* The selected chip is a sibling behind the label rather
+                      than a background on it, matching how their indicator
+                      sits at z-index -1 under the tab. */}
+                  {theme === id && <span className="tabs__indicator" />}
+                  <Icon size={14} />
+                </button>
+              ))}
+            </div>
           </div>
 
           <a
             href="https://github.com/CrackedResearcher/fern"
             target="_blank"
             rel="noreferrer"
-            className={cn(
-              "flex h-9 items-center gap-2 rounded-full border border-separator px-3",
-              "text-[13px] text-foreground-muted transition-colors duration-150",
-              "hover:bg-default hover:text-foreground",
-              "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
-            )}
-            style={{ transitionTimingFunction: EASE }}
+            className="button button--outline button--sm gap-2 text-muted"
           >
             <GitHubIcon />
             {stars && <span className="hidden tabular-nums sm:inline">{stars}</span>}
@@ -169,31 +169,34 @@ export function Header({
         </div>
       </div>
 
-      {/* Row two: section tabs */}
+      {/* Row two: section tabs. Their secondary tab variant — a flat row with
+          an accent underline indicator — rather than the pill variant. */}
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
-        <nav className="flex h-10 items-end gap-1 overflow-x-auto md:gap-3">
-          {TABS.map(({ id, label, Icon }) => {
-            const active = activeTab === id
-            return (
-              <a
-                key={id}
-                href={href(id === "components" ? REGISTRY[0]!.slug : id)}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex shrink-0 items-center gap-2 border-b-2 px-1 pb-2 pt-1.5 text-[13.5px]",
-                  "transition-colors duration-150",
-                  "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
-                  active
-                    ? "border-accent font-medium text-accent"
-                    : "border-transparent text-foreground-muted hover:text-foreground",
-                )}
-                style={{ transitionTimingFunction: EASE }}
-              >
-                <Icon size={15} />
-                {label}
-              </a>
-            )
-          })}
+        <nav
+          className="tabs tabs--secondary"
+          data-orientation="horizontal"
+          aria-label="Documentation sections"
+        >
+          <div className="tabs__list-container">
+            <div className="tabs__list" data-orientation="horizontal">
+              {TABS.map(({ id, label, Icon }) => {
+                const active = activeTab === id
+                return (
+                  <a
+                    key={id}
+                    href={href(id === "components" ? REGISTRY[0]!.slug : id)}
+                    aria-current={active ? "page" : undefined}
+                    data-selected={active || undefined}
+                    className="tabs__tab h-10 w-auto gap-2 px-3"
+                  >
+                    {active && <span className="tabs__indicator" />}
+                    <Icon size={15} />
+                    {label}
+                  </a>
+                )
+              })}
+            </div>
+          </div>
         </nav>
       </div>
     </header>
