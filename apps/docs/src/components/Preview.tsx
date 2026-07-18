@@ -10,10 +10,9 @@ const VIEWPORTS = {
 
 type Viewport = keyof typeof VIEWPORTS
 
-const segment = cn(
-  "rounded-lg px-2.5 py-1 text-[12px] transition-colors duration-150",
-  "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
-)
+/** Their tab class carries size, radius, colour and focus; only the type
+ *  scale is narrowed for this denser control. */
+const segment = "tabs__tab w-auto px-2.5 text-[12px]"
 
 /**
  * Live preview surface with its own controls.
@@ -41,35 +40,29 @@ export function Preview({
           type="button"
           onClick={() => setOverride(!dark)}
           aria-label={dark ? "Preview in light theme" : "Preview in dark theme"}
-          className={cn(
-            "grid size-8 place-items-center rounded-lg text-foreground-muted",
-            "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
-            "hover:bg-default hover:text-foreground",
-            "outline-none focus-visible:ring-2 focus-visible:ring-focus/60",
-          )}
-          style={{ transitionTimingFunction: EASE }}
+          className="button button--ghost button--icon-only button--sm text-muted"
         >
           {dark ? <SunIcon size={14} /> : <MoonIcon size={14} />}
         </button>
 
-        <div className="flex items-center gap-0.5 rounded-xl bg-default-hover p-0.5">
-          {(Object.keys(VIEWPORTS) as Viewport[]).map((key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setViewport(key)}
-              aria-pressed={viewport === key}
-              className={cn(
-                segment,
-                viewport === key
-                  ? "bg-background font-medium text-foreground shadow-sm"
-                  : "text-foreground-muted hover:text-foreground",
-              )}
-              style={{ transitionTimingFunction: EASE }}
-            >
-              {key[0]!.toUpperCase() + key.slice(1)}
-            </button>
-          ))}
+        {/* Their segmented control: a pill tray with the selected segment
+            lifted on --segment, rather than a shadow-sm approximation. */}
+        <div role="group" aria-label="Viewport" className="tabs__list-container">
+          <div className="tabs__list" data-orientation="horizontal">
+            {(Object.keys(VIEWPORTS) as Viewport[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setViewport(key)}
+                aria-pressed={viewport === key}
+                data-selected={viewport === key || undefined}
+                className={segment}
+              >
+                {viewport === key && <span className="tabs__indicator" />}
+                {key[0]!.toUpperCase() + key.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
