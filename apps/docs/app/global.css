@@ -1,0 +1,220 @@
+/**
+ * Layer order matters and is declared once, here.
+ *
+ * Fumadocs owns the docs *shell* (sidebar, TOC, code blocks, search) and
+ * @heroui/styles owns the *design foundation* (colour, elevation, radius) plus
+ * the component classes. That is exactly how heroui.com is built, and it is why
+ * the two stylesheets are imported side by side rather than one replacing the
+ * other.
+ */
+@layer theme, base, components, utilities;
+
+@import "tailwindcss";
+
+/**
+ * @heroui/styles is unpacked here rather than imported via its `@heroui/styles/css`
+ * barrel.
+ *
+ * tw-animate-css is aliased to its real file in next.config.mjs — it ships only
+ * a `style` export condition, which Turbopack will not resolve. It cannot be
+ * dropped: their component layer `@apply`s its utilities, so a missing import
+ * is a build error, not just a missing animation.
+ */
+@import "tw-animate-css";
+@import "@heroui/styles/base/base.css" layer(base);
+@import "@heroui/styles/base/scrollbar.css" layer(base);
+@import "@heroui/styles/components/index.css" layer(components);
+@import "@heroui/styles/themes/default" layer(theme);
+@import "@heroui/styles/utilities";
+@import "@heroui/styles/variants";
+
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+@source "../../../packages/color-picker/src";
+@source "../content";
+
+/**
+ * Their `dark` variant falls back to prefers-color-scheme when no .dark
+ * ancestor is present, which would render explicit light mode dark on a
+ * dark-preferenced machine. Fumadocs toggles an explicit .dark class, so the
+ * variant only ever needs to read it. Declared last so it wins.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/**
+ * ────────────────────────────────────────────────────────────────────────────
+ * THE INDIRECTION LAYER
+ *
+ * Still the only file in the repo permitted to name a @heroui/styles variable.
+ * Everything else uses fern's semantic utility names. A token rename upstream
+ * is this block's diff and nothing else.
+ * ────────────────────────────────────────────────────────────────────────────
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-surface: var(--surface);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-overlay: var(--overlay);
+  --color-default: var(--default);
+  --color-default-hover: var(--default-hover);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-danger: var(--danger);
+  --color-separator: var(--separator);
+  --color-border: var(--border);
+  --color-focus: var(--focus);
+  --radius-field: var(--field-radius);
+
+  /* Their docs site sets code in the *system* mono stack, not a webfont. */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+}
+
+/**
+ * ────────────────────────────────────────────────────────────────────────────
+ * FUMADOCS → HEROUI TOKEN BRIDGE
+ *
+ * Fumadocs styles its shell from --color-fd-*. heroui.com re-points those at
+ * the HeroUI tokens so one palette drives both, and these are the mappings read
+ * out of their compiled CSS. Without this the shell keeps Fumadocs' stock
+ * neutral palette and no amount of component work makes the page match.
+ * ────────────────────────────────────────────────────────────────────────────
+ */
+:root,
+.dark {
+  --color-fd-background: var(--background);
+  --color-fd-foreground: var(--foreground);
+  --color-fd-muted-foreground: var(--muted);
+  --color-fd-border: var(--border);
+  --color-fd-ring: var(--focus);
+}
+
+:root {
+  --color-fd-primary: #090909;
+  --color-fd-card: #f9f9f9;
+  --color-fd-secondary: #f9f9f9;
+  --color-fd-accent: #f9f9f9;
+  --color-fd-popover: #fff;
+  --color-fd-muted: #f5f5f5;
+}
+
+.dark {
+  --color-fd-primary: #fcfcfc;
+  --color-fd-card: rgb(40 40 40 / 0.4);
+  --color-fd-secondary: #18181b;
+  --color-fd-accent: #2c2c2c;
+  --color-fd-popover: #383435;
+  --color-fd-muted: #141414;
+}
+
+/**
+ * Preset accents.
+ *
+ * Deliberately unlayered: their variables live in @layer base, and unlayered
+ * CSS beats layered CSS regardless of specificity, so these win with no
+ * !important and no specificity war.
+ */
+[data-preset="sky"] {
+  --accent: oklch(0.72 0.132 220.5);
+}
+[data-preset="lavender"] {
+  --accent: oklch(0.665 0.185 301.2);
+}
+[data-preset="mint"] {
+  --accent: oklch(0.755 0.132 165.4);
+}
+[data-preset="rose"] {
+  --accent: oklch(0.63 0.219 15.8);
+}
+[data-preset="amber"] {
+  --accent: oklch(0.755 0.158 62.5);
+}
+[data-preset="slate"] {
+  --accent: oklch(0.44 0.021 285.9);
+}
+
+/**
+ * ────────────────────────────────────────────────────────────────────────────
+ * HEROUI'S OWN OVERRIDES OF THE FUMADOCS SHELL
+ *
+ * Copied from the resolved rules in their compiled CSS, not from the utility
+ * classes on their markup — those are overridden and reading them produces the
+ * wrong result. Each rule notes what it replaces.
+ * ────────────────────────────────────────────────────────────────────────────
+ */
+
+/* Nav tab underline is the accent, 2px. */
+#nd-subnav [data-header-tabs] .border-fd-primary {
+  border-color: var(--accent);
+}
+
+/* Sidebar: 12px radius, and an active state that is a raised --surface pill
+   rather than the bg-fd-primary/10 tint the class list advertises. */
+#nd-sidebar a {
+  border-radius: var(--field-radius, calc(var(--radius) * 1.5));
+  transition: none;
+}
+#nd-sidebar a:hover {
+  background: rgb(0 0 0 / 0.04);
+}
+.dark #nd-sidebar a:hover {
+  background: rgb(255 255 255 / 0.04);
+}
+#nd-sidebar a[data-active="true"] {
+  background-color: var(--surface);
+  box-shadow: var(--surface-shadow);
+}
+.dark #nd-sidebar a[data-active="true"] {
+  background: rgb(255 255 255 / 0.08);
+}
+
+/* Search trigger takes the field treatment: no border, field shadow, 12px. */
+#nd-subnav [data-search-full] {
+  border-radius: var(--field-radius, calc(var(--radius) * 1.5));
+  background-color: var(--field-background, var(--default));
+  box-shadow: var(--field-shadow);
+  border-style: none;
+}
+#nd-subnav [data-search-full] kbd {
+  background-color: var(--default);
+  border-style: none;
+}
+
+/* Header: solid background and a full-viewport-width hairline. */
+#nd-subnav {
+  background-color: var(--background);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+#nd-subnav::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  height: 1px;
+  background: var(--separator);
+  z-index: 1;
+}
+
+/* Code blocks: the figure's background, border and shadow are cancelled and
+   the fill moves to the inner scroll container. */
+.prose .shiki {
+  background: transparent;
+  border-style: none;
+  box-shadow: none;
+}
+.prose .shiki .fd-scroll-container {
+  background: rgb(0 0 0 / 0.04);
+  border-style: none;
+  max-height: fit-content;
+}
+.dark .prose .shiki .fd-scroll-container {
+  background: rgb(40 40 40 / 0.4);
+}
