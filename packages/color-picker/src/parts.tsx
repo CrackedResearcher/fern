@@ -4,7 +4,7 @@
  *  file reads as composition rather than as a wall of markup. */
 
 import * as React from "react"
-import { cn } from "./utils"
+import { cn } from "./class-names"
 import { EASE_OUT, RECESSED, RAISED, THUMB_RADIUS, type ChannelSpec } from "./constants"
 import { DURATION, EASING } from "./motion"
 import type { useTrackDrag } from "./hooks"

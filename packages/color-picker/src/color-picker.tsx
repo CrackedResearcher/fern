@@ -27,7 +27,7 @@ import {
 import { usePrefersReducedMotion, useTrackDrag } from "./hooks"
 import { ChannelField, IconSwap, LabelledSlider, RoundButton, Thumb } from "./parts"
 import { CheckIcon, ChevronIcon, CopyIcon, EyedropperIcon } from "./icons"
-import { cn } from "./utils"
+import { cn } from "./class-names"
 
 /**
  * Re-derives HSV from RGB while carrying hue and saturation through the points
