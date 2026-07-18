@@ -76,8 +76,6 @@ const DEFAULT_SWATCHES = [
 
 const FORMAT_CYCLE: ColorFormat[] = ["hex", "rgb", "hsl"]
 
-/** Presets shown per page before the pager kicks in. */
-const SWATCHES_PER_PAGE = 10
 
 /* -------------------------------------------------------------------------- */
 /*                                   Props                                    */
@@ -290,7 +288,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const [alphaDraft, setAlphaDraft] = React.useState<string | null>(null)
     const [announcement, setAnnouncement] = React.useState("")
     const [copied, setCopied] = React.useState(false)
-    const [swatchPage, setSwatchPage] = React.useState(0)
+
     const reducedMotion = usePrefersReducedMotion()
     const inputId = React.useId()
 
@@ -497,14 +495,6 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
     const swatchList = swatches === false ? [] : swatches
     // Presets page rather than wrap. A wrapping grid changes the card's height
     // as the palette grows; a pager keeps the layout fixed at any length.
-    const maxSwatchPage = Math.max(
-      0,
-      Math.ceil(swatchList.length / SWATCHES_PER_PAGE) - 1,
-    )
-    const visibleSwatches = swatchList.slice(
-      swatchPage * SWATCHES_PER_PAGE,
-      swatchPage * SWATCHES_PER_PAGE + SWATCHES_PER_PAGE,
-    )
 
     const randomize = () => {
       // Random hue, but saturation and value kept in a usable band — fully
@@ -524,14 +514,24 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
 
     const swatchRow = (
 
-        <div className="flex items-center gap-3 px-2">
-          <PagerButton
-            direction="previous"
-            disabled={disabled || swatchPage === 0}
-            onClick={() => setSwatchPage((page) => Math.max(0, page - 1))}
-          />
-          <div className="flex flex-1 items-center justify-between">
-            {visibleSwatches.map((swatch) => {
+        /**
+         * Scrolls rather than paging.
+         *
+         * Chevrons cost two tap targets inside a 240px card and sit there even
+         * when there is nothing to page to. Scrolling has no idle cost, and
+         * because each preset is a real button, Tab already scrolls the focused
+         * one into view — the keyboard path comes free where a pager needs its
+         * own handling.
+         *
+         * The scrollbar is hidden because a 3px horizontal bar under a 16px row
+         * reads as damage, not affordance. `scroll-px` keeps a focused preset
+         * off the clipped edge.
+         */
+        <div
+          className="flex items-center gap-2 overflow-x-auto px-2 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ scrollPaddingInline: 8 }}
+        >
+            {swatchList.map((swatch) => {
               const selected = swatch.toLowerCase() === color.hex.toLowerCase()
               return (
                 <button
@@ -560,14 +560,6 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 />
               )
             })}
-          </div>
-          <PagerButton
-            direction="next"
-            disabled={disabled || swatchPage >= maxSwatchPage}
-            onClick={() =>
-              setSwatchPage((page) => Math.min(maxSwatchPage, page + 1))
-            }
-          />
         </div>
     )
 
@@ -1037,51 +1029,6 @@ function SquareButton({
   )
 }
 
-/** Chevron pager for the preset row. Hidden from readers — the swatches
- *  themselves are the content, and the arrows only reposition them. */
-function PagerButton({
-  direction,
-  disabled,
-  onClick,
-}: {
-  direction: "previous" | "next"
-  disabled: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={`${direction === "previous" ? "Previous" : "Next"} presets`}
-      className={cn(
-        "grid size-4 shrink-0 place-items-center rounded-full",
-        "text-[var(--muted,#a1a1aa)]",
-        "transition-[color,opacity] duration-150",
-        "hover:text-[var(--foreground,#18181b)] disabled:opacity-30",
-        "outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--focus,#0485f7)]/50",
-      )}
-      style={{ transitionTimingFunction: EASE_OUT }}
-    >
-      <svg
-        width="10"
-        height="10"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden
-        style={{
-          transform: direction === "next" ? "rotate(180deg)" : undefined,
-        }}
-      >
-        <path d="m15 18-6-6 6-6" />
-      </svg>
-    </button>
-  )
-}
 
 function Thumb({
   style,
