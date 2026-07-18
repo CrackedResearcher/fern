@@ -60,7 +60,14 @@ export function LabelledSlider({
   return (
     <div className="flex flex-col">
       {showLabel && (
-        <div className="flex items-center justify-between px-0.5">
+        // Pulls the label into the hit area's 10px of internal padding rather
+        // than adding to it. A plain gap could only ever make this bigger —
+        // 10px was already the floor with no gap at all — and the negative
+        // margin is on the label rather than on the track so the 16px between
+        // sections is untouched. leading-none stops the 12px text carrying
+        // another ~3px of leading below its glyphs, which is why this reads
+        // tighter than the number alone suggests.
+        <div className="-mb-0.5 flex items-center justify-between px-0.5 leading-none">
           <span className="text-[12px] text-[var(--muted,#71717a)]">
             {label}
           </span>
