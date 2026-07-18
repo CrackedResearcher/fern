@@ -100,6 +100,49 @@ export interface HSL {
   l: number
 }
 
+/** Pulls the numbers out of `rgb(…)` / `hsl(…)`, separator-agnostic. */
+function numbersIn(input: string): number[] {
+  return (input.match(/-?[\d.]+/g) ?? []).map(Number)
+}
+
+/**
+ * Parses every string this component can *emit* — hex, `rgb()`, and `hsl()`,
+ * with or without alpha, comma- or space-separated.
+ *
+ * It has to accept all three because a controlled picker round-trips its own
+ * output: the parent stores whatever `onChange` gave it and hands it straight
+ * back as `value`. When the parser only understood hex, selecting RGBA or HSL
+ * meant every change came back unparseable — alpha snapped to 100% and typed
+ * channel values never stuck. Emitting a format you cannot read is a closed
+ * loop that silently loses the colour.
+ */
+export function parseColor(input: string): { rgb: RGB; a: number } | null {
+  const text = input.trim()
+
+  if (text.startsWith("rgb")) {
+    const [r, g, b, a] = numbersIn(text)
+    if (r === undefined || g === undefined || b === undefined) return null
+    return {
+      rgb: { r: clamp(r, 0, 255), g: clamp(g, 0, 255), b: clamp(b, 0, 255) },
+      // `rgb(0 0 0 / 50%)` yields 50 here, not 0.5.
+      a: a === undefined ? 1 : clamp(a > 1 ? a / 100 : a, 0, 1),
+    }
+  }
+
+  if (text.startsWith("hsl")) {
+    const [h, s, l, a] = numbersIn(text)
+    if (h === undefined || s === undefined || l === undefined) return null
+    return {
+      rgb: hsvToRgb(
+        hslToHsv({ h: h % 360, s: clamp(s / 100, 0, 1), l: clamp(l / 100, 0, 1) }),
+      ),
+      a: a === undefined ? 1 : clamp(a > 1 ? a / 100 : a, 0, 1),
+    }
+  }
+
+  return parseHex(text)
+}
+
 export function hsvToHsl({ h, s, v }: HSV): HSL {
   const l = v * (1 - s / 2)
   const denom = Math.min(l, 1 - l)
