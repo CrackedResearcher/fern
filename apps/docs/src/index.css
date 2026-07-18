@@ -57,3 +57,25 @@ html {
   -webkit-font-smoothing: antialiased;
   scroll-behavior: smooth;
 }
+
+/* Shiki emits its own <pre> with inline theme colours; this only supplies the
+   box around it so the highlighting stays authoritative. */
+.fern-code pre {
+  margin: 0;
+  padding: 1rem 1.15rem;
+  overflow-x: auto;
+  background: var(--fern-surface-2) !important;
+}
+
+.fern-code code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+/* Shiki wraps each line in a span. Making them blocks keeps lines separate when
+   the block scrolls horizontally; the height comes from the inherited
+   line-height, since setting it here again doubles empty lines. */
+.fern-code .line {
+  display: block;
+}
