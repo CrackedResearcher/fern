@@ -78,9 +78,12 @@ export function LabelledSlider({
         onKeyDown={onKeyDown}
         {...drag.handlers}
         className={cn(
-          // 20px visible track inside a 32px hit area — the bar stays slim
-          // while the pointer target clears a comfortable touch size.
-          "relative flex h-8 touch-none items-center rounded-xl",
+          // 20px visible track inside a 40px hit area — the bar stays slim
+          // while the target clears the WCAG 2.5.5 minimum. The two are
+          // separate elements precisely so the hit area can exceed the paint:
+          // `trackRef` marks the 20px rail that defines 0-1, the handlers sit
+          // on this padded parent.
+          "relative flex h-10 touch-none items-center rounded-2xl",
           !disabled && "cursor-pointer",
           "outline-hidden focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50",
         )}
@@ -208,7 +211,7 @@ export function ChannelField({
           }
         }}
         className={cn(
-          "h-9 w-full min-w-0 rounded-xl bg-[var(--surface,#ffffff)] px-1 text-center",
+          "h-10 w-full min-w-0 rounded-xl bg-[var(--surface,#ffffff)] px-1 text-center",
           "text-[12px] tabular-nums",
           "text-[var(--foreground,#18181b)] outline-hidden",
           focusRing,

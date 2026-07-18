@@ -36,6 +36,9 @@ export const HUE_GRADIENT = `linear-gradient(to right, ${[0, 60, 120, 180, 240, 
 /** Half the slider thumb's width. Insets both its travel and the drag maths. */
 export const THUMB_RADIUS = 10
 
+/** Half the field thumb's width. Insets its travel on both axes. */
+export const FIELD_THUMB_RADIUS = 8
+
 // ease-in is never used here — starting slow reads as lag at exactly the
 // moment the user is watching hardest.
 export const EASE_OUT = EASING.out

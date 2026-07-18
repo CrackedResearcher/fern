@@ -39,10 +39,14 @@ export function useTrackDrag(
    * belongs to, and because the same inset is applied to the pointer maths the
    * thumb still lands exactly under the cursor rather than drifting from it.
    *
-   * Left at 0 for the 2D field, where reaching the true corner is the point —
-   * that is where pure white and pure black live.
+   * The 2D field insets on both axes for the same reason. Its corners stay
+   * selectable — the maths still resolves them to exactly 0 and 1 — but the
+   * thumb no longer hangs half outside the control, and at the bottom-left it
+   * was clearing the card's edge entirely.
    */
   inset = 0,
+  /** Vertical equivalent, for the 2D field. Sliders leave it at 0. */
+  insetY = 0,
 ) {
   const trackRef = React.useRef<HTMLDivElement>(null)
   const pointerId = React.useRef<number | null>(null)
@@ -52,10 +56,11 @@ export function useTrackDrag(
     const element = trackRef.current
     if (!element) return
     const rect = element.getBoundingClientRect()
-    const usable = rect.width - inset * 2
+    const usableX = rect.width - inset * 2
+    const usableY = rect.height - insetY * 2
     onPosition(
-      usable > 0 ? clamp((event.clientX - rect.left - inset) / usable, 0, 1) : 0,
-      rect.height ? clamp((event.clientY - rect.top) / rect.height, 0, 1) : 0,
+      usableX > 0 ? clamp((event.clientX - rect.left - inset) / usableX, 0, 1) : 0,
+      usableY > 0 ? clamp((event.clientY - rect.top - insetY) / usableY, 0, 1) : 0,
     )
   }
 
