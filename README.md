@@ -20,8 +20,6 @@ React UI blocks that get the small things right. Thoughtfully designed, zero run
 | [`@fern-ui/color-picker`](packages/color-picker) | A color picker. |
 | [`@fern-ui/country-picker`](packages/country-picker) | A searchable country select. |
 
-Not on npm yet. Until then, copy a block out of `packages/` — that path is supported first-class, not a fallback.
-
 ## Documentation
 
 ```bash
