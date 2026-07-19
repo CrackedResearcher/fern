@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "bun install",
-  "buildCommand": "bun run --filter '@fern-ui/*' build && bun run --filter docs build",
+  "buildCommand": "bun run --filter '@fern-ui/*' build && bun run verify && bun run --filter docs build",
   "outputDirectory": "apps/docs/.next"
 }

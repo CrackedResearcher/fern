@@ -1,0 +1,40 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      # Build first, and the order is load-bearing. dist/ is gitignored, so a
+      # fresh clone has none — and only color-picker is aliased to source in the
+      # docs tsconfig. The other three resolve through package.json to
+      # dist/index.d.ts, so typechecking first fails with "cannot find module"
+      # on a clean checkout while passing locally, where a previous build left
+      # dist/ behind. Same trap that broke the first Vercel deploy.
+      - run: bun run build
+
+      # Typechecking is not evidence of anything shippable. A pass early in this
+      # project shipped a build where Tailwind had dropped every class, and the
+      # 0.1.0 packages typechecked while shipping no client boundary, no
+      # stylesheet, and two missing .d.ts files.
+      - run: bun run typecheck
+
+      # Which is what this is for: it asserts against dist, not src.
+      - run: bun run verify
+
+      # And this installs the packed tarballs into a Next app that sits outside
+      # the workspace globs, so nothing resolves to local source. It is the only
+      # check here that exercises the artifact a stranger actually receives.
+      - run: bun run e2e
