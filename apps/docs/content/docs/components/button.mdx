@@ -1,0 +1,220 @@
+---
+title: Button
+description: Seven variants, three sizes, matched to the HeroUI v3 button without the dependency.
+---
+
+<Preview>
+  <PreviewDemo>
+    <ButtonDemo />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+import { Button } from "@fern-ui/button"
+
+<Button variant="primary">Primary</Button>
+<Button variant="outline">Outline</Button>
+<Button variant="danger">Danger</Button>
+```
+
+  </PreviewCode>
+</Preview>
+
+The variants are pixel-matched to HeroUI v3, verified by walking the whole
+`getComputedStyle` on both buttons rather than by comparing class lists. What
+that buys you is a drop-in: a HeroUI call site swaps the import and nothing on
+the page moves.
+
+What it does not carry over is react-aria's press abstraction. HeroUI's Button
+wraps `react-aria-components`, which is also what lets a Popover or Dropdown
+adopt it as a trigger. This is a button, not a trigger primitive — if you need
+one, keep HeroUI's for that call site.
+
+## Examples
+
+### Sizes
+
+<Preview>
+  <PreviewDemo>
+    <ButtonSizes />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<Button size="sm">Small</Button>
+<Button size="md">Medium</Button>
+<Button size="lg">Large</Button>
+```
+
+  </PreviewCode>
+</Preview>
+
+Heights step down at the `md` breakpoint — 36/40/44px below it, 32/36/40px
+above — which is HeroUI's own behaviour. That makes `sm` a 36px target, falling
+to 32px on desktop, under the 40px minimum every other fern block clears. The tradeoff was
+made deliberately: this block exists to be indistinguishable from HeroUI's, and
+a taller `sm` would put every adopted call site visibly out of step with the
+page around it. Use `md` or `lg` for anything a finger has to hit.
+
+The press scale is per size — `0.98`, `0.97`, `0.96`. A fixed ratio makes a
+small button look like it barely moves and a large one look like it collapses.
+
+### Icons
+
+<Preview>
+  <PreviewDemo>
+    <ButtonIcons />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<Button>
+  <PlusIcon />
+  New project
+</Button>
+
+<Button isIconOnly aria-label="New project">
+  <PlusIcon />
+</Button>
+```
+
+  </PreviewCode>
+</Preview>
+
+Any `svg` child is sized and aligned automatically — 20px, dropping to 16px at
+`md`, matched to the type beside it. It also carries a small negative inline
+margin, because a glyph rarely fills its own box and the optical gap otherwise
+reads wider than the one that was set.
+
+`isIconOnly` trades the inline padding for a fixed width, so the button is
+square at its own height. It takes no label from its children, so give it an
+`aria-label` — an icon-only button without one announces as nothing.
+
+### Disabled
+
+<Preview>
+  <PreviewDemo>
+    <ButtonDisabled />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<Button isDisabled>Primary</Button>
+```
+
+  </PreviewCode>
+</Preview>
+
+`isDisabled` is an alias for the native `disabled`, so a HeroUI call site swaps
+over unchanged. Both work; `disabled` is what reaches the DOM.
+
+### Full width
+
+<Preview>
+  <PreviewDemo>
+    <ButtonFullWidth />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<Button fullWidth>Continue</Button>
+<Button fullWidth variant="ghost">Cancel</Button>
+```
+
+  </PreviewCode>
+</Preview>
+
+### Handling presses
+
+<Preview>
+  <PreviewDemo>
+    <ButtonPress />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<Button onPress={() => setCount((n) => n + 1)}>Pressed {count}×</Button>
+<Button variant="secondary" onClick={() => setCount(0)}>Reset</Button>
+```
+
+  </PreviewCode>
+</Preview>
+
+`onPress` is an alias for `onClick`, again for the HeroUI swap. If you pass
+both, both fire — it is not a fallback.
+
+## Theming
+
+Every colour is a CSS custom property with a literal fallback, so the button
+renders correctly against no theme at all and picks one up where it exists.
+
+<PreviewCode standalone label="globals.css">
+
+```css
+:root {
+  --accent: #0485f7;
+  --accent-hover: #0479dd;
+  --accent-foreground: #ffffff;
+  --default: #ebebec;
+  --default-hover: #e2e2e4;
+  --default-foreground: #18181b;
+  --danger: #ff383c;
+  --border: #dedee0;
+  --focus: #0485f7;
+  --radius: 0.5rem;
+}
+```
+
+</PreviewCode>
+
+The fallbacks are HeroUI's light-theme values converted out of oklch, so an
+unthemed button is not a guess — it is their default.
+
+Two properties are worth knowing about. `--radius` is multiplied by three, so
+the button stays proportional to the rest of your surfaces rather than needing
+its own token. And `--disabled-opacity` drives the disabled state, so a theme
+that needs more contrast there can raise it without restyling the variant.
+
+### Accessibility
+
+The focus ring is separated from the button by a band of the page background,
+so it stays legible on a filled variant where a flush ring would sit against
+the fill and read as part of it. Under
+`prefers-reduced-motion` the press scale and the colour transitions both go —
+the button still responds, it just does not move.
+
+Only three properties transition: `transform`, `background-color` and
+`box-shadow`. `transition: all` would also ease the focus ring, which has to
+appear the instant focus lands.
+
+## Installation
+
+<InstallTabs pkg="@fern-ui/button" />
+
+Or copy both files into your project. No runtime dependencies beyond React.
+
+<ComponentSource pkg="button" file="button.tsx" />
+<ComponentSource pkg="button" file="merge-classes.ts" />
+
+`merge-classes.ts` is the local Tailwind class merge — last-wins per utility
+group, so a `className` you pass overrides the variant instead of racing it in
+the stylesheet. It is about seventy lines, and it is why this package does not
+pull `tailwind-merge`.
+
+## Props
+
+<PropsTable
+  rows={[
+    { name: "variant", type: '"primary" | "secondary" | "tertiary" | "ghost" | "outline" | "danger" | "danger-soft"', default: '"primary"', description: "Colour treatment. Tertiary inherits the surrounding text colour." },
+    { name: "size", type: '"sm" | "md" | "lg"', default: '"md"', description: "Height and type scale. Each steps down at the md breakpoint." },
+    { name: "isIconOnly", type: "boolean", default: "false", description: "Square, sized to the height, with the inline padding removed. Needs an aria-label." },
+    { name: "fullWidth", type: "boolean", default: "false", description: "Fill the inline size of the parent." },
+    { name: "isDisabled", type: "boolean", description: "Alias for disabled, so a HeroUI call site swaps over unchanged." },
+    { name: "onPress", type: "MouseEventHandler", description: "Alias for onClick. Both fire if both are given." },
+    { name: "className", type: "string", description: "Merged last-wins against the variant classes, not appended." },
+  ]}
+/>
+
+Everything else on a native `button` passes straight through — `type` defaults
+to `"button"` rather than `"submit"`, so a button inside a form does not submit
+it by accident.
