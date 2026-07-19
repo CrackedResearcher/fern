@@ -40,10 +40,10 @@ Uncontrolled works too — omit `value` and pass `defaultValue`.
 | `value` | `string` | — | Controlled selection, as an ISO 3166-1 alpha-2 code. |
 | `defaultValue` | `string` | — | Initial selection when uncontrolled. |
 | `onChange` | `(code, country) => void` | — | Fires with the code and the full country record. |
-| `countries` | `Country[]` | 195 countries | Replace the list — for a subset, or another locale's names. |
+| `countries` | `Country[]` | 198 countries | Replace the list — for a subset, or another locale's names. |
 | `priority` | `string[]` | — | Codes pinned above the alphabetical list. |
 | `showDialCode` | `boolean` | `true` | Show the dial code and allow searching by it. |
-| `showFlags` | `boolean` | `true` | Off gives a plain text list, and skips 195 image requests. |
+| `showFlags` | `boolean` | `true` | Off gives a plain text list, and skips 198 image requests. |
 | `flagSrc` | `(code) => string` | jsDelivr CDN | Resolves a flag URL from a lowercase country code. |
 | `placeholder` | `string` | `"Select a country"` | Trigger text with nothing selected. |
 | `searchPlaceholder` | `string` | `"Search countries"` | Placeholder inside the search field. |

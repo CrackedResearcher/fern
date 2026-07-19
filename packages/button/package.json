@@ -23,7 +23,8 @@
   "scripts": {
     "build": "rm -rf dist && tsup && tailwindcss -i src/styles.css -o dist/styles.css --minify",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build && cd ../.. && node scripts/verify-packages.mjs"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0"
