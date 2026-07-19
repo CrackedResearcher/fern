@@ -2,9 +2,9 @@
 
 React UI blocks that get the small things right. Thoughtfully designed, zero runtime dependencies, copy-paste friendly. **Yours to edit.**
 
-<a href="https://react.dev"><img src=".github/badges/react.png" width="120" alt="react 18 | 19"></a>
-<img src=".github/badges/deps.png" width="81" alt="runtime dependencies: 0">
-<a href="#license"><img src=".github/badges/license.png" width="109" alt="license: MIT"></a>
+[![npm](https://badgen.net/npm/v/@fern-ui/color-picker?color=90d068&labelColor=2b2b2b)](https://www.npmjs.com/package/@fern-ui/color-picker)
+[![stars](https://badgen.net/github/stars/CrackedResearcher/fern?color=90d068&labelColor=2b2b2b)](https://github.com/CrackedResearcher/fern/stargazers)
+[![react](https://badgen.net/badge/react/18%20%7C%2019/90d068?labelColor=2b2b2b)](https://react.dev)
 
 ## Blocks
 
