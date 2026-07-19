@@ -1,6 +1,6 @@
 import "./global.css"
 import { RootProvider } from "fumadocs-ui/provider/next"
-import { Inter } from "next/font/google"
+import { Inter, Instrument_Serif } from "next/font/google"
 import { Suspense, type ReactNode } from "react"
 import { UrlTheme } from "@/components/url-theme"
 
@@ -10,6 +10,17 @@ import { UrlTheme } from "@/components/url-theme"
  * that stops the first paint reflowing — the same treatment their docs use.
  */
 const inter = Inter({ subsets: ["latin"] })
+
+/**
+ * The wordmark only — never body copy. Exposed as a variable rather than a
+ * class because it is applied to one element, and a second `className` on
+ * <body> would put a font on everything that does not inherit past it.
+ */
+const wordmark = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-wordmark",
+})
 
 export const metadata = {
   title: {
@@ -29,7 +40,9 @@ export default function Layout({ children }: { children: ReactNode }) {
     // that rewrite — which shows up as a hydration mismatch rather than as a
     // missing font.
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} flex min-h-screen flex-col font-sans`}>
+      <body
+        className={`${inter.className} ${wordmark.variable} flex min-h-screen flex-col font-sans`}
+      >
         <RootProvider>
           {/* useSearchParams suspends during prerender. */}
           <Suspense fallback={null}>

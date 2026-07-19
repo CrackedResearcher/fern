@@ -47,13 +47,20 @@ export default function Layout({ children }: { children: ReactNode }) {
         // `<div class="flex items-center gap-4">logo v3.2.2 ⌄</div>`.
         title: (
           <span className="flex items-center gap-4">
-            <span className="inline-flex items-center gap-2.5 font-semibold">
-              <FernMark />
-              fern
+            {/* The wordmark is a serif at 22px against Inter's 16 — a serif's
+                x-height runs smaller, so matching the set size would leave it
+                reading shorter than the nav beside it. */}
+            <span className="inline-flex items-center gap-2">
+              <FernMark size={17} />
+              <span className="text-[22px] leading-none font-[family-name:var(--font-wordmark)]">
+                fern
+              </span>
             </span>
             {/* Their version trigger: muted, xs→sm, with a chevron, and
                 hidden below lg. */}
-            <span className="mt-1 hidden items-center gap-1.5 py-1 text-left text-xs font-medium text-muted transition-opacity hover:opacity-80 lg:flex sm:text-sm">
+            {/* Held at 11px rather than stepping up with the breakpoint: it
+                sits beside a 22px wordmark, and a version is a footnote to it. */}
+            <span className="mt-1 hidden items-center gap-1.5 py-1 text-left text-[11px] font-medium text-foreground/70 transition-opacity hover:opacity-80 lg:flex">
               v0.1.0
               <svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden>
                 <path

@@ -1,12 +1,27 @@
-export function FernMark({ size = 20 }: { size?: number }) {
+/**
+ * The fern leaf, traced from the brand mark rather than drawn to approximate
+ * it — the previous icon was a generic frond and did not match the banner.
+ *
+ * A polygon, not curves. It is set at 20px in the header, where the pixel
+ * staircase a contour trace leaves is below what the display resolves; the
+ * simplification tolerance was chosen against a 96px render, not the 20px one.
+ *
+ * Green by default rather than `currentColor`: the leaf is the one part of the
+ * mark that holds its colour across themes, and the wordmark beside it already
+ * takes the theme's foreground.
+ */
+export function FernMark({
+  size = 20,
+  color = "var(--fern-mark, #90d068)",
+}: {
+  size?: number
+  color?: string
+}) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
-        d="M12 21V8m0 0c0-3.5 2.5-6 6-6 0 3.5-2.5 6-6 6Zm0 5c0-3.5-2.5-6-6-6 0 3.5 2.5 6 6 6Zm0 4c0-3-2-5-5-5 0 3 2 5 5 5Zm0-1c0-3 2-5 5-5 0 3-2 5-5 5Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d="M0.29 23.51L2.43 20.5L6.61 15.74L6.12 12.34L6.02 8.16L6.51 5.05L7.0 3.69L7.68 2.72L8.45 8.55L8.45 11.37L8.06 13.51L8.16 13.89L8.65 13.7L9.91 12.34L9.62 9.81L9.62 6.02L9.91 4.18L10.3 2.91L11.17 1.65L11.56 1.46L11.47 2.82L11.76 6.61L11.76 9.04L11.27 10.98L11.47 11.17L12.63 10.3L12.63 5.93L12.83 4.18L13.41 2.04L14.38 0.58L14.67 0.49L14.57 4.66L14.38 7.38L13.99 8.74L14.09 9.04L15.84 5.93L18.27 3.3L20.99 1.46L23.61 0.29L23.03 2.82L22.15 4.28L20.31 6.02L14.77 9.91L17.88 11.56L20.11 13.41L21.67 14.96L19.92 14.96L18.75 14.57L17.1 13.6L14.57 11.56L13.7 11.08L12.83 11.17L11.95 12.15L13.7 12.63L15.06 13.31L18.56 16.13L19.92 16.91L19.92 17.1L17.49 17.2L15.84 16.71L13.6 15.35L10.98 12.92L10.59 13.12L9.13 14.67L9.23 14.87L11.56 15.45L13.21 16.23L15.35 17.59L18.17 19.72L17.39 19.92L15.16 19.92L13.31 19.43L10.98 18.27L8.26 16.32L7.77 16.13L5.54 18.95L2.43 23.32L2.14 23.61L0.39 23.61Z"
+        fill={color}
       />
     </svg>
   )
