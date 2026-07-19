@@ -3,6 +3,8 @@
   "icon": "Components",
   "root": true,
   "pages": [
+    "---Actions---",
+    "button",
     "---Inputs---",
     "color-picker",
     "country-picker",
