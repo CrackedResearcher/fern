@@ -31,7 +31,7 @@ Uncontrolled works too — omit `value` and pass `defaultValue`.
 | `priority` | `string[]` | — | Codes pinned above the alphabetical list. |
 | `showDialCode` | `boolean` | `true` | Show the dial code and allow searching by it. |
 | `showFlags` | `boolean` | `true` | Off gives a plain text list, and skips 195 image requests. |
-| `flagSrc` | `(code) => string` | `/flags/{code}.svg` | Resolves a flag URL from a lowercase country code. |
+| `flagSrc` | `(code) => string` | jsDelivr CDN | Resolves a flag URL from a lowercase country code. |
 | `placeholder` | `string` | `"Select a country"` | Trigger text with nothing selected. |
 | `searchPlaceholder` | `string` | `"Search countries"` | Placeholder inside the search field. |
 | `clearable` | `boolean` | `true` | Let the user clear the selection once one is made. |
@@ -52,15 +52,24 @@ query of `44` matches nothing rather than surprising you with the UK.
 
 ## Flags
 
-Flags are not bundled. `flagSrc` resolves a URL from the country code and
-defaults to `/flags/{code}.svg`, so you either host them yourself:
+By default flags load from a CDN, so `bun add` works with no setup — a picker
+whose images 404 until you copy an asset directory is broken out of the box.
 
-```tsx
-<CountryPicker flagSrc={(code) => `https://cdn.example.com/${code}.svg`} />
+The same 200 SVGs ship inside the package. To self-host, copy them into your
+public directory and point `flagSrc` at it:
+
+```bash
+cp -r node_modules/@fern-ui/country-picker/flags public/flags
 ```
 
-or copy a flag set into your own `public/`. Shipping 195 images inside a
-package nobody asked for is not a tradeoff worth making.
+```tsx
+<CountryPicker flagSrc={(code) => `/flags/${code}.svg`} />
+```
+
+Each is a 512×512 circle-cropped SVG averaging 0.6KB, loaded lazily — only the
+rows you scroll to are fetched.
+
+`showFlags={false}` skips them entirely, and with them 200 image requests.
 
 ## The country data
 

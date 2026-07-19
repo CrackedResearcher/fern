@@ -68,12 +68,18 @@ matches nothing rather than surprising you with the UK.
 
 ### Flags
 
-Flags are served as static SVGs, resolved from the country code. Copy
-`public/flags` into your own project, or point `flagSrc` wherever you host
-them.
+By default flags load from a CDN, so `bun add` works with no setup — a picker
+whose images 404 until you copy an asset directory is broken out of the box.
+
+The same SVGs ship inside the package. To self-host, copy them across and point
+`flagSrc` at your own path:
+
+```bash
+cp -r node_modules/@fern-ui/country-picker/flags public/flags
+```
 
 ```tsx
-<CountryPicker flagSrc={(code) => `https://cdn.example.com/${code}.svg`} />
+<CountryPicker flagSrc={(code) => `/flags/${code}.svg`} />
 ```
 
 Each is a 512×512 circle-cropped SVG averaging 0.6KB, loaded lazily — only the
@@ -111,7 +117,8 @@ React; every one of them is imported by the component.
     { name: "countries", type: "Country[]", default: "195 countries", description: "Replace the list — for a subset, or another locale's names." },
     { name: "priority", type: "string[]", description: "Codes pinned above the alphabetical list." },
     { name: "showDialCode", type: "boolean", default: "true", description: "Show the dial code badge and allow searching by it." },
-    { name: "flagSrc", type: "(code) => string", default: "/flags/{code}.svg", description: "Resolves a flag URL from a lowercase country code." },
+    { name: "flagSrc", type: "(code) => string", default: "jsDelivr CDN", description: "Resolves a flag URL from a lowercase country code." },
+    { name: "showFlags", type: "boolean", default: "true", description: "Off gives a plain text list, and skips 200 image requests." },
     { name: "placeholder", type: "string", default: '"Select a country"', description: "Trigger text with nothing selected." },
     { name: "searchPlaceholder", type: "string", default: '"Search countries"', description: "Placeholder inside the search field." },
     { name: "clearable", type: "boolean", default: "true", description: "Let the user clear the selection once one is made." },
