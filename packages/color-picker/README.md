@@ -6,6 +6,19 @@ An accessible color picker for React. No runtime dependencies beyond React itsel
 bun add @fern-ui/color-picker
 ```
 
+Import the stylesheet once, anywhere in your app:
+
+```tsx
+import "@fern-ui/color-picker/styles.css"
+```
+
+The component is built from Tailwind utilities. Without the stylesheet the
+markup is correct and nothing is styled — it fails quietly rather than loudly,
+so it is worth checking first if a block looks wrong.
+
+Skip it only if you are copy-pasting the source into a Tailwind project of your
+own, where your build generates the utilities already.
+
 ## Usage
 
 ```tsx

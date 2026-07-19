@@ -86,6 +86,39 @@
   --color-fd-ring: var(--focus);
 }
 
+/* The blocks read `--fern-*` rather than bare names, because bare ones collide:
+   create-next-app's own template defines --foreground, so a host in dark mode
+   handed the picker near-white text while it kept its own white surface, and
+   every label vanished. Namespacing makes that impossible; this is the one
+   file that maps the foundation onto it. */
+:root,
+.dark {
+  --fern-surface: var(--surface);
+  --fern-surface-secondary: var(--surface-secondary);
+  --fern-background: var(--background);
+  --fern-foreground: var(--foreground);
+  --fern-muted: var(--muted);
+  --fern-default: var(--default);
+  --fern-default-hover: var(--default-hover);
+  --fern-default-foreground: var(--default-foreground);
+  --fern-accent: var(--accent);
+  --fern-accent-hover: var(--accent-hover);
+  --fern-accent-foreground: var(--accent-foreground);
+  --fern-accent-soft-foreground: var(--accent-soft-foreground);
+  --fern-danger: var(--danger);
+  --fern-danger-hover: var(--danger-hover);
+  --fern-danger-foreground: var(--danger-foreground);
+  --fern-danger-soft-foreground: var(--danger-soft-foreground);
+  --fern-border: var(--border);
+  --fern-separator: var(--separator);
+  --fern-focus: var(--focus);
+  --fern-radius: var(--radius);
+  --fern-overlay-shadow: var(--overlay-shadow);
+  --fern-disabled-opacity: var(--disabled-opacity);
+  --fern-cursor-interactive: var(--cursor-interactive);
+  --fern-cursor-disabled: var(--cursor-disabled);
+}
+
 /* Their literal #737373, not HeroUI's --muted. The two are close, but --muted
    carries a little blue that reads as a cooler cast across the whole rail. */
 :root {

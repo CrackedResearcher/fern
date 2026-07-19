@@ -1,0 +1,19 @@
+/**
+ * The stylesheet shipped to consumers who install rather than copy-paste.
+ *
+ * Preflight is deliberately not imported. `@import "tailwindcss"` would pull
+ * Tailwind's base reset in with it, and a component library that resets its
+ * host's margins, headings and form controls is a bug, not a feature — only
+ * the theme variables and the utilities this component actually uses belong
+ * here.
+ *
+ * Built by @tailwindcss/cli into dist/styles.css. `@source` points at the
+ * component source so only the utilities in use are emitted.
+ */
+
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@source "./";

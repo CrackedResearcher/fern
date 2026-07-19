@@ -152,16 +152,16 @@ renders correctly against no theme at all and picks one up where it exists.
 
 ```css
 :root {
-  --accent: #0485f7;
-  --accent-hover: #0479dd;
-  --accent-foreground: #ffffff;
-  --default: #ebebec;
-  --default-hover: #e2e2e4;
-  --default-foreground: #18181b;
-  --danger: #ff383c;
-  --border: #dedee0;
-  --focus: #0485f7;
-  --radius: 0.5rem;
+  --fern-accent: #0485f7;
+  --fern-accent-hover: #0479dd;
+  --fern-accent-foreground: #ffffff;
+  --fern-default: #ebebec;
+  --fern-default-hover: #e2e2e4;
+  --fern-default-foreground: #18181b;
+  --fern-danger: #ff383c;
+  --fern-border: #dedee0;
+  --fern-focus: #0485f7;
+  --fern-radius: 0.5rem;
 }
 ```
 
@@ -170,9 +170,9 @@ renders correctly against no theme at all and picks one up where it exists.
 The fallbacks are HeroUI's light-theme values converted out of oklch, so an
 unthemed button is not a guess — it is their default.
 
-Two properties are worth knowing about. `--radius` is multiplied by three, so
+Two properties are worth knowing about. `--fern-radius` is multiplied by three, so
 the button stays proportional to the rest of your surfaces rather than needing
-its own token. And `--disabled-opacity` drives the disabled state, so a theme
+its own token. And `--fern-disabled-opacity` drives the disabled state, so a theme
 that needs more contrast there can raise it without restyling the variant.
 
 ### Accessibility

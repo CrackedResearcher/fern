@@ -7,6 +7,19 @@ runtime dependencies beyond React itself.
 bun add @fern-ui/button
 ```
 
+Import the stylesheet once, anywhere in your app:
+
+```tsx
+import "@fern-ui/button/styles.css"
+```
+
+The component is built from Tailwind utilities. Without the stylesheet the
+markup is correct and nothing is styled — it fails quietly rather than loudly,
+so it is worth checking first if a block looks wrong.
+
+Skip it only if you are copy-pasting the source into a Tailwind project of your
+own, where your build generates the utilities already.
+
 ## Usage
 
 ```tsx
@@ -62,24 +75,24 @@ renders correctly against no theme at all:
 
 ```css
 :root {
-  --accent: #0485f7;
-  --accent-hover: #0479dd;
-  --accent-foreground: #ffffff;
-  --default: #ebebec;
-  --default-hover: #e2e2e4;
-  --default-foreground: #18181b;
-  --danger: #ff383c;
-  --border: #dedee0;
-  --focus: #0485f7;
-  --radius: 0.5rem;
+  --fern-accent: #0485f7;
+  --fern-accent-hover: #0479dd;
+  --fern-accent-foreground: #ffffff;
+  --fern-default: #ebebec;
+  --fern-default-hover: #e2e2e4;
+  --fern-default-foreground: #18181b;
+  --fern-danger: #ff383c;
+  --fern-border: #dedee0;
+  --fern-focus: #0485f7;
+  --fern-radius: 0.5rem;
 }
 ```
 
 The fallbacks are HeroUI's light-theme values converted out of oklch, so an
 unthemed button is their default rather than a guess.
 
-`--radius` is multiplied by three, so the button stays proportional to your
-other surfaces without needing its own token. `--disabled-opacity` drives the
+`--fern-radius` is multiplied by three, so the button stays proportional to your
+other surfaces without needing its own token. `--fern-disabled-opacity` drives the
 disabled state.
 
 ## Accessibility
