@@ -27,10 +27,12 @@ Uncontrolled works too — omit `value` and pass `defaultValue`.
 | `defaultValue` | `string` | `"#3b82f6"` | Initial value when uncontrolled. |
 | `onChange` | `(value, color) => void` | — | Fires on every change, including each frame of a drag. |
 | `onChangeComplete` | `(value, color) => void` | — | Fires once when an interaction settles. |
-| `format` | `"hex" \| "rgb" \| "hsl"` | `"hex"` | Format of the string passed to callbacks. |
+| `format` | `"hex" \| "rgb" \| "hsl"` | `"hex"` | Starting format. Affects both the displayed text and the string passed to callbacks. |
+| `formatToggle` | `boolean` | `true` | Let the user cycle hex → rgb → hsl at runtime. |
 | `alpha` | `boolean` | `false` | Show the opacity slider and include alpha in output. |
-| `swatches` | `string[]` | — | Preset colors rendered as a row below the controls. |
+| `sliderLabels` | `boolean` | `true` | Name and live readout above each slider. In HEX and RGBA the readout is the only place the hue appears. |
 | `eyedropper` | `boolean` | `false` | Offer the native screen eyedropper where supported. |
+| `copyable` | `boolean` | — | Show the copy-to-clipboard button. |
 | `disabled` | `boolean` | `false` | Block interaction and dim the control. |
 | `label` | `string` | `"Color picker"` | Accessible name for the group. |
 
@@ -78,8 +80,8 @@ import { parseHex, rgbToHex, hsvToRgb } from "@fern-ui/color-picker/color"
   human-readable `aria-valuetext`.
 - Full keyboard support: arrows nudge by 1%, <kbd>Shift</kbd>+arrows by 10%,
   <kbd>Home</kbd>/<kbd>End</kbd> jump to the ends.
-- Slider hit areas are 44px tall to clear WCAG 2.5.5, while the visible track
-  stays 10px.
+- Slider hit areas are 40px tall to clear WCAG 2.5.5, while the visible track
+  stays 20px.
 - Settled values are announced through a polite live region. Intermediate drag
   frames are deliberately not announced, which would otherwise flood a reader.
 - The field thumb switches between a light and dark ring based on the luminance
