@@ -16,7 +16,7 @@ import {
 const cn = (...classes: (string | false | undefined | null)[]) =>
   classes.filter(Boolean).join(" ")
 
-const SURFACE = "var(--surface, #ffffff)"
+const SURFACE = "var(--fern-surface, #ffffff)"
 
 /**
  * Fade at a scroll boundary, so rows dissolve into the edge instead of being
@@ -86,20 +86,20 @@ export function Row({
         // Two distinct states, as on the trigger: the keyboard/pointer cursor
         // is a neutral wash, the current selection is tinted with the accent so
         // you can tell "where I am" from "what I chose" at a glance.
-        active && !selected && "bg-[var(--default,#ebebec)]",
+        active && !selected && "bg-[var(--fern-default,#ebebec)]",
         selected &&
-          "bg-[color-mix(in_oklab,var(--focus,#0485f7)_12%,transparent)]",
+          "bg-[color-mix(in_oklab,var(--fern-focus,#0485f7)_12%,transparent)]",
         selected && active &&
-          "bg-[color-mix(in_oklab,var(--focus,#0485f7)_20%,transparent)]",
+          "bg-[color-mix(in_oklab,var(--fern-focus,#0485f7)_20%,transparent)]",
       )}
     >
       {showFlags && <Flag country={country} flagSrc={flagSrc} />}
-      <span className="min-w-0 flex-1 truncate text-[14px] text-[var(--foreground,#18181b)]">
+      <span className="min-w-0 flex-1 truncate text-[14px] text-[var(--fern-foreground,#18181b)]">
         {country.name}
       </span>
       {showDialCode && <DialBadge dial={country.dial} />}
       {selected && (
-        <span className="shrink-0 text-[var(--focus,#0485f7)]">
+        <span className="shrink-0 text-[var(--fern-focus,#0485f7)]">
           <CheckIcon />
         </span>
       )}
@@ -148,7 +148,7 @@ export function Flag({
 /**
  * Tabular figures so the badges line up down the column.
  *
- * The fill is a tint of the foreground rather than `--default`, which is also
+ * The fill is a tint of the foreground rather than `--fern-default`, which is also
  * the hovered-row background — a badge painted in it disappears on exactly the
  * row you are pointing at. A tint reads on any surface and stays quiet enough
  * not to compete with the country name.
@@ -160,8 +160,8 @@ export function DialBadge({ dial }: { dial: string }) {
       className="shrink-0 rounded px-1 py-px font-mono text-[11px] leading-[1.45] tabular-nums"
       style={{
         backgroundColor:
-          "color-mix(in oklab, var(--foreground, #18181b) 7%, transparent)",
-        color: "var(--muted, #71717a)",
+          "color-mix(in oklab, var(--fern-foreground, #18181b) 7%, transparent)",
+        color: "var(--fern-muted, #71717a)",
       }}
     >
       {dial}
@@ -184,13 +184,13 @@ export function EmptyState({
       role="status"
       className="flex flex-col items-center gap-1 px-6 py-10 text-center"
     >
-      <span aria-hidden className="mb-2 text-[var(--muted,#71717a)]">
+      <span aria-hidden className="mb-2 text-[var(--fern-muted,#71717a)]">
         {icon ?? <GlobeIcon />}
       </span>
-      <p className="text-[14px] font-medium text-[var(--foreground,#18181b)]">
+      <p className="text-[14px] font-medium text-[var(--fern-foreground,#18181b)]">
         No countries match “{query.trim()}”
       </p>
-      <p className="text-[13px] text-[var(--muted,#71717a)]">
+      <p className="text-[13px] text-[var(--fern-muted,#71717a)]">
         Try a country name, a two-letter code like <b>JP</b>, or a dial code
         like <b>+81</b>.
       </p>
@@ -199,9 +199,9 @@ export function EmptyState({
         onClick={onClear}
         className={cn(
           "mt-3 rounded-full px-3.5 py-1.5 text-[13px] font-medium",
-          "bg-[var(--default,#ebebec)] text-[var(--foreground,#18181b)]",
+          "bg-[var(--fern-default,#ebebec)] text-[var(--fern-foreground,#18181b)]",
           "transition-[background-color,scale] duration-150 active:scale-[0.97]",
-          "hover:bg-[var(--default-hover,#e0e0e2)]",
+          "hover:bg-[var(--fern-default-hover,#e0e0e2)]",
         )}
         style={{ transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)" }}
       >
@@ -264,9 +264,9 @@ export const Trigger = React.forwardRef<
           onClick={onToggle}
           className={cn(
             "flex h-11 w-full items-center gap-2.5 rounded-xl px-3",
-            "bg-[var(--default,#ebebec)] text-[15px] text-[var(--foreground,#18181b)]",
+            "bg-[var(--fern-default,#ebebec)] text-[15px] text-[var(--fern-foreground,#18181b)]",
             "transition-[background-color,scale] duration-150",
-            !disabled && "cursor-pointer hover:bg-[var(--default-hover,#e0e0e2)]",
+            !disabled && "cursor-pointer hover:bg-[var(--fern-default-hover,#e0e0e2)]",
             !disabled && "active:scale-[0.97]",
             disabled && "cursor-not-allowed opacity-50",
             focusRing,
@@ -281,7 +281,7 @@ export const Trigger = React.forwardRef<
               {showDialCode && <DialBadge dial={selected.dial} />}
             </>
           ) : (
-            <span className="flex-1 text-left text-[var(--muted,#71717a)]">
+            <span className="flex-1 text-left text-[var(--fern-muted,#71717a)]">
               {placeholder}
             </span>
           )}
@@ -295,7 +295,7 @@ export const Trigger = React.forwardRef<
                 event.stopPropagation()
                 onClear()
               }}
-              className="grid size-5 shrink-0 place-items-center rounded-full text-[var(--muted,#71717a)] hover:bg-[var(--surface,#fff)]/60 hover:text-[var(--foreground,#18181b)]"
+              className="grid size-5 shrink-0 place-items-center rounded-full text-[var(--fern-muted,#71717a)] hover:bg-[var(--fern-surface,#fff)]/60 hover:text-[var(--fern-foreground,#18181b)]"
             >
               <CloseIcon />
             </span>
@@ -326,7 +326,7 @@ export const SearchField = React.forwardRef<
     <div className="relative flex items-center px-1 pt-1 pb-2">
       <span
         aria-hidden
-        className="pointer-events-none absolute left-3.5 text-[var(--muted,#71717a)]"
+        className="pointer-events-none absolute left-3.5 text-[var(--fern-muted,#71717a)]"
       >
         <SearchIcon />
       </span>
@@ -346,9 +346,9 @@ export const SearchField = React.forwardRef<
         autoComplete="off"
         onChange={(event) => onChange(event.target.value)}
         className={cn(
-          "h-10 w-full rounded-xl bg-[var(--default,#ebebec)] pr-9 pl-9",
-          "text-[15px] text-[var(--foreground,#18181b)] outline-hidden",
-          "placeholder:text-[var(--muted,#71717a)]",
+          "h-10 w-full rounded-xl bg-[var(--fern-default,#ebebec)] pr-9 pl-9",
+          "text-[15px] text-[var(--fern-foreground,#18181b)] outline-hidden",
+          "placeholder:text-[var(--fern-muted,#71717a)]",
           focusRing,
         )}
       />
@@ -359,8 +359,8 @@ export const SearchField = React.forwardRef<
           aria-label="Clear search"
           className={cn(
             "absolute right-3.5 grid size-5 place-items-center rounded-full",
-            "text-[var(--muted,#71717a)] transition-colors duration-150",
-            "hover:bg-[var(--default-hover,#e0e0e2)] hover:text-[var(--foreground,#18181b)]",
+            "text-[var(--fern-muted,#71717a)] transition-colors duration-150",
+            "hover:bg-[var(--fern-default-hover,#e0e0e2)] hover:text-[var(--fern-foreground,#18181b)]",
           )}
         >
           <CloseIcon />
@@ -380,7 +380,7 @@ export function LetterHeader({ letter }: { letter: string }) {
     <div
       aria-hidden
       data-slot="letter"
-      className="sticky top-0 z-10 -mb-2 px-3 pt-2 pb-5 text-[11px] font-medium tracking-wide text-[var(--muted,#71717a)]"
+      className="sticky top-0 z-10 -mb-2 px-3 pt-2 pb-5 text-[11px] font-medium tracking-wide text-[var(--fern-muted,#71717a)]"
       style={{
         // A long tail, not a hard edge. Too short and the row underneath reads
         // as stuck to the letter rather than passing behind it.

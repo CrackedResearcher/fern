@@ -10,6 +10,19 @@ Bundling a highlighter would cost more than the component.
 bun add @fern-ui/code-block
 ```
 
+Import the stylesheet once, anywhere in your app:
+
+```tsx
+import "@fern-ui/code-block/styles.css"
+```
+
+The component is built from Tailwind utilities. Without the stylesheet the
+markup is correct and nothing is styled — it fails quietly rather than loudly,
+so it is worth checking first if a block looks wrong.
+
+Skip it only if you are copy-pasting the source into a Tailwind project of your
+own, where your build generates the utilities already.
+
 ## Usage
 
 ```tsx
@@ -70,14 +83,14 @@ against no theme and picks one up where it exists:
 
 ```css
 :root {
-  --surface: #ffffff;
-  --surface-secondary: #f4f4f5;
-  --background: #060607;
-  --separator: rgb(0 0 0 / 0.1);
-  --foreground: #18181b;
-  --muted: #71717a;
-  --default: #ebebec;
-  --focus: #0485f7;
+  --fern-surface: #ffffff;
+  --fern-surface-secondary: #f4f4f5;
+  --fern-background: #060607;
+  --fern-separator: rgb(0 0 0 / 0.1);
+  --fern-foreground: #18181b;
+  --fern-muted: #71717a;
+  --fern-default: #ebebec;
+  --fern-focus: #0485f7;
 }
 ```
 

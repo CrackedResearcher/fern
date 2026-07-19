@@ -676,7 +676,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
       luminance(color.rgb) > 0.55 ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.98)"
 
     const focusRing =
-      "outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface,#ffffff)]"
+      "outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--fern-focus,#0485f7)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fern-surface,#ffffff)]"
 
     // Declared once, rendered from one of two rows, so they cannot drift. It
     // copies what the channel row displays — a button that always emits hex
@@ -723,7 +723,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           // 8px sides the top corners wanted one value and the sides another,
           // and the field's curve visibly fought the card's.
           "flex w-80 select-none flex-col gap-4 p-2 antialiased",
-          "rounded-3xl bg-[var(--surface,#ffffff)]",
+          "rounded-3xl bg-[var(--fern-surface,#ffffff)]",
           disabled && "pointer-events-none opacity-50 saturate-50",
           className,
         )}
@@ -733,11 +733,11 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
           // the page. Without it the card reads as sitting in a hole.
           //
           // The literal is the light-theme value. Where a host defines
-          // --overlay-shadow the card picks up that host's elevation, including
+          // --fern-overlay-shadow the card picks up that host's elevation, including
           // its dark-theme treatment, which is why there is no dark: variant
           // here any more — one variable covers both.
           boxShadow:
-            "var(--overlay-shadow, 0 14px 28px 0 rgb(0 0 0 / 0.08), 0 -6px 12px 0 rgb(0 0 0 / 0.03), 0 2px 8px 0 rgb(0 0 0 / 0.06), 0 0 0 1px rgb(0 0 0 / 0.04))",
+            "var(--fern-overlay-shadow, 0 14px 28px 0 rgb(0 0 0 / 0.08), 0 -6px 12px 0 rgb(0 0 0 / 0.03), 0 2px 8px 0 rgb(0 0 0 / 0.06), 0 0 0 1px rgb(0 0 0 / 0.04))",
           // Mobile Safari paints a grey box over anything tappable otherwise.
           WebkitTapHighlightColor: "transparent",
         }}
@@ -773,7 +773,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             // See RADIUS in tokens.ts.
             "relative aspect-[4/3] max-h-[240px] w-full touch-none rounded-2xl",
             !disabled && "cursor-crosshair",
-            "outline-hidden focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-[var(--focus,#0485f7)]/70",
+            "outline-hidden focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-[var(--fern-focus,#0485f7)]/70",
           )}
           style={{
             backgroundColor: `hsl(${state.hsv.h} 100% 50%)`,
@@ -862,7 +862,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 hundred lines of focus management and typeahead to arrive back
                 where the platform already is — and it would be the only part of
                 this package that needed a portal. */}
-            <div className="relative flex h-10 min-w-0 flex-1 items-center rounded-2xl bg-[var(--default,#ebebec)]">
+            <div className="relative flex h-10 min-w-0 flex-1 items-center rounded-2xl bg-[var(--fern-default,#ebebec)]">
               <select
                 data-slot="model-select"
                 value={format}
@@ -874,7 +874,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                 }
                 className={cn(
                   "h-full w-full appearance-none rounded-2xl bg-transparent pr-9 pl-3.5",
-                  "text-[13px] font-medium text-[var(--foreground,#18181b)] outline-hidden",
+                  "text-[13px] font-medium text-[var(--fern-foreground,#18181b)] outline-hidden",
                   !disabled && formatToggle && "cursor-pointer",
                   focusRing,
                 )}
@@ -887,7 +887,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
               </select>
               <span
                 aria-hidden
-                className="pointer-events-none absolute right-3 flex text-[var(--muted,#71717a)]"
+                className="pointer-events-none absolute right-3 flex text-[var(--fern-muted,#71717a)]"
               >
                 <ChevronIcon />
               </span>
@@ -960,7 +960,7 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
             id={channelGroupId}
             role="group"
             aria-label="Color channels"
-            className="flex h-12 min-w-0 flex-1 items-center gap-2 rounded-2xl bg-[var(--default,#ebebec)] px-2 py-1"
+            className="flex h-12 min-w-0 flex-1 items-center gap-2 rounded-2xl bg-[var(--fern-default,#ebebec)] px-2 py-1"
           >
             {format === "hex" ? (
               <>
@@ -990,9 +990,9 @@ export const ColorPicker = React.forwardRef<HTMLDivElement, ColorPickerProps>(
                     if (event.key === "Escape") setDraft(null)
                   }}
                   className={cn(
-                    "h-full w-full min-w-0 rounded-xl bg-[var(--surface,#ffffff)] px-3",
+                    "h-full w-full min-w-0 rounded-xl bg-[var(--fern-surface,#ffffff)] px-3",
                     "font-mono text-[13px] tracking-tight tabular-nums lowercase",
-                    "text-[var(--foreground,#18181b)] outline-hidden",
+                    "text-[var(--fern-foreground,#18181b)] outline-hidden",
                     focusRing,
                   )}
                 />
@@ -1100,11 +1100,11 @@ function LabelledSlider({
         // another ~3px of leading below its glyphs, which is why this reads
         // tighter than the number alone suggests.
         <div className="-mb-0.5 flex items-center justify-between px-0.5 leading-none">
-          <span className="text-[12px] text-[var(--muted,#71717a)]">
+          <span className="text-[12px] text-[var(--fern-muted,#71717a)]">
             {label}
           </span>
           {/* Tabular figures so the readout doesn't jitter while dragging. */}
-          <span className="font-mono text-[12px] tabular-nums text-[var(--muted,#71717a)]">
+          <span className="font-mono text-[12px] tabular-nums text-[var(--fern-muted,#71717a)]">
             {readout}
           </span>
         </div>
@@ -1132,7 +1132,7 @@ function LabelledSlider({
           // on this padded parent.
           "relative flex h-10 touch-none items-center rounded-2xl",
           !disabled && "cursor-pointer",
-          "outline-hidden focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50",
+          "outline-hidden focus-visible:ring-[3px] focus-visible:ring-[var(--fern-focus,#0485f7)]/50",
         )}
       >
         <div
@@ -1201,7 +1201,7 @@ function ChannelField({
     <div className="flex min-w-0 flex-1 items-center gap-1.5">
       <span
         aria-hidden
-        className="shrink-0 text-[11px] text-[var(--muted,#71717a)]"
+        className="shrink-0 text-[11px] text-[var(--fern-muted,#71717a)]"
       >
         {spec.short}
       </span>
@@ -1255,9 +1255,9 @@ function ChannelField({
           }
         }}
         className={cn(
-          "h-10 w-full min-w-0 rounded-xl bg-[var(--surface,#ffffff)] px-1 text-center",
+          "h-10 w-full min-w-0 rounded-xl bg-[var(--fern-surface,#ffffff)] px-1 text-center",
           "text-[12px] tabular-nums",
-          "text-[var(--foreground,#18181b)] outline-hidden",
+          "text-[var(--fern-foreground,#18181b)] outline-hidden",
           focusRing,
         )}
       />
@@ -1289,14 +1289,14 @@ function RoundButton({
       title={label}
       className={cn(
         "grid size-10 shrink-0 place-items-center rounded-full",
-        // #71717a, matching every other --muted fallback in this file. It read
+        // #71717a, matching every other --fern-muted fallback in this file. It read
         // #52525b, so a themed page rendered the icons and the slider labels
         // the same colour while an unthemed one rendered the icons darker —
         // one token resolving to two literals means the fallback does not
         // preserve the relationship the theme describes.
-        "bg-[var(--default,#ebebec)] text-[var(--muted,#71717a)]",
+        "bg-[var(--fern-default,#ebebec)] text-[var(--fern-muted,#71717a)]",
         "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
-        "hover:bg-[var(--default-hover,#e0e0e2)] hover:text-[var(--foreground,#18181b)]",
+        "hover:bg-[var(--fern-default-hover,#e0e0e2)] hover:text-[var(--fern-foreground,#18181b)]",
         focusRing,
       )}
       style={{ transitionTimingFunction: EASE_OUT }}

@@ -65,7 +65,7 @@ export function CodeBlock({
   const clamped = overflows && !expanded
   const bar = label ?? lang
   const surface =
-    "bg-[var(--surface,#ffffff)] dark:bg-[var(--background,#060607)]"
+    "bg-[var(--fern-surface,#ffffff)] dark:bg-[var(--fern-background,#060607)]"
 
   return (
     <div
@@ -75,21 +75,21 @@ export function CodeBlock({
         "code-section relative",
         standalone
           ? cn(
-              "my-4 rounded-xl border border-[var(--separator,rgb(0_0_0/0.1))] bg-[var(--surface-secondary,#f4f4f5)]",
+              "my-4 rounded-xl border border-[var(--fern-separator,rgb(0_0_0/0.1))] bg-[var(--fern-surface-secondary,#f4f4f5)]",
               // The bar fills the top when there is one; without it the
               // surface needs its own inset there or it sits flush to the edge.
               bar ? "px-1 pb-1" : "p-1",
             )
-          : "rounded-b-xl border border-[var(--separator,rgb(0_0_0/0.1))] bg-transparent",
+          : "rounded-b-xl border border-[var(--fern-separator,rgb(0_0_0/0.1))] bg-transparent",
         className,
       )}
     >
       {bar && (
         <div
           data-slot="bar"
-          className="flex items-center justify-between gap-3 bg-[var(--surface-secondary,#f4f4f5)] py-1 pr-1 pl-4"
+          className="flex items-center justify-between gap-3 bg-[var(--fern-surface-secondary,#f4f4f5)] py-1 pr-1 pl-4"
         >
-          <span className="font-mono text-xs text-[var(--foreground,#18181b)]">
+          <span className="font-mono text-xs text-[var(--fern-foreground,#18181b)]">
             {label ?? lang?.toUpperCase()}
           </span>
           {copyable && <CopyButton targetRef={contentRef} />}
@@ -122,8 +122,8 @@ export function CodeBlock({
           data-slot="fade"
           className={cn(
             "pointer-events-none absolute inset-x-1 bottom-1 h-24 rounded-b-lg",
-            "bg-gradient-to-b from-transparent to-[var(--surface,#ffffff)]",
-            "dark:to-[var(--background,#060607)]",
+            "bg-gradient-to-b from-transparent to-[var(--fern-surface,#ffffff)]",
+            "dark:to-[var(--fern-background,#060607)]",
           )}
         />
       )}
@@ -135,15 +135,15 @@ export function CodeBlock({
           onClick={() => setExpanded((value) => !value)}
           className={cn(
             // 36px tall, 12px inline, r24 — HeroUI's .button--sm at
-            // calc(--radius * 3), which is what this replaced. A plain button
+            // calc(--fern-radius * 3), which is what this replaced. A plain button
             // keeps the package dependency-free, but it has to land on the
             // same metrics or the block stops matching the rest of the system.
             "absolute right-1/2 bottom-2 h-9 translate-x-1/2 rounded-3xl px-3",
-            "bg-[var(--surface,#ffffff)] text-xs text-[var(--foreground,#18181b)]",
+            "bg-[var(--fern-surface,#ffffff)] text-xs text-[var(--fern-foreground,#18181b)]",
             "shadow-sm shadow-black/5",
             "transition-[background-color,scale] duration-150 active:scale-[0.97]",
-            "hover:bg-[var(--default,#ebebec)]",
-            "outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50",
+            "hover:bg-[var(--fern-default,#ebebec)]",
+            "outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--fern-focus,#0485f7)]/50",
           )}
           style={{ transitionTimingFunction: EASE_OUT }}
         >
@@ -193,10 +193,10 @@ function CopyButton({
       className={cn(
         // Matches the toggle: 36px, same radius family.
         "grid size-9 shrink-0 place-items-center rounded-3xl",
-        "text-[var(--muted,#71717a)]",
+        "text-[var(--fern-muted,#71717a)]",
         "transition-[background-color,color,scale] duration-150 active:scale-[0.97]",
-        "hover:bg-[var(--default,#ebebec)] hover:text-[var(--foreground,#18181b)]",
-        "outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50",
+        "hover:bg-[var(--fern-default,#ebebec)] hover:text-[var(--fern-foreground,#18181b)]",
+        "outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--fern-focus,#0485f7)]/50",
       )}
       style={{ transitionTimingFunction: EASE_OUT }}
     >

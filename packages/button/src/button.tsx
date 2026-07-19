@@ -34,61 +34,61 @@ export type ButtonSize = "sm" | "md" | "lg"
  * class strings, and hover/pressed stay in one place.
  */
 type ButtonVars = React.CSSProperties &
-  Record<"--btn-bg" | "--btn-bg-hover" | "--btn-bg-pressed" | "--btn-fg", string>
+  Record<"--fern-btn-bg" | "--fern-btn-bg-hover" | "--fern-btn-bg-pressed" | "--fern-btn-fg", string>
 
 /**
  * Literal fallbacks are the light-theme defaults converted from HeroUI's oklch
  * source, so the button renders correctly with no theme loaded at all.
- * `--accent` is oklch(62.04% .195 253.83) → #0485f7, and so on.
+ * `--fern-accent` is oklch(62.04% .195 253.83) → #0485f7, and so on.
  */
 const VARIANTS: Record<ButtonVariant, ButtonVars> = {
   primary: {
-    "--btn-bg": "var(--accent, #0485f7)",
-    "--btn-bg-hover": "var(--accent-hover, #0479dd)",
-    "--btn-bg-pressed": "var(--accent-hover, #0479dd)",
-    "--btn-fg": "var(--accent-foreground, #ffffff)",
+    "--fern-btn-bg": "var(--fern-accent, #0485f7)",
+    "--fern-btn-bg-hover": "var(--fern-accent-hover, #0479dd)",
+    "--fern-btn-bg-pressed": "var(--fern-accent-hover, #0479dd)",
+    "--fern-btn-fg": "var(--fern-accent-foreground, #ffffff)",
   },
   secondary: {
-    "--btn-bg": "var(--default, #ebebec)",
-    "--btn-bg-hover": "var(--default-hover, #e2e2e4)",
-    "--btn-bg-pressed": "var(--default-hover, #e2e2e4)",
-    "--btn-fg": "var(--accent-soft-foreground, #0b6bc4)",
+    "--fern-btn-bg": "var(--fern-default, #ebebec)",
+    "--fern-btn-bg-hover": "var(--fern-default-hover, #e2e2e4)",
+    "--fern-btn-bg-pressed": "var(--fern-default-hover, #e2e2e4)",
+    "--fern-btn-fg": "var(--fern-accent-soft-foreground, #0b6bc4)",
   },
-  // Deliberately inherits `--btn-fg`. HeroUI's tertiary sets no foreground, so
+  // Deliberately inherits `--fern-btn-fg`. HeroUI's tertiary sets no foreground, so
   // it takes the surrounding text colour — that is what makes it the neutral
   // choice inside a toolbar.
   tertiary: {
-    "--btn-bg": "var(--default, #ebebec)",
-    "--btn-bg-hover": "var(--default-hover, #e2e2e4)",
-    "--btn-bg-pressed": "var(--default-hover, #e2e2e4)",
-    "--btn-fg": "currentColor",
+    "--fern-btn-bg": "var(--fern-default, #ebebec)",
+    "--fern-btn-bg-hover": "var(--fern-default-hover, #e2e2e4)",
+    "--fern-btn-bg-pressed": "var(--fern-default-hover, #e2e2e4)",
+    "--fern-btn-fg": "currentColor",
   },
   ghost: {
-    "--btn-bg": "transparent",
-    "--btn-bg-hover": "var(--default, #ebebec)",
-    "--btn-bg-pressed": "var(--default, #ebebec)",
-    "--btn-fg": "var(--default-foreground, #18181b)",
+    "--fern-btn-bg": "transparent",
+    "--fern-btn-bg-hover": "var(--fern-default, #ebebec)",
+    "--fern-btn-bg-pressed": "var(--fern-default, #ebebec)",
+    "--fern-btn-fg": "var(--fern-default-foreground, #18181b)",
   },
   outline: {
-    "--btn-bg": "transparent",
-    // 60% rather than the flat `--default` the other variants use: an outlined
+    "--fern-btn-bg": "transparent",
+    // 60% rather than the flat `--fern-default` the other variants use: an outlined
     // button already reads as a surface, so a full-strength hover fill makes it
     // jump forward more than the others do.
-    "--btn-bg-hover": "color-mix(in srgb, var(--default, #ebebec) 60%, transparent)",
-    "--btn-bg-pressed": "var(--default, #ebebec)",
-    "--btn-fg": "var(--default-foreground, #18181b)",
+    "--fern-btn-bg-hover": "color-mix(in srgb, var(--fern-default, #ebebec) 60%, transparent)",
+    "--fern-btn-bg-pressed": "var(--fern-default, #ebebec)",
+    "--fern-btn-fg": "var(--fern-default-foreground, #18181b)",
   },
   danger: {
-    "--btn-bg": "var(--danger, #ff383c)",
-    "--btn-bg-hover": "var(--danger-hover, #f22e33)",
-    "--btn-bg-pressed": "var(--danger-hover, #f22e33)",
-    "--btn-fg": "var(--danger-foreground, #ffffff)",
+    "--fern-btn-bg": "var(--fern-danger, #ff383c)",
+    "--fern-btn-bg-hover": "var(--fern-danger-hover, #f22e33)",
+    "--fern-btn-bg-pressed": "var(--fern-danger-hover, #f22e33)",
+    "--fern-btn-fg": "var(--fern-danger-foreground, #ffffff)",
   },
   "danger-soft": {
-    "--btn-bg": "color-mix(in oklab, var(--danger, #ff383c) 15%, transparent)",
-    "--btn-bg-hover": "color-mix(in oklab, var(--danger, #ff383c) 20%, transparent)",
-    "--btn-bg-pressed": "color-mix(in oklab, var(--danger, #ff383c) 20%, transparent)",
-    "--btn-fg": "var(--danger-soft-foreground, #cc2427)",
+    "--fern-btn-bg": "color-mix(in oklab, var(--fern-danger, #ff383c) 15%, transparent)",
+    "--fern-btn-bg-hover": "color-mix(in oklab, var(--fern-danger, #ff383c) 20%, transparent)",
+    "--fern-btn-bg-pressed": "color-mix(in oklab, var(--fern-danger, #ff383c) 20%, transparent)",
+    "--fern-btn-fg": "var(--fern-danger-soft-foreground, #cc2427)",
   },
 }
 
@@ -109,7 +109,7 @@ const SIZES: Record<ButtonSize, string> = {
 
 /** The one variant that is not purely a colour swap. */
 const VARIANT_CLASS: Partial<Record<ButtonVariant, string>> = {
-  outline: "border border-[var(--border,#dedee0)]",
+  outline: "border border-[var(--fern-border,#dedee0)]",
 }
 
 /** Icon-only trades the inline padding for a fixed width, one step per size. */
@@ -131,21 +131,21 @@ const ICON =
 
 const BASE =
   "relative isolate inline-flex w-fit items-center justify-center gap-2 " +
-  "rounded-[calc(var(--radius,0.5rem)*3)] " +
+  "rounded-[calc(var(--fern-radius,0.5rem)*3)] " +
   "font-medium whitespace-nowrap select-none " +
   // Opts out of the ~300ms delay a browser holds a tap for in case it becomes
   // a double-tap zoom. Without it every press on touch feels a beat late.
   "touch-manipulation " +
-  "cursor-[var(--cursor-interactive,pointer)] " +
+  "cursor-[var(--fern-cursor-interactive,pointer)] " +
   // `[color:…]` rather than `text-[…]`: `text-` is the font-size family as far
   // as the merge is concerned, and a size override must not strip the colour.
-  "bg-[var(--btn-bg)] [color:var(--btn-fg)] " +
-  "hover:bg-[var(--btn-bg-hover)] active:bg-[var(--btn-bg-pressed)] " +
+  "bg-[var(--fern-btn-bg)] [color:var(--fern-btn-fg)] " +
+  "hover:bg-[var(--fern-btn-bg-hover)] active:bg-[var(--fern-btn-bg-pressed)] " +
   "outline-none " +
-  "focus-visible:ring-2 focus-visible:ring-[var(--focus,#0485f7)] " +
-  "focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background,#ffffff)] " +
-  "disabled:pointer-events-none disabled:opacity-[var(--disabled-opacity,0.5)] " +
-  "disabled:cursor-[var(--cursor-disabled,not-allowed)] " +
+  "focus-visible:ring-2 focus-visible:ring-[var(--fern-focus,#0485f7)] " +
+  "focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fern-background,#ffffff)] " +
+  "disabled:pointer-events-none disabled:opacity-[var(--fern-disabled-opacity,0.5)] " +
+  "disabled:cursor-[var(--fern-cursor-disabled,not-allowed)] " +
   // Only the three properties that actually change. `transition: all` would
   // also ease the ring, which should appear instantly on focus.
   "transition-[transform,background-color,box-shadow] " +

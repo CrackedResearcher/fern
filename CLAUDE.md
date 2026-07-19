@@ -81,15 +81,30 @@ anything.
 theme:
 
 ```tsx
-background: "var(--surface, #ffffff)"
+background: "var(--fern-surface, #ffffff)"
 ```
 
 They theme automatically where variables exist and still render correctly
 where they do not.
 
+**Every variable is `--fern-` prefixed, and that is not cosmetic.** Bare names
+collide: `create-next-app`'s own template defines `--foreground`, so a host in
+dark mode handed the picker near-white text while it kept its own white
+`--surface` fallback, and every label in the block disappeared. The host
+defines half the pair and the block defaults the other half, which no fallback
+can detect. Namespacing makes the collision impossible.
+
+**Published packages ship their own stylesheet.** The blocks are Tailwind
+utilities, and a consumer without Tailwind gets correct markup with no styling
+at all — silently, the same shape as the `@source` trap. `src/styles.css`
+imports the theme and utilities layers only, never preflight, and builds to
+`dist/styles.css` for consumers to import. Tailwind is a devDependency; it
+never reaches a consumer's graph.
+
 **Third-party token names appear in exactly one mapping file.** Components use
 fern's semantic names (`bg-surface`, `text-accent`). A foundation rename or
-swap must be a one-file change.
+swap must be a one-file change — `apps/docs/app/global.css` maps `--fern-*`
+onto the HeroUI foundation.
 
 **Accessibility is not optional and not a later pass.** Every control carries a
 role, a label, and a human-readable `aria-valuetext`. Interactive targets clear

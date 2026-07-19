@@ -216,7 +216,7 @@ export const CountryPicker = React.forwardRef<
     })
 
   const focusRing =
-    "outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--focus,#0485f7)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface,#ffffff)]"
+    "outline-none focus-visible:ring-[3px] focus-visible:ring-[var(--fern-focus,#0485f7)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fern-surface,#ffffff)]"
 
   // Section letters are computed once per result set rather than per row, so a
   // row only has to compare against the letter before it.
@@ -268,7 +268,7 @@ export const CountryPicker = React.forwardRef<
           data-placement={position.placement}
           role="dialog"
           aria-label={label}
-          className="fixed z-50 overflow-hidden rounded-2xl bg-[var(--surface,#ffffff)] p-1"
+          className="fixed z-50 overflow-hidden rounded-2xl bg-[var(--fern-surface,#ffffff)] p-1"
           style={{
             top: position.placement === "bottom" ? position.top : undefined,
             bottom:
@@ -278,7 +278,7 @@ export const CountryPicker = React.forwardRef<
             left: position.left,
             width: position.width,
             boxShadow:
-              "var(--overlay-shadow, 0 14px 28px 0 rgb(0 0 0 / 0.08), 0 2px 8px 0 rgb(0 0 0 / 0.06), 0 0 0 1px rgb(0 0 0 / 0.06))",
+              "var(--fern-overlay-shadow, 0 14px 28px 0 rgb(0 0 0 / 0.08), 0 2px 8px 0 rgb(0 0 0 / 0.06), 0 0 0 1px rgb(0 0 0 / 0.06))",
             // Scales from the trigger it belongs to, not from its own centre.
             transformOrigin:
               position.placement === "bottom" ? "top center" : "bottom center",
