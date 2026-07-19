@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run typecheck
+
+      # Typechecking is not evidence of anything shippable. A pass early in this
+      # project shipped a build where Tailwind had dropped every class, and the
+      # 0.1.0 packages typechecked while shipping no client boundary, no
+      # stylesheet, and two missing .d.ts files.
+      - run: bun run build
+
+      # Which is what this is for: it asserts against dist, not src.
+      - run: bun run verify

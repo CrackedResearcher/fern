@@ -1,6 +1,6 @@
 # fern docs
 
-The documentation site, and the test harness. There is deliberately no separate
+The documentation site — live at https://fernui.vercel.app — and the test harness. There is deliberately no separate
 demo app — blocks get exercised and documented in the same place, so a block
 that looks wrong here is wrong.
 
