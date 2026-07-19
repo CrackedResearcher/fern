@@ -27,3 +27,8 @@ jobs:
 
       # Which is what this is for: it asserts against dist, not src.
       - run: bun run verify
+
+      # And this installs the packed tarballs into a Next app that sits outside
+      # the workspace globs, so nothing resolves to local source. It is the only
+      # check here that exercises the artifact a stranger actually receives.
+      - run: bun run e2e
