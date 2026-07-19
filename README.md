@@ -30,4 +30,4 @@ bun run dev
 
 ## License
 
-MIT. See [`NOTICE`](NOTICE) for more.
+[MIT](LICENSE). See [`NOTICE`](NOTICE) for third-party attribution.
