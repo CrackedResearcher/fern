@@ -27,8 +27,6 @@ bun install
 bun run dev
 ```
 
-The docs site and playground run at localhost:5200. See [`apps/docs`](apps/docs).
-
 ## License
 
-MIT. See [`NOTICE`](NOTICE) for third-party attribution.
+MIT. See [`NOTICE`](NOTICE) for more.
