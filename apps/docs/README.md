@@ -88,6 +88,24 @@ located file.
 client component is undefined by the time a server component resolves it, so
 `<Foo.Bar>` in MDX throws. Export slots as separate components.
 
+## Deployment
+
+`vercel.json` at the repo root configures this app. It is the only deployable
+thing in the repo — the packages go to npm.
+
+The build command builds the packages before the site, and that order is
+load-bearing:
+
+```
+bun run --filter '@fern-ui/*' build && bun run --filter docs build
+```
+
+`dist/` is gitignored, so a fresh clone has none. Only `@fern-ui/color-picker`
+is aliased to source (`tsconfig` paths + `transpilePackages`); the other three
+resolve through their `package.json` to `dist/index.js`. Building the site
+alone fails with `module-not-found` on all three — it passes locally only
+because a previous build left `dist/` behind.
+
 ## Attribution
 
 This app's theme foundation — colour, elevation, radius, spacing, and the
