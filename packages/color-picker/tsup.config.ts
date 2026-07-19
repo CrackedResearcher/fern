@@ -1,21 +1,38 @@
 import { defineConfig } from "tsup"
 
-export default defineConfig({
-  // Separate entries rather than one bundle, so importing `@fern-ui/color-picker/color`
-  // never drags the React component into a consumer's graph.
-  entry: {
-    index: "src/index.ts",
-    color: "src/color.ts",
-    "color-picker": "src/color-picker.tsx",
-  },
-  format: ["esm", "cjs"],
+const shared = {
+  format: ["esm", "cjs"] as const,
   dts: true,
-  clean: true,
-  treeshake: false,
-  splitting: true,
   external: ["react", "react-dom"],
-  // esbuild strips directives during bundling, so the client boundary has to be
-  // re-added. It lands on every chunk; `color` is pure math and would ideally
-  // stay server-importable — revisit with a preserve-directives plugin.
-  banner: { js: '"use client";' },
-})
+}
+
+/**
+ * Two passes, because the client boundary is per entry and tsup's `banner` is
+ * per config. Bundling them together marks the colour maths as client code,
+ * which hands a server component client references instead of the functions.
+ */
+export default defineConfig([
+  {
+    ...shared,
+    entry: { index: "src/index.ts", "color-picker": "src/color-picker.tsx" },
+    clean: false,
+    splitting: true,
+    /**
+     * esbuild strips directives when it bundles, so the boundary is re-added
+     * here — and `treeshake` stays off because it runs rollup over esbuild's
+     * output afterwards, which drops the directive again and warns that it
+     * "was ignored". That warning was the only sign nothing shipped a boundary.
+     */
+    treeshake: false,
+    banner: { js: '"use client";' },
+  },
+  {
+    ...shared,
+    // Pure maths, no React, no banner — this entry exists to be importable
+    // from anywhere, including a server component.
+    entry: { color: "src/color.ts" },
+    clean: false,
+    splitting: false,
+    treeshake: true,
+  },
+])
