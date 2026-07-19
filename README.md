@@ -1,59 +1,33 @@
-# fern
+![fern](.github/assets/banner.png)
 
-Thoughtfully designed React UI blocks. Low-dependency, copy-paste, yours to edit.
+React UI blocks that get the small things right. Thoughtfully designed, zero runtime dependencies, copy-paste friendly. **Yours to edit.**
+
+<br />
+
+<a href="https://www.npmjs.com/package/@fern-ui/color-picker"><img src="https://badgen.net/npm/v/@fern-ui/color-picker?color=90d068&labelColor=2b2b2b" alt="npm" /></a>
+&nbsp;&nbsp;
+<a href="https://github.com/CrackedResearcher/fern/stargazers"><img src="https://badgen.net/github/stars/CrackedResearcher/fern?color=90d068&labelColor=2b2b2b" alt="stars" /></a>
+&nbsp;&nbsp;
+<a href="https://react.dev"><img src="https://badgen.net/badge/react/18%20%7C%2019/90d068?labelColor=2b2b2b" alt="react 18 | 19" /></a>
+
+<br />
 
 ## Blocks
 
 | Package | Description |
 | --- | --- |
-| [`@fern-ui/color-picker`](packages/color-picker) | Accessible color picker with alpha, swatches, and eyedropper. |
+| [`@fern-ui/button`](packages/button) | A button. |
+| [`@fern-ui/code-block`](packages/code-block) | A code viewer. |
+| [`@fern-ui/color-picker`](packages/color-picker) | A color picker. |
+| [`@fern-ui/country-picker`](packages/country-picker) | A searchable country select. |
 
-## Principles
-
-**Low dependency.** Blocks depend on React and nothing else at runtime. Color
-math, drag handling, and keyboard behaviour are written rather than installed.
-
-**Tree-shakeable.** Every package is `sideEffects: false` with granular entry
-points, so importing a utility never drags a component into your bundle.
-
-**Accessible by default.** Full keyboard support, correct ARIA, 44px hit areas,
-live-region announcements, and `prefers-reduced-motion` support — not as an
-afterthought toggle.
-
-**Yours to edit.** Blocks are meant to be copied into your codebase and changed.
-The npm package is a convenience, not a lock-in.
-
-## Development
+## Documentation
 
 ```bash
 bun install
-bun run dev        # docs at localhost:5200
-bun run typecheck
-bun run build
+bun run dev
 ```
-
-The docs app aliases packages to their source, so changes hot-reload without a
-build step.
-
-## Layout
-
-```
-packages/          one folder per block
-apps/docs          docs site and live playground
-```
-
-## Theme foundation
-
-The documentation site's colour, elevation, radius, spacing, and component
-styles come from [`@heroui/styles`](https://github.com/heroui-inc/heroui/tree/v3/packages/styles)
-by HeroUI, consumed as a pinned npm dependency rather than copied in. See
-[`NOTICE`](NOTICE) for attribution and a note on the package's conflicting
-licence metadata.
-
-The published blocks under `packages/` do **not** depend on it. They read CSS
-custom properties with literal fallbacks, so they pick up a host's theme where
-one exists and render correctly where it does not.
 
 ## License
 
-MIT
+MIT. See [`NOTICE`](NOTICE) for more.
