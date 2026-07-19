@@ -5,7 +5,7 @@ export default defineConfig({
   format: ["esm", "cjs"],
   dts: true,
   clean: true,
-  treeshake: true,
+  treeshake: false,
   splitting: true,
   external: ["react", "react-dom"],
   // esbuild strips directives during bundling, so the client boundary has to
