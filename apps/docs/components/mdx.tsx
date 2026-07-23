@@ -26,6 +26,13 @@ import {
   ColorPickerMinimal,
   ColorPickerModel,
 } from "@/components/demos/color-picker-demo"
+import {
+  ModelPickerDemo,
+  ModelPickerMinimal,
+  ModelPickerPill,
+  ModelPickerPrices,
+  ModelPickerRecent,
+} from "@/components/demos/model-picker-demo"
 
 /**
  * Components reachable from MDX without an import in every file. Demos are
@@ -64,6 +71,11 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     CountryPickerDemo,
     CountryPickerPriority,
     CountryPickerPlain,
+    ModelPickerDemo,
+    ModelPickerPill,
+    ModelPickerPrices,
+    ModelPickerRecent,
+    ModelPickerMinimal,
     ...components,
   }
 }

@@ -16,7 +16,7 @@
 import { readFileSync, existsSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 
-const PACKAGES = ["button", "code-block", "color-picker", "country-picker"]
+const PACKAGES = ["button", "code-block", "color-picker", "country-picker", "model-picker"]
 
 /**
  * Entries that must NOT carry a client boundary. They exist so a consumer can
@@ -29,6 +29,7 @@ const PACKAGES = ["button", "code-block", "color-picker", "country-picker"]
 const PURE_ENTRIES = {
   "color-picker": ["./color"],
   "country-picker": ["./countries"],
+  "model-picker": ["./model"],
   button: [],
   "code-block": [],
 }

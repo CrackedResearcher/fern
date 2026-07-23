@@ -1,0 +1,280 @@
+---
+title: Model Picker
+description: An AI model picker with search, capability filters, recents and locked models.
+---
+
+<Preview>
+  <PreviewDemo>
+    <ModelPickerDemo />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+import { ModelPicker } from "@fern-ui/model-picker"
+
+const [model, setModel] = useState("claude-sonnet-5")
+
+<ModelPicker models={MODELS} value={model} onChange={setModel} />
+```
+
+  </PreviewCode>
+</Preview>
+
+Choosing a model is a decision, not a preference — the question is never "which
+name do I like" but "which of these, for this job, at this price". So the panel
+is built to answer that comparison rather than to list names: the price sits
+beside every name, locked models stay visible and say why, and the capability
+chips come from your own tags.
+
+Hover, selection, badge and fade treatments are taken from
+[Country Picker](/docs/components/country-picker) rather than reinvented — a
+block that picks its own selected-state tint is recognisably a different
+person's work sitting next to the others.
+
+There is no bundled model list. One goes stale in weeks, and a wrong price
+inside a component library is worse than no price at all.
+
+## Examples
+
+### The detail pane is opt-in
+
+`showDetails` adds a second pane beside the list with the active model's
+description, meters and tradeoffs. It is off by default: the list on its own
+answers the question most of the time, and a panel that doubles in width to show
+prose nobody asked for is heavier than what it replaced.
+
+Where it is on, it is open from the moment the panel is. Revealing it on hover
+was tried first and was wrong twice over — it made the information mouse-only,
+and a dwell delay stacked on an enter transition meant the pane took the better
+part of half a second to answer, which reads as the component thinking rather
+than responding. Nothing that can lag is the only preview that never lags.
+
+### Meters are relative to your catalogue
+
+`speed` and `quality` take any scale you like — 1-5, tokens per second, a
+percentage — and are normalised across the models you actually offer. "Fast"
+has no meaning without a population, and a fixed tier invites every model to be
+marked a four.
+
+Cost is normalised only within the models sharing a price denominator. Credits
+per second and credits per image are different quantities; ranking them against
+each other would put a cheap video model below an expensive image one for no
+reason anyone could act on.
+
+```tsx
+{ price: { amount: 3, symbol: "$", per: "1M" }, speed: 4, quality: 4 }
+```
+
+A `symbol` drops the unit noun everywhere: `$3/1M` says what "3 dollars per 1M"
+says in a third of the width, on every row. `from: true` marks the figure as a
+floor rather than the price — presenting a floor as exact is something a user
+only discovers on their invoice.
+
+### Prices
+
+Off by default. Most of the time the choice is made on capability, and the
+figure is one more thing to read past on every row — a column of prices also
+quietly reframes the list as a menu, which is a stronger claim than a component
+should make on its own.
+
+<Preview>
+  <PreviewDemo>
+    <ModelPickerPrices />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<ModelPicker models={MODELS} value={model} onChange={setModel} showPrice />
+```
+
+  </PreviewCode>
+</Preview>
+
+### Compact trigger
+
+`variant="pill"` is the form for a config row sitting beside aspect, duration
+and the rest. It stays 40px: it is the compact variant, but the floor for an
+interactive target does not move because a control got smaller.
+
+It opens on click, not hover. Hover-opening a menu in a dense row fires on
+every pass of the cursor, and means nothing at all on touch.
+
+<Preview>
+  <PreviewDemo>
+    <ModelPickerPill />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<ModelPicker models={MODELS} value={model} onChange={setModel} variant="pill" />
+```
+
+  </PreviewCode>
+</Preview>
+
+### Recents
+
+The two models someone alternates between are otherwise buried, and re-finding
+them is the most repeated action this component has. `recent` pins them into a
+leading section — but only while idle, since once someone is searching or
+filtering they have said what they want, and pinning the same rows twice makes
+a short result set look longer than it is.
+
+Persisting the list is yours to decide. A block that writes to `localStorage`
+on its own is a surprise in someone else's app.
+
+<Preview>
+  <PreviewDemo>
+    <ModelPickerRecent />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<ModelPicker
+  models={MODELS}
+  value={model}
+  onChange={(id) => {
+    setModel(id)
+    setRecent((r) => [id, ...r.filter((x) => x !== id)].slice(0, 3))
+  }}
+/>
+```
+
+  </PreviewCode>
+</Preview>
+
+### Capability filters
+
+The chips are derived from the `tags` on your models, never configured
+separately — the two cannot drift out of step, and adding a tag cannot silently
+fail to offer a filter for it.
+
+They narrow rather than widen: picking `vision` and then `fast` is someone
+building up a requirement, and answering that with a longer list than they
+started from reads as the control ignoring them. Chips that would empty the
+list are disabled in place rather than removed, because a chip row that reflows
+as you click through it puts the next chip under a moving target. Backspace on
+an empty query removes the last one.
+
+### Locked models
+
+A model gated behind a plan keeps its row, keeps its details, and says why. The
+cursor still lands on it so the reason is reachable; only selection is blocked.
+A model nobody can see is a model nobody can upgrade for.
+
+```tsx
+{
+  disabled: true,
+  disabledReason: "Available on the Scale plan. Your workspace is on Team.",
+}
+```
+
+### Short lists
+
+Search and chips appear on their own once the catalogue is long enough to need
+them — a search box over four models is noise.
+
+<Preview>
+  <PreviewDemo>
+    <ModelPickerMinimal />
+  </PreviewDemo>
+  <PreviewCode>
+
+```tsx
+<ModelPicker models={MODELS.slice(0, 3)} value={model} onChange={setModel} />
+```
+
+  </PreviewCode>
+</Preview>
+
+### Logos
+
+`logo` is a URL you supply, drawn straight into the row — no plate, no ring, no
+box. A mark on the surface reads as part of the row; the same mark inside a
+bordered tile reads as a favicon someone pasted in, and ten of them down a list
+are ten little boxes competing with the names beside them.
+
+The tradeoff is real: a monochrome black mark is invisible on a dark panel,
+because nothing here can know what is inside the file. `logoBackground` puts a
+filled brand-coloured tile back for a mark that needs one.
+
+A model with no logo, or one whose URL fails, falls back to the provider's
+initial. Not hypothetical — the demo above hit it the day a CDN dropped one of
+the marks it was using.
+
+### Keyboard
+
+Arrows move, Home and End jump to the ends, PageUp and PageDown move by ten.
+Enter selects, Escape closes, Tab closes and moves on. Backspace on an empty
+query removes the last filter chip. The trigger opens on Enter, Space or
+ArrowDown, and the list opens with the cursor on the current selection, scrolled
+to it.
+
+## Installation
+
+<InstallTabs pkg="@fern-ui/model-picker" />
+
+Or copy these files into your project. No runtime dependencies beyond React;
+every one of them is imported by the component.
+
+<ComponentSource pkg="model-picker" file="model-picker.tsx" />
+<ComponentSource pkg="model-picker" file="parts.tsx" />
+<ComponentSource pkg="model-picker" file="chrome.tsx" />
+<ComponentSource pkg="model-picker" file="details.tsx" />
+<ComponentSource pkg="model-picker" file="empty.tsx" />
+<ComponentSource pkg="model-picker" file="model.ts" />
+<ComponentSource pkg="model-picker" file="search.ts" />
+<ComponentSource pkg="model-picker" file="filters.ts" />
+<ComponentSource pkg="model-picker" file="keyboard.ts" />
+<ComponentSource pkg="model-picker" file="use-model-list.ts" />
+<ComponentSource pkg="model-picker" file="use-panel-geometry.ts" />
+<ComponentSource pkg="model-picker" file="use-open-state.ts" />
+<ComponentSource pkg="model-picker" file="use-anchored-position.ts" />
+<ComponentSource pkg="model-picker" file="icons.tsx" />
+
+## Props
+
+<PropsTable
+  rows={[
+    { name: "models", type: "Model[]", description: "The catalogue. Order is preserved — put the model you want chosen first." },
+    { name: "value", type: "string", description: "Controlled selection, as a model id." },
+    { name: "defaultValue", type: "string", description: "Initial selection when uncontrolled." },
+    { name: "onChange", type: "(id, model) => void", description: "Fires with the id and the full model record." },
+    { name: "onOpenChange", type: "(open) => void", description: "Fires as the panel opens and closes." },
+    { name: "recent", type: "string[]", description: "Ids pinned into a leading section, most recent first." },
+    { name: "recentLabel", type: "string", default: '"Recent"', description: "Heading for that section." },
+    { name: "variant", type: '"default" | "pill"', default: '"default"', description: "Compact trigger for a config row." },
+    { name: "searchable", type: "boolean", default: "over 7 models", description: "Show the search field." },
+    { name: "filterable", type: "boolean", default: "2+ tags", description: "Show the capability chips." },
+    { name: "showDetails", type: "boolean", default: "false", description: "A second pane with description, meters and tradeoffs." },
+    { name: "showLogos", type: "boolean", default: "true", description: "Provider marks, falling back to the provider initial." },
+    { name: "showPrice", type: "boolean", default: "false", description: "Price badges on rows and the trigger. Off by default." },
+    { name: "placeholder", type: "string", default: '"Select a model"', description: "Trigger text with nothing selected." },
+    { name: "searchPlaceholder", type: "string", default: '"Search models"', description: "Placeholder inside the search field." },
+    { name: "disabled", type: "boolean", default: "false", description: "Block interaction and dim the control." },
+    { name: "label", type: "string", default: '"Model"', description: "Accessible name for the trigger and panel." },
+  ]}
+/>
+
+## The `Model` record
+
+<PropsTable
+  rows={[
+    { name: "id", type: "string", description: "Stable id. What onChange reports and value matches against." },
+    { name: "name", type: "string", description: "What the user reads." },
+    { name: "provider", type: "string", description: "Shown under the name, and searchable." },
+    { name: "logo", type: "string", description: "Provider mark, drawn bare into the row." },
+    { name: "logoBackground", type: "string", description: "Filled tile behind the mark, for a brand that needs one." },
+    { name: "description", type: "string", description: "The reason someone would pick this model." },
+    { name: "strengths", type: "string[]", description: "Listed in the card." },
+    { name: "limitations", type: "string[]", description: "Listed as tradeoffs, not warnings." },
+    { name: "tags", type: "string[]", description: "Searchable, and the source of the filter chips." },
+    { name: "badge", type: "string", description: 'A short status word beside the name — "New", "Beta".' },
+    { name: "price", type: "{ amount, symbol?, unit?, per?, from? }", description: 'Renders "$3/1M", "2 credits/image".' },
+    { name: "speed", type: "number", description: "Any scale — normalised across the catalogue." },
+    { name: "quality", type: "number", description: "Any scale — normalised across the catalogue." },
+    { name: "group", type: "string", description: "Section heading. Groups appear in the order they first occur." },
+    { name: "disabled", type: "boolean", description: "Visible and explained, but not selectable." },
+    { name: "disabledReason", type: "string", description: "Why. A locked row with no reason is a dead end." },
+  ]}
+/>

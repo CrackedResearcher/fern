@@ -13,6 +13,7 @@
     "@fern-ui/button": "workspace:*",
     "@fern-ui/code-block": "workspace:*",
     "@fern-ui/country-picker": "workspace:*",
+    "@fern-ui/model-picker": "workspace:*",
     "@gravity-ui/icons": "^2.20.0",
     "@heroui/react": "^3.2.2",
     "clsx": "^2.1.1",
